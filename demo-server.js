@@ -103,6 +103,57 @@ function generateHTML() {
             outline: 2px solid #3b82f6;
             outline-offset: 2px;
         }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 8px;
+            width: 200px;
+            max-width: 200px;
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: normal;
+            text-align: left;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .tooltip:hover::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 2px;
+            border: 6px solid transparent;
+            border-bottom-color: #1f2937;
+            z-index: 1000;
+        }
+        
+        /* Responsive tooltip adjustments */
+        @media (max-width: 640px) {
+            .tooltip:hover::after {
+                width: 180px;
+                max-width: 180px;
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+        }
     </style>
 </head>
 <body class="bg-gray-50 font-sans antialiased">
@@ -116,13 +167,27 @@ function generateHTML() {
         <div class="container mx-auto px-4 py-8 max-w-7xl">
             
             <!-- Application Header -->
-            <header class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                    Weekly Snippets Reminder
-                </h1>
-                <p class="text-gray-600">
-                    Manage and track your weekly work summaries with ease
-                </p>
+            <header class="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        Weekly Snippets Reminder
+                    </h1>
+                    <p class="text-gray-600">
+                        Manage and track your weekly work summaries with ease
+                    </p>
+                </div>
+                <button
+                    onclick="openSettings()"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center space-x-2"
+                    aria-label="Open performance cycle settings"
+                    id="settings-btn"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Settings</span>
+                </button>
             </header>
             
             <!-- Main Content Grid -->
@@ -164,6 +229,198 @@ function generateHTML() {
                         </div>
                     </div>
                 </main>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <!-- Header -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900">Performance Cycle Settings</h2>
+                        <button
+                            onclick="closeSettings()"
+                            class="text-gray-400 hover:text-gray-600 transition-colors"
+                            aria-label="Close settings"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="settings-form" class="space-y-6">
+                        <!-- Job Title Field -->
+                        <div>
+                            <label for="jobTitle" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                Job Title <span class="text-red-500 ml-1">*</span>
+                                <div class="tooltip ml-1" title="Your current job title (e.g., Senior Software Engineer, Product Manager).">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </label>
+                            <input
+                                id="jobTitle"
+                                type="text"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Senior Software Engineer"
+                            />
+                            <div id="jobTitle-error" class="mt-1 text-sm text-red-600 hidden"></div>
+                        </div>
+
+                        <!-- Seniority Level Field -->
+                        <div>
+                            <label for="seniorityLevel" class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                Seniority Level <span class="text-red-500 ml-1">*</span>
+                                <div class="tooltip ml-1" title="Your company's level or title (e.g., Senior Engineer, L5, Staff, Principal).">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </label>
+                            <input
+                                id="seniorityLevel"
+                                type="text"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder="e.g., Senior Software Engineer, L5, Staff Engineer, Principal"
+                            />
+                            <div id="seniorityLevel-error" class="mt-1 text-sm text-red-600 hidden"></div>
+                        </div>
+
+                        <!-- Career Ladder Upload -->
+                        <div>
+                            <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                Career Ladder Document <span class="text-gray-500 ml-1">(Optional)</span>
+                                <div class="tooltip ml-1" title="Upload your company's career ladder document. PDF, Word, or text files (max 10MB).">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </label>
+                            
+                            <div class="flex items-center space-x-3">
+                                <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.txt"
+                                    class="hidden"
+                                    id="careerLadderFile"
+                                    onchange="handleFileUpload()"
+                                />
+                                
+                                <label
+                                    for="careerLadderFile"
+                                    class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-200 transition-colors"
+                                >
+                                    Choose File
+                                </label>
+                                
+                                <div id="file-info" class="hidden flex items-center space-x-2">
+                                    <span id="file-name" class="text-sm text-gray-600"></span>
+                                    <button
+                                        type="button"
+                                        onclick="removeFile()"
+                                        class="text-red-500 hover:text-red-700 transition-colors"
+                                        aria-label="Remove file"
+                                    >
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="file-error" class="mt-1 text-sm text-red-600 hidden"></div>
+                        </div>
+
+                        <!-- Performance Feedback Field -->
+                        <div>
+                            <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+                                Previous Performance Feedback <span class="text-gray-500 ml-1">(Optional)</span>
+                                <div class="tooltip ml-1" title="Upload review document OR paste text below. File takes priority over text.">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </label>
+                            
+                            <!-- File Upload Option -->
+                            <div class="mb-4">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.doc,.docx,.txt"
+                                        class="hidden"
+                                        id="performanceFeedbackFile"
+                                        onchange="handlePerformanceFeedbackFileUpload()"
+                                    />
+                                    
+                                    <label
+                                        for="performanceFeedbackFile"
+                                        class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-md cursor-pointer hover:bg-blue-100 transition-colors text-sm"
+                                    >
+                                        📄 Upload Feedback Document
+                                    </label>
+                                    
+                                    <div id="feedback-file-info" class="hidden flex items-center space-x-2">
+                                        <span id="feedback-file-name" class="text-sm text-green-600 font-medium"></span>
+                                        <button
+                                            type="button"
+                                            onclick="removePerformanceFeedbackFile()"
+                                            class="text-red-500 hover:text-red-700 transition-colors"
+                                            aria-label="Remove feedback file"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="feedback-file-error" class="text-sm text-red-600 hidden"></div>
+                            </div>
+
+                            <!-- Text Input Option -->
+                            <div class="relative">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Or paste feedback text:</span>
+                                    <span id="feedback-priority-indicator" class="text-xs text-amber-600 font-medium hidden">
+                                        📄 File uploaded - text will be ignored
+                                    </span>
+                                </div>
+                                <textarea
+                                    id="performanceFeedback"
+                                    rows="6"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                    placeholder="Paste feedback from your last performance review, including strengths, areas for improvement, and goals..."
+                                ></textarea>
+                            </div>
+                            
+                            <p class="mt-2 text-xs text-gray-500">
+                                💡 <strong>Priority:</strong> If you upload a file, it will be used instead of the text field. 
+                                This information helps generate more relevant snippet suggestions.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button
+                                type="button"
+                                onclick="closeSettings()"
+                                class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            >
+                                Save Settings
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -220,7 +477,14 @@ function generateJavaScript() {
         currentWeek: 30,
         isEditing: false,
         snippets: ${JSON.stringify(MOCK_SNIPPETS)},
-        hasUnsavedChanges: false
+        hasUnsavedChanges: false,
+        settings: {
+            jobTitle: '',
+            seniorityLevel: '',
+            careerLadderFile: null,
+            performanceFeedback: '',
+            performanceFeedbackFile: null
+        }
     };
 
     /**
@@ -247,6 +511,12 @@ function generateJavaScript() {
         
         // Warn about unsaved changes when leaving page
         window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        // Set up settings form event listener
+        const settingsForm = document.getElementById('settings-form');
+        if (settingsForm) {
+            settingsForm.addEventListener('submit', handleSettingsSubmit);
+        }
         
         console.log('Weekly Snippets Demo initialized');
     }
@@ -583,6 +853,308 @@ function generateJavaScript() {
      */
     function handleAddNewWeek() {
         alert('Add new week functionality would be implemented here.\\n\\nThis would typically:\\n- Calculate current week number\\n- Create new snippet entry\\n- Switch to edit mode for the new snippet');
+    }
+
+    /**
+     * Open settings modal
+     */
+    function openSettings() {
+        const modal = document.getElementById('settings-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            
+            // Load current settings
+            loadSettingsData();
+            
+            // Focus on first input
+            setTimeout(() => {
+                const firstInput = document.getElementById('jobTitle');
+                if (firstInput) firstInput.focus();
+            }, 100);
+            
+            announceToScreenReader('Settings modal opened');
+        }
+    }
+
+    /**
+     * Close settings modal
+     */
+    function closeSettings() {
+        const modal = document.getElementById('settings-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            clearSettingsErrors();
+            announceToScreenReader('Settings modal closed');
+        }
+    }
+
+    /**
+     * Load settings data into form
+     */
+    function loadSettingsData() {
+        const jobTitleInput = document.getElementById('jobTitle');
+        const senioritySelect = document.getElementById('seniorityLevel');
+        const feedbackTextarea = document.getElementById('performanceFeedback');
+        
+        if (jobTitleInput) jobTitleInput.value = AppState.settings.jobTitle;
+        if (senioritySelect) senioritySelect.value = AppState.settings.seniorityLevel;
+        if (feedbackTextarea) feedbackTextarea.value = AppState.settings.performanceFeedback;
+        
+        // Update file display if files were previously selected
+        if (AppState.settings.careerLadderFile) {
+            showFileInfo(AppState.settings.careerLadderFile);
+        }
+        
+        if (AppState.settings.performanceFeedbackFile) {
+            showPerformanceFeedbackFileInfo(AppState.settings.performanceFeedbackFile);
+            updateFeedbackPriorityIndicator(true);
+        }
+    }
+
+    /**
+     * Handle file upload
+     */
+    function handleFileUpload() {
+        const fileInput = document.getElementById('careerLadderFile');
+        const fileError = document.getElementById('file-error');
+        
+        if (!fileInput.files || !fileInput.files[0]) {
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+            fileError.textContent = 'Please upload a PDF, Word document, or text file';
+            fileError.classList.remove('hidden');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size
+        if (file.size > maxSize) {
+            fileError.textContent = 'File size must be less than 10MB';
+            fileError.classList.remove('hidden');
+            fileInput.value = '';
+            return;
+        }
+        
+        // File is valid
+        fileError.classList.add('hidden');
+        AppState.settings.careerLadderFile = file.name;
+        showFileInfo(file.name);
+    }
+
+    /**
+     * Show file information
+     */
+    function showFileInfo(fileName) {
+        const fileInfo = document.getElementById('file-info');
+        const fileNameSpan = document.getElementById('file-name');
+        
+        if (fileInfo && fileNameSpan) {
+            fileNameSpan.textContent = fileName;
+            fileInfo.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Remove uploaded file
+     */
+    function removeFile() {
+        const fileInput = document.getElementById('careerLadderFile');
+        const fileInfo = document.getElementById('file-info');
+        
+        if (fileInput) fileInput.value = '';
+        if (fileInfo) fileInfo.classList.add('hidden');
+        
+        AppState.settings.careerLadderFile = null;
+    }
+
+    /**
+     * Handle performance feedback file upload
+     */
+    function handlePerformanceFeedbackFileUpload() {
+        const fileInput = document.getElementById('performanceFeedbackFile');
+        const fileError = document.getElementById('feedback-file-error');
+        
+        if (!fileInput.files || !fileInput.files[0]) {
+            return;
+        }
+        
+        const file = fileInput.files[0];
+        const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+            fileError.textContent = 'Please upload a PDF, Word document, or text file';
+            fileError.classList.remove('hidden');
+            fileInput.value = '';
+            return;
+        }
+        
+        // Validate file size
+        if (file.size > maxSize) {
+            fileError.textContent = 'File size must be less than 10MB';
+            fileError.classList.remove('hidden');
+            fileInput.value = '';
+            return;
+        }
+        
+        // File is valid
+        fileError.classList.add('hidden');
+        AppState.settings.performanceFeedbackFile = file.name;
+        showPerformanceFeedbackFileInfo(file.name);
+        updateFeedbackPriorityIndicator(true);
+    }
+
+    /**
+     * Show performance feedback file information
+     */
+    function showPerformanceFeedbackFileInfo(fileName) {
+        const fileInfo = document.getElementById('feedback-file-info');
+        const fileNameSpan = document.getElementById('feedback-file-name');
+        
+        if (fileInfo && fileNameSpan) {
+            fileNameSpan.textContent = fileName;
+            fileInfo.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Remove performance feedback file
+     */
+    function removePerformanceFeedbackFile() {
+        const fileInput = document.getElementById('performanceFeedbackFile');
+        const fileInfo = document.getElementById('feedback-file-info');
+        
+        if (fileInput) fileInput.value = '';
+        if (fileInfo) fileInfo.classList.add('hidden');
+        
+        AppState.settings.performanceFeedbackFile = null;
+        updateFeedbackPriorityIndicator(false);
+    }
+
+    /**
+     * Update the feedback priority indicator
+     */
+    function updateFeedbackPriorityIndicator(hasFile) {
+        const indicator = document.getElementById('feedback-priority-indicator');
+        const textarea = document.getElementById('performanceFeedback');
+        
+        if (indicator) {
+            if (hasFile) {
+                indicator.classList.remove('hidden');
+                if (textarea) {
+                    textarea.classList.add('opacity-60');
+                    textarea.setAttribute('placeholder', 'File uploaded - this text field will be ignored');
+                }
+            } else {
+                indicator.classList.add('hidden');
+                if (textarea) {
+                    textarea.classList.remove('opacity-60');
+                    textarea.setAttribute('placeholder', 'Paste feedback from your last performance review, including strengths, areas for improvement, and goals...');
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate settings form
+     */
+    function validateSettings() {
+        let isValid = true;
+        const errors = {};
+        
+        // Job title validation
+        const jobTitle = document.getElementById('jobTitle').value.trim();
+        if (!jobTitle) {
+            errors.jobTitle = 'Job title is required';
+            isValid = false;
+        }
+        
+        // Seniority level validation
+        const seniorityLevel = document.getElementById('seniorityLevel').value.trim();
+        if (!seniorityLevel) {
+            errors.seniorityLevel = 'Please enter your seniority level';
+            isValid = false;
+        }
+        
+        // Display errors
+        displaySettingsErrors(errors);
+        
+        return isValid;
+    }
+
+    /**
+     * Display settings form errors
+     */
+    function displaySettingsErrors(errors) {
+        // Clear previous errors
+        clearSettingsErrors();
+        
+        // Show new errors
+        Object.keys(errors).forEach(field => {
+            const errorElement = document.getElementById(field + '-error');
+            const inputElement = document.getElementById(field);
+            
+            if (errorElement && inputElement) {
+                errorElement.textContent = errors[field];
+                errorElement.classList.remove('hidden');
+                inputElement.classList.add('border-red-300');
+                inputElement.classList.remove('border-gray-300');
+            }
+        });
+    }
+
+    /**
+     * Clear settings form errors
+     */
+    function clearSettingsErrors() {
+        const errorFields = ['jobTitle', 'seniorityLevel'];
+        
+        errorFields.forEach(field => {
+            const errorElement = document.getElementById(field + '-error');
+            const inputElement = document.getElementById(field);
+            
+            if (errorElement) {
+                errorElement.classList.add('hidden');
+            }
+            
+            if (inputElement) {
+                inputElement.classList.remove('border-red-300');
+                inputElement.classList.add('border-gray-300');
+            }
+        });
+    }
+
+    /**
+     * Handle settings form submission
+     */
+    function handleSettingsSubmit(event) {
+        event.preventDefault();
+        
+        if (!validateSettings()) {
+            return;
+        }
+        
+        // Save settings
+        AppState.settings.jobTitle = document.getElementById('jobTitle').value.trim();
+        AppState.settings.seniorityLevel = document.getElementById('seniorityLevel').value.trim();
+        AppState.settings.performanceFeedback = document.getElementById('performanceFeedback').value.trim();
+        // Note: performanceFeedbackFile and careerLadderFile are already saved when uploaded
+        
+        // Close modal
+        closeSettings();
+        
+        // Show success message
+        showNotification('Settings saved successfully!', 'success');
+        
+        console.log('Settings saved:', AppState.settings);
     }
 
     /**

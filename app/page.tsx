@@ -15,6 +15,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { Settings } from '../components/Settings'
 
 /**
  * Interface for weekly snippet data structure
@@ -26,6 +27,16 @@ interface WeeklySnippet {
   startDate: string
   endDate: string
   content: string
+}
+
+/**
+ * Interface for user performance cycle settings
+ */
+interface PerformanceSettings {
+  jobTitle: string
+  seniorityLevel: string
+  careerLadderFile: File | null
+  performanceFeedback: string
 }
 
 /**
@@ -46,6 +57,14 @@ const Home = (): JSX.Element => {
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
+  const [showSettings, setShowSettings] = useState<boolean>(false)
+  const [userSettings, setUserSettings] = useState<PerformanceSettings>({
+    jobTitle: '',
+    seniorityLevel: '',
+    careerLadderFile: null,
+    performanceFeedback: '',
+    performanceFeedbackFile: null
+  })
 
   /**
    * Initialize component with mock data
@@ -146,14 +165,51 @@ const Home = (): JSX.Element => {
     setIsEditing(false)
   }, [])
 
+  /**
+   * Handle opening settings modal
+   */
+  const handleOpenSettings = useCallback((): void => {
+    setShowSettings(true)
+  }, [])
+
+  /**
+   * Handle closing settings modal
+   */
+  const handleCloseSettings = useCallback((): void => {
+    setShowSettings(false)
+  }, [])
+
+  /**
+   * Handle saving settings
+   */
+  const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
+    // In production, this would save to the database
+    setUserSettings(settings)
+    setShowSettings(false)
+    
+    // Here you would typically make an API call to save settings
+    console.log('Saving settings:', settings)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <header className="mb-8">
+        <header className="mb-8 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">
             Weekly Snippets
           </h1>
+          <button
+            onClick={handleOpenSettings}
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center space-x-2"
+            aria-label="Open performance cycle settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Settings</span>
+          </button>
         </header>
         
         {/* Main Content Grid */}
@@ -238,6 +294,15 @@ const Home = (): JSX.Element => {
             )}
           </main>
         </div>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <Settings
+            onSave={handleSaveSettings}
+            onClose={handleCloseSettings}
+            initialSettings={userSettings}
+          />
+        )}
       </div>
     </div>
   )
