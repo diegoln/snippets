@@ -14,11 +14,12 @@
 
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { Settings } from '../components/Settings'
 import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 import { PerformanceSettings } from '../types/settings'
-import { PerformanceAssessment, GenerateDraftRequest, AssessmentContext } from '../types/performance'
+import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 
 /**
@@ -31,6 +32,42 @@ interface WeeklySnippet {
   startDate: string
   endDate: string
   content: string
+}
+
+/**
+ * Reducer for managing assessment state with proper immutability
+ */
+const assessmentReducer = (state: PerformanceAssessment[], action: AssessmentAction): PerformanceAssessment[] => {
+  switch (action.type) {
+    case 'ADD_ASSESSMENT':
+      return [action.payload, ...state]
+    
+    case 'UPDATE_ASSESSMENT':
+      return state.map(assessment => 
+        assessment.id === action.id 
+          ? { ...assessment, ...action.updates }
+          : assessment
+      )
+    
+    case 'REMOVE_ASSESSMENT':
+      return state.filter(assessment => assessment.id !== action.id)
+    
+    case 'SET_ASSESSMENTS':
+      return action.payload
+    
+    default:
+      return state
+  }
+}
+
+/**
+ * Input sanitization utility
+ */
+const sanitizeInput = (input: string): string => {
+  return input
+    .trim()
+    .replace(/[<>]/g, '') // Basic XSS prevention
+    .substring(0, ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH)
 }
 
 
@@ -54,7 +91,7 @@ const Home = (): JSX.Element => {
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [showSettings, setShowSettings] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'snippets' | 'performance'>('snippets')
-  const [assessments, setAssessments] = useState<PerformanceAssessment[]>([])
+  const [assessments, dispatch] = useReducer(assessmentReducer, [])
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
     jobTitle: '',
     seniorityLevel: '',
@@ -62,6 +99,12 @@ const Home = (): JSX.Element => {
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
+
+  // Memoized sorted assessments for performance
+  const sortedAssessments = useMemo(() => 
+    [...assessments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+    [assessments]
+  )
 
   /**
    * Initialize component with mock data
@@ -99,7 +142,7 @@ const Home = (): JSX.Element => {
         updatedAt: '2025-07-01T00:00:00Z'
       }
     ]
-    setAssessments(mockAssessments)
+    dispatch({ type: 'SET_ASSESSMENTS', payload: mockAssessments })
   }, [])
 
   /**
@@ -206,14 +249,22 @@ const Home = (): JSX.Element => {
   /**
    * Handle generating a new performance assessment draft
    */
-  const handleGenerateDraft = useCallback(async (request: GenerateDraftRequest): Promise<void> => {
+  const handleGenerateDraft = useCallback(async (request: AssessmentFormData): Promise<void> => {
+    // Input validation and sanitization
+    const sanitizedRequest = {
+      cycleName: sanitizeInput(request.cycleName),
+      startDate: request.startDate,
+      endDate: request.endDate,
+      assessmentDirections: request.assessmentDirections ? 
+        sanitizeInput(request.assessmentDirections) : undefined
+    }
     // Create assessment immediately with generating state
     const newAssessment: PerformanceAssessment = {
       id: Date.now().toString(),
       userId: 'user-1',
-      cycleName: request.cycleName,
-      startDate: request.startDate,
-      endDate: request.endDate,
+      cycleName: sanitizedRequest.cycleName,
+      startDate: sanitizedRequest.startDate,
+      endDate: sanitizedRequest.endDate,
       generatedDraft: '', // Empty initially
       isGenerating: true, // Mark as generating
       createdAt: new Date().toISOString(),
@@ -221,7 +272,7 @@ const Home = (): JSX.Element => {
     }
     
     // Add to list immediately so user sees it's being generated
-    setAssessments(prev => [...prev, newAssessment])
+    dispatch({ type: 'ADD_ASSESSMENT', payload: newAssessment })
 
     // Collect context for LLMProxy
     const relevantSnippets = snippets.filter(snippet => {
@@ -244,11 +295,11 @@ const Home = (): JSX.Element => {
         content: snippet.content
       })),
       previousFeedback: userSettings.performanceFeedback || undefined,
-      assessmentDirections: request.assessmentDirections,
+      assessmentDirections: sanitizedRequest.assessmentDirections,
       cyclePeriod: {
-        startDate: request.startDate,
-        endDate: request.endDate,
-        cycleName: request.cycleName
+        startDate: sanitizedRequest.startDate,
+        endDate: sanitizedRequest.endDate,
+        cycleName: sanitizedRequest.cycleName
       }
     }
 
@@ -261,24 +312,19 @@ const Home = (): JSX.Element => {
       console.log('LLMProxy response:', { model: response.model, tokens: response.usage?.tokens })
 
       // Update the assessment with the generated content
-      setAssessments(prev => 
-        prev.map(assessment => 
-          assessment.id === newAssessment.id 
-            ? { 
-                ...assessment, 
-                generatedDraft, 
-                isGenerating: false,
-                updatedAt: new Date().toISOString()
-              }
-            : assessment
-        )
-      )
+      dispatch({
+        type: 'UPDATE_ASSESSMENT',
+        id: newAssessment.id,
+        updates: {
+          generatedDraft,
+          isGenerating: false,
+          updatedAt: new Date().toISOString()
+        }
+      })
     } catch (error) {
       console.error('Failed to generate draft:', error)
-      // Update assessment to show error state or remove it
-      setAssessments(prev => 
-        prev.filter(assessment => assessment.id !== newAssessment.id)
-      )
+      // Remove failed assessment from list
+      dispatch({ type: 'REMOVE_ASSESSMENT', id: newAssessment.id })
       throw error // Let the component handle the error display
     }
   }, [snippets, userSettings])
@@ -288,8 +334,14 @@ const Home = (): JSX.Element => {
    * Handle deleting a performance assessment
    */
   const handleDeleteAssessment = useCallback(async (assessmentId: string): Promise<void> => {
-    setAssessments(prev => prev.filter(a => a.id !== assessmentId))
-    console.log('Deleting assessment:', assessmentId)
+    try {
+      dispatch({ type: 'REMOVE_ASSESSMENT', id: assessmentId })
+      console.log('Deleting assessment:', assessmentId)
+      // In production, this would make an API call to delete from database
+    } catch (error) {
+      console.error('Failed to delete assessment:', error)
+      throw error
+    }
   }, [])
 
   return (
@@ -427,11 +479,20 @@ const Home = (): JSX.Element => {
         </div>
         ) : (
           /* Performance Assessments Content */
-          <PerformanceAssessmentComponent
-            assessments={assessments}
-            onGenerateDraft={handleGenerateDraft}
-            onDeleteAssessment={handleDeleteAssessment}
-          />
+          <ErrorBoundary
+            fallback={
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                <h3 className="text-red-800 font-semibold mb-2">Assessment Error</h3>
+                <p className="text-red-600">Failed to load performance assessments. Please refresh the page.</p>
+              </div>
+            }
+          >
+            <PerformanceAssessmentComponent
+              assessments={sortedAssessments}
+              onGenerateDraft={handleGenerateDraft}
+              onDeleteAssessment={handleDeleteAssessment}
+            />
+          </ErrorBoundary>
         )}
 
         {/* Settings Modal */}

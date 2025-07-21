@@ -5,7 +5,7 @@
  * This provides fast, local LLM processing without external API calls.
  */
 
-import { AssessmentContext } from '../types/performance'
+import { AssessmentContext, ASSESSMENT_CONSTANTS } from '../types/performance'
 
 export interface LLMProxyRequest {
   prompt: string
@@ -43,8 +43,9 @@ export class LLMProxyClient {
     const prompt = this.buildPerformanceAssessmentPrompt(context)
     
     try {
-      // Add fake lag for testing generation states (3-5 seconds)
-      const delay = 3000 + Math.random() * 2000
+      // Add fake lag for testing generation states
+      const delay = ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN + 
+        Math.random() * (ASSESSMENT_CONSTANTS.GENERATION_DELAY_MAX - ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN)
       await new Promise(resolve => setTimeout(resolve, delay))
       
       // For development, we'll provide a mock response

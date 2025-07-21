@@ -11,9 +11,10 @@ import React, { useState, useCallback } from 'react'
 import {
   PerformanceAssessment,
   PerformanceAssessmentProps,
-  GenerateDraftRequest,
+  AssessmentFormData,
   PerformanceAssessmentErrors,
-  GenerationStatus
+  GenerationStatus,
+  ASSESSMENT_CONSTANTS
 } from '../types/performance'
 
 export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps> = ({
@@ -23,7 +24,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
 }) => {
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [selectedAssessment, setSelectedAssessment] = useState<PerformanceAssessment | null>(null)
-  const [formData, setFormData] = useState<GenerateDraftRequest>({
+  const [formData, setFormData] = useState<AssessmentFormData>({
     cycleName: '',
     startDate: '',
     endDate: '',
@@ -35,11 +36,13 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
   /**
    * Validate form data
    */
-  const validateForm = useCallback((data: GenerateDraftRequest): boolean => {
+  const validateForm = useCallback((data: AssessmentFormData): boolean => {
     const newErrors: PerformanceAssessmentErrors = {}
 
     if (!data.cycleName.trim()) {
       newErrors.cycleName = 'Performance cycle name is required'
+    } else if (data.cycleName.length > ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH) {
+      newErrors.cycleName = `Cycle name must be less than ${ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH} characters`
     }
 
     if (!data.startDate) {
@@ -52,6 +55,10 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
 
     if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
       newErrors.endDate = 'End date must be after start date'
+    }
+
+    if (data.assessmentDirections && data.assessmentDirections.length > ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH) {
+      newErrors.assessmentDirections = `Directions must be less than ${ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH} characters`
     }
 
     setErrors(newErrors)
@@ -276,7 +283,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                   <>
                     <h4 className="font-medium text-gray-900 mb-2">Draft Preview</h4>
                     <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-700 max-h-32 overflow-y-auto">
-                      {assessment.generatedDraft.substring(0, 200)}...
+                      {assessment.generatedDraft.substring(0, ASSESSMENT_CONSTANTS.DRAFT_PREVIEW_LENGTH).replace(/[<>&"']/g, '')}...
                     </div>
                   </>
                 )}
@@ -335,7 +342,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
             <div className="p-6">
               <div className="prose max-w-none">
                 <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
-                  {selectedAssessment.generatedDraft}
+                  {selectedAssessment.generatedDraft.replace(/[<>&"']/g, '')}
                 </pre>
               </div>
               <div className="mt-6 flex justify-end space-x-3">
