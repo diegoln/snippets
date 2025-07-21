@@ -1,0 +1,85 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <!-- User -->
+  <rect x="350" y="20" width="100" height="40" fill="#e3f2fd" stroke="#1976d2" stroke-width="2" rx="5"/>
+  <text x="400" y="45" text-anchor="middle" font-family="Arial" font-size="14" fill="#1976d2">User</text>
+  
+  <!-- UserHub Frontend -->
+  <rect x="200" y="100" width="400" height="80" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" rx="5"/>
+  <text x="400" y="125" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#7b1fa2">UserHub (Frontend)</text>
+  
+  <!-- UserHub components -->
+  <rect x="220" y="145" width="100" height="25" fill="#f8bbd9" stroke="#c2185b" stroke-width="1" rx="3"/>
+  <text x="270" y="162" text-anchor="middle" font-family="Arial" font-size="10" fill="#c2185b">Snippets CRUD</text>
+  
+  <rect x="340" y="145" width="100" height="25" fill="#f8bbd9" stroke="#c2185b" stroke-width="1" rx="3"/>
+  <text x="390" y="162" text-anchor="middle" font-family="Arial" font-size="10" fill="#c2185b">Profile Config</text>
+  
+  <rect x="460" y="145" width="100" height="25" fill="#f8bbd9" stroke="#c2185b" stroke-width="1" rx="3"/>
+  <text x="510" y="162" text-anchor="middle" font-family="Arial" font-size="10" fill="#c2185b">Integrations</text>
+  
+  <!-- Authentication Services -->
+  <rect x="200" y="220" width="400" height="60" fill="#fff3e0" stroke="#f57c00" stroke-width="2" rx="5"/>
+  <text x="400" y="245" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#f57c00">Authentication Services</text>
+  <text x="270" y="265" text-anchor="middle" font-family="Arial" font-size="10" fill="#f57c00">NextAuth</text>
+  <text x="390" y="265" text-anchor="middle" font-family="Arial" font-size="10" fill="#f57c00">Google OAuth</text>
+  <text x="510" y="265" text-anchor="middle" font-family="Arial" font-size="10" fill="#f57c00">Todoist OAuth</text>
+  
+  <!-- Database -->
+  <rect x="50" y="320" width="150" height="80" fill="#e8f5e8" stroke="#388e3c" stroke-width="2" rx="5"/>
+  <text x="125" y="345" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#388e3c">PostgreSQL</text>
+  <text x="125" y="365" text-anchor="middle" font-family="Arial" font-size="10" fill="#388e3c">User Profiles</text>
+  <text x="125" y="380" text-anchor="middle" font-family="Arial" font-size="10" fill="#388e3c">Weekly Data</text>
+  <text x="125" y="395" text-anchor="middle" font-family="Arial" font-size="10" fill="#388e3c">Settings</text>
+  
+  <!-- Google Calendar -->
+  <rect x="250" y="320" width="150" height="80" fill="#fff8e1" stroke="#fbc02d" stroke-width="2" rx="5"/>
+  <text x="325" y="345" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#fbc02d">Google Calendar</text>
+  <text x="325" y="365" text-anchor="middle" font-family="Arial" font-size="10" fill="#fbc02d">Meetings</text>
+  <text x="325" y="380" text-anchor="middle" font-family="Arial" font-size="10" fill="#fbc02d">Events</text>
+  
+  <!-- Todoist -->
+  <rect x="450" y="320" width="150" height="80" fill="#fce4ec" stroke="#e91e63" stroke-width="2" rx="5"/>
+  <text x="525" y="345" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#e91e63">Todoist</text>
+  <text x="525" y="365" text-anchor="middle" font-family="Arial" font-size="10" fill="#e91e63">Tasks</text>
+  <text x="525" y="380" text-anchor="middle" font-family="Arial" font-size="10" fill="#e91e63">Projects</text>
+  
+  <!-- LLMProxy -->
+  <rect x="300" y="450" width="200" height="100" fill="#e1f5fe" stroke="#0277bd" stroke-width="2" rx="5"/>
+  <text x="400" y="475" text-anchor="middle" font-family="Arial" font-size="16" font-weight="bold" fill="#0277bd">LLMProxy</text>
+  <text x="400" y="495" text-anchor="middle" font-family="Arial" font-size="12" fill="#0277bd">API Gateway</text>
+  <text x="350" y="515" text-anchor="middle" font-family="Arial" font-size="10" fill="#0277bd">Request Management</text>
+  <text x="450" y="515" text-anchor="middle" font-family="Arial" font-size="10" fill="#0277bd">Security</text>
+  <text x="350" y="530" text-anchor="middle" font-family="Arial" font-size="10" fill="#0277bd">Caching</text>
+  <text x="450" y="530" text-anchor="middle" font-family="Arial" font-size="10" fill="#0277bd">Token Mgmt</text>
+  
+  <!-- OpenAI API -->
+  <rect x="350" y="580" width="100" height="40" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" rx="5"/>
+  <text x="400" y="605" text-anchor="middle" font-family="Arial" font-size="14" fill="#7b1fa2">OpenAI API</text>
+  
+  <!-- Arrows -->
+  <!-- User to UserHub -->
+  <line x1="400" y1="60" x2="400" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- UserHub to Auth -->
+  <line x1="400" y1="180" x2="400" y2="220" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Auth to components -->
+  <line x1="300" y1="280" x2="125" y2="320" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="280" x2="325" y2="320" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="500" y1="280" x2="525" y2="320" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Components to LLMProxy -->
+  <line x1="125" y1="400" x2="350" y2="450" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="325" y1="400" x2="400" y2="450" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="525" y1="400" x2="450" y2="450" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- LLMProxy to OpenAI -->
+  <line x1="400" y1="550" x2="400" y2="580" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#333"/>
+    </marker>
+  </defs>
+</svg>

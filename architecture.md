@@ -2,7 +2,17 @@
 
 ## Overview
 
-The Weekly Snippets Reminder system is built around a central UserHub component that manages user interactions, data persistence, and external integrations. The architecture follows a modular design with clear separation between the frontend interface, authentication services, and external API integrations.
+The Weekly Snippets Reminder system is built around a central UserHub component that manages user interactions, data persistence, and external integrations. The architecture follows a modular design with clear separation between the frontend interface, authentication services, LLM processing, and external API integrations.
+
+## Architecture Diagram
+
+![System Architecture](docs/architecture-diagram.svg)
+
+The diagram shows the flow of data and interactions between system components:
+- Users interact with the UserHub frontend for all CRUD operations
+- Authentication services handle user login and external service OAuth
+- Data sources (PostgreSQL, Google Calendar, Todoist) provide information to the system
+- LLMProxy acts as a centralized gateway for all OpenAI API interactions
 
 ## Core Components
 
@@ -42,25 +52,51 @@ The UserHub allows users to optionally configure:
 - **Todoist OAuth**: Authentication for task management integration
 - Token refresh and credential management for external services
 
+### LLMProxy (API Gateway Component)
+
+The LLMProxy serves as a centralized gateway for all OpenAI API interactions, providing a single point of access for LLM operations across the system.
+
+#### Core Responsibilities
+- **API Gateway**: Single entry point for all OpenAI API calls from system components
+- **Request Management**: Handles rate limiting, retry logic, and request queuing for OpenAI services
+- **Security & Authentication**: Manages OpenAI API keys and authentication centrally
+- **Response Processing**: Standardizes OpenAI API responses for consistent consumption across the system
+- **Error Handling**: Provides robust error handling and fallback mechanisms for API failures
+
+#### Technical Capabilities
+- **Request Routing**: Routes different types of LLM requests to appropriate OpenAI models and endpoints
+- **Response Caching**: Implements intelligent caching strategies to optimize API usage and reduce costs
+- **Token Management**: Monitors and manages token usage across all system requests
+- **Request Logging**: Logs all API interactions for debugging, monitoring, and usage analysis
+- **Configuration Management**: Handles model selection, temperature settings, and other LLM parameters
+
+#### Integration Points
+- **OpenAI API**: Direct integration with OpenAI services (GPT, embeddings, etc.)
+- **UserHub**: Receives LLM requests from frontend components
+- **External Services**: Processes requests for analyzing data from Google Calendar and Todoist
+- **Database**: Stores request logs, usage metrics, and cached responses
+
 ### External Integrations
 
 #### Google Calendar Integration
 - **Meeting Extraction**: Retrieves scheduled meetings and events
-- **Transcription Analysis**: Processes meeting transcriptions for key insights
-- **Action Item Detection**: Identifies decisions and follow-up tasks from meetings
+- **Data Synchronization**: Syncs meeting data to system database
+- **API Integration**: Handles OAuth authentication and API rate limiting
 
 #### Todoist Integration
 - **Task Synchronization**: Imports completed and pending tasks
-- **Project Context**: Understands task organization and project relationships
-- **Progress Tracking**: Monitors task completion patterns and productivity metrics
+- **Data Integration**: Syncs task and project data to system database
+- **API Management**: Handles OAuth authentication and API interactions
 
 ## Data Flow
 
 1. **User Input**: Users create and edit weekly snippets through the UserHub interface
-2. **Context Enrichment**: System automatically pulls relevant data from integrated services
-3. **Intelligent Analysis**: AI processing combines manual input with extracted context
-4. **Career Guidance**: System provides personalized recommendations based on user's current level and company career ladder expectations
-5. **Performance Preparation**: Accumulated data supports review cycle documentation
+2. **Data Collection**: System automatically pulls relevant data from Google Calendar and Todoist
+3. **API Requests**: UserHub and other components make LLM requests through LLMProxy
+4. **Request Processing**: LLMProxy handles authentication, rate limiting, and routes requests to OpenAI API
+5. **Response Management**: LLMProxy processes OpenAI responses and returns standardized results
+6. **Data Integration**: Processed AI insights are integrated back into the user interface and database
+7. **Caching & Optimization**: LLMProxy caches responses and manages token usage for cost efficiency
 
 ## Deployment Architecture
 
@@ -79,6 +115,7 @@ The UserHub allows users to optionally configure:
 ### Technology Stack
 - **Frontend**: Next.js 14+ with TypeScript
 - **API**: AWS Lambda with Node.js/TypeScript
+- **LLM Integration**: OpenAI API for document processing and snippet generation
 - **Database**: PostgreSQL on AWS RDS
 - **ORM**: Prisma for database management
 - **Infrastructure**: AWS CDK or Terraform for IaC
