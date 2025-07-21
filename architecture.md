@@ -6,56 +6,13 @@ The Weekly Snippets Reminder system is built around a central UserHub component 
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                                    User                                         │
-└─────────────────────────┬───────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────────────────────────┐
-│                            UserHub (Frontend)                                  │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                  │
-│  │  Weekly Snippets│ │  Profile Config │ │  Integration    │                  │
-│  │  CRUD Interface │ │  Management     │ │  Management     │                  │
-│  └─────────────────┘ └─────────────────┘ └─────────────────┘                  │
-└─────────────────────────┬───────────────────────────────────────────────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────────────────────────┐
-│                        Authentication Services                                 │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐                  │
-│  │  User Auth      │ │  Google OAuth   │ │  Todoist OAuth  │                  │
-│  │  (NextAuth)     │ │  Integration    │ │  Integration    │                  │
-│  └─────────────────┘ └─────────────────┘ └─────────────────┘                  │
-└─────────┬───────────────────────┬───────────────────────┬───────────────────────┘
-          │                       │                       │
-┌─────────▼───────────┐ ┌─────────▼───────────┐ ┌─────────▼───────────┐
-│    PostgreSQL       │ │   Google Calendar   │ │      Todoist        │
-│    Database         │ │    Integration      │ │    Integration      │
-│  ┌───────────────┐  │ │  ┌───────────────┐  │ │  ┌───────────────┐  │
-│  │ User Profiles │  │ │  │ Meetings      │  │ │  │ Tasks         │  │
-│  │ Weekly Data   │  │ │  │ Transcriptions│  │ │  │ Projects      │  │
-│  │ Settings      │  │ │  │ Events        │  │ │  │ Completions   │  │
-│  └───────────────┘  │ │  └───────────────┘  │ │  └───────────────┘  │
-└─────────┬───────────┘ └─────────┬───────────┘ └─────────┬───────────┘
-          │                       │                       │
-          └───────────────────────▼───────────────────────┘
-                                  │
-                    ┌─────────────▼─────────────┐
-                    │        LLMProxy           │
-                    │   (AI Processing Layer)   │
-                    │  ┌─────────────────────┐  │
-                    │  │  Document Analysis  │  │
-                    │  │  Meeting Processing │  │
-                    │  │  Task Understanding │  │
-                    │  │  Snippet Generation │  │
-                    │  │  Career Guidance    │  │
-                    │  └─────────────────────┘  │
-                    │           │               │
-                    │  ┌─────────▼─────────┐    │
-                    │  │   OpenAI API      │    │
-                    │  │   Integration     │    │
-                    │  └───────────────────┘    │
-                    └───────────────────────────┘
-```
+![System Architecture](docs/architecture-diagram.svg)
+
+The diagram shows the flow of data and interactions between system components:
+- Users interact with the UserHub frontend for all CRUD operations
+- Authentication services handle user login and external service OAuth
+- Data sources (PostgreSQL, Google Calendar, Todoist) provide information to the system
+- LLMProxy acts as a centralized gateway for all OpenAI API interactions
 
 ## Core Components
 
@@ -95,50 +52,51 @@ The UserHub allows users to optionally configure:
 - **Todoist OAuth**: Authentication for task management integration
 - Token refresh and credential management for external services
 
-### LLMProxy (AI Processing Component)
+### LLMProxy (API Gateway Component)
 
-The LLMProxy serves as the intelligent processing layer that leverages OpenAI's language models to enhance user experience and provide automated insights.
+The LLMProxy serves as a centralized gateway for all OpenAI API interactions, providing a single point of access for LLM operations across the system.
 
-#### Key Responsibilities
-- **Document Analysis**: Extracts meaningful information from uploaded documents, meeting transcriptions, and other text-based content
-- **Snippet Generation**: Automatically generates weekly snippet recommendations based on user context, completed tasks, and meeting outcomes
-- **Content Enhancement**: Improves user-written snippets with relevant details from integrated data sources
-- **Career Guidance**: Provides personalized recommendations aligned with user's seniority level and company career ladder
+#### Core Responsibilities
+- **API Gateway**: Single entry point for all OpenAI API calls from system components
+- **Request Management**: Handles rate limiting, retry logic, and request queuing for OpenAI services
+- **Security & Authentication**: Manages OpenAI API keys and authentication centrally
+- **Response Processing**: Standardizes OpenAI API responses for consistent consumption across the system
+- **Error Handling**: Provides robust error handling and fallback mechanisms for API failures
 
-#### AI Processing Capabilities
-- **Meeting Transcription Analysis**: Processes meeting recordings/transcriptions to identify key decisions, action items, and accomplishments
-- **Task Context Understanding**: Analyzes Todoist task data to understand project significance and completion impact
-- **Document Information Extraction**: Parses uploaded documents (PDFs, Word docs) to extract relevant work accomplishments and project details
-- **Contextual Snippet Recommendations**: Generates weekly snippets by combining data from all integrated sources with user's career context
+#### Technical Capabilities
+- **Request Routing**: Routes different types of LLM requests to appropriate OpenAI models and endpoints
+- **Response Caching**: Implements intelligent caching strategies to optimize API usage and reduce costs
+- **Token Management**: Monitors and manages token usage across all system requests
+- **Request Logging**: Logs all API interactions for debugging, monitoring, and usage analysis
+- **Configuration Management**: Handles model selection, temperature settings, and other LLM parameters
 
 #### Integration Points
-- **OpenAI API**: Primary LLM service for text processing and generation
-- **UserHub**: Receives processed insights and AI-generated content recommendations
-- **External Services**: Processes data from Google Calendar and Todoist integrations
-- **File Storage**: Analyzes uploaded documents from AWS S3 or local storage
+- **OpenAI API**: Direct integration with OpenAI services (GPT, embeddings, etc.)
+- **UserHub**: Receives LLM requests from frontend components
+- **External Services**: Processes requests for analyzing data from Google Calendar and Todoist
+- **Database**: Stores request logs, usage metrics, and cached responses
 
 ### External Integrations
 
 #### Google Calendar Integration
 - **Meeting Extraction**: Retrieves scheduled meetings and events
-- **Transcription Analysis**: Processes meeting transcriptions for key insights via LLMProxy
-- **Action Item Detection**: Identifies decisions and follow-up tasks from meetings using AI analysis
+- **Data Synchronization**: Syncs meeting data to system database
+- **API Integration**: Handles OAuth authentication and API rate limiting
 
 #### Todoist Integration
 - **Task Synchronization**: Imports completed and pending tasks
-- **Project Context**: Understands task organization and project relationships through LLMProxy analysis
-- **Progress Tracking**: Monitors task completion patterns and productivity metrics
+- **Data Integration**: Syncs task and project data to system database
+- **API Management**: Handles OAuth authentication and API interactions
 
 ## Data Flow
 
 1. **User Input**: Users create and edit weekly snippets through the UserHub interface
-2. **Document Upload**: Users can upload documents that get processed by LLMProxy for content extraction
-3. **Context Enrichment**: System automatically pulls relevant data from Google Calendar and Todoist
-4. **LLM Processing**: LLMProxy analyzes all data sources (documents, meetings, tasks) using OpenAI models
-5. **Intelligent Analysis**: AI processing combines manual input with extracted context to generate insights
-6. **Snippet Recommendations**: LLMProxy provides AI-generated snippet suggestions based on user's weekly activities
-7. **Career Guidance**: System provides personalized recommendations based on user's current level and company career ladder expectations
-8. **Performance Preparation**: Accumulated data and AI insights support review cycle documentation
+2. **Data Collection**: System automatically pulls relevant data from Google Calendar and Todoist
+3. **API Requests**: UserHub and other components make LLM requests through LLMProxy
+4. **Request Processing**: LLMProxy handles authentication, rate limiting, and routes requests to OpenAI API
+5. **Response Management**: LLMProxy processes OpenAI responses and returns standardized results
+6. **Data Integration**: Processed AI insights are integrated back into the user interface and database
+7. **Caching & Optimization**: LLMProxy caches responses and manages token usage for cost efficiency
 
 ## Deployment Architecture
 
