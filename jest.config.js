@@ -1,0 +1,80 @@
+/**
+ * Jest Configuration for Weekly Snippets Reminder
+ * 
+ * This configuration sets up Jest for testing both React components
+ * and Node.js server code with TypeScript support.
+ */
+
+const nextJest = require('next/jest')
+
+const createJestConfig = nextJest({
+  // Provide the path to your Next.js app to load next.config.js and .env files
+  dir: './',
+})
+
+/** @type {import('jest').Config} */
+const customJestConfig = {
+  // Test environment for React components
+  testEnvironment: 'jsdom',
+  
+  // Setup files to run before tests
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  
+  // Test file patterns
+  testMatch: [
+    '<rootDir>/**/__tests__/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/**/*.(test|spec).{js,jsx,ts,tsx}'
+  ],
+  
+  // Module paths and aliases
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+    '^@/components/(.*)$': '<rootDir>/components/$1',
+    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/utils/(.*)$': '<rootDir>/utils/$1'
+  },
+  
+  // Coverage configuration
+  collectCoverageFrom: [
+    '**/*.{js,jsx,ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+    '!**/.next/**',
+    '!**/coverage/**',
+    '!jest.config.js',
+    '!jest.setup.js',
+    '!next.config.js',
+    '!tailwind.config.js',
+    '!postcss.config.js'
+  ],
+  
+  // Coverage thresholds
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70
+    }
+  },
+  
+  // Transform configuration for TypeScript
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
+  },
+  
+  // Transform ignore patterns
+  transformIgnorePatterns: [
+    '/node_modules/',
+    '^.+\\.module\\.(css|sass|scss)$'
+  ],
+  
+  // Test timeout
+  testTimeout: 10000,
+  
+  // Verbose output
+  verbose: true
+}
+
+// Create the Jest config with Next.js integration
+module.exports = createJestConfig(customJestConfig)
