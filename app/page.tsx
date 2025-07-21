@@ -14,8 +14,12 @@
 
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Settings } from '../components/Settings'
+import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
+import { PerformanceSettings } from '../types/settings'
+import { PerformanceAssessment, GenerateDraftRequest, AssessmentContext } from '../types/performance'
+import { llmProxy } from '../lib/llmproxy'
 
 /**
  * Interface for weekly snippet data structure
@@ -29,15 +33,6 @@ interface WeeklySnippet {
   content: string
 }
 
-/**
- * Interface for user performance cycle settings
- */
-interface PerformanceSettings {
-  jobTitle: string
-  seniorityLevel: string
-  careerLadderFile: File | null
-  performanceFeedback: string
-}
 
 /**
  * Props for the SnippetEditor component
@@ -58,6 +53,8 @@ const Home = (): JSX.Element => {
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [showSettings, setShowSettings] = useState<boolean>(false)
+  const [activeTab, setActiveTab] = useState<'snippets' | 'performance'>('snippets')
+  const [assessments, setAssessments] = useState<PerformanceAssessment[]>([])
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
     jobTitle: '',
     seniorityLevel: '',
@@ -88,6 +85,21 @@ const Home = (): JSX.Element => {
       }
     ]
     setSnippets(mockSnippets)
+
+    // Initialize mock performance assessments
+    const mockAssessments: PerformanceAssessment[] = [
+      {
+        id: '1',
+        userId: 'user-1',
+        cycleName: 'H1 2025 Performance Review',
+        startDate: '2025-01-01',
+        endDate: '2025-06-30',
+        generatedDraft: 'Sample draft content would be here...',
+        createdAt: '2025-07-01T00:00:00Z',
+        updatedAt: '2025-07-01T00:00:00Z'
+      }
+    ]
+    setAssessments(mockAssessments)
   }, [])
 
   /**
@@ -191,13 +203,102 @@ const Home = (): JSX.Element => {
     console.log('Saving settings:', settings)
   }, [])
 
+  /**
+   * Handle generating a new performance assessment draft
+   */
+  const handleGenerateDraft = useCallback(async (request: GenerateDraftRequest): Promise<void> => {
+    // Create assessment immediately with generating state
+    const newAssessment: PerformanceAssessment = {
+      id: Date.now().toString(),
+      userId: 'user-1',
+      cycleName: request.cycleName,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      generatedDraft: '', // Empty initially
+      isGenerating: true, // Mark as generating
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    
+    // Add to list immediately so user sees it's being generated
+    setAssessments(prev => [...prev, newAssessment])
+
+    // Collect context for LLMProxy
+    const relevantSnippets = snippets.filter(snippet => {
+      const snippetDate = new Date(snippet.startDate)
+      const startDate = new Date(request.startDate)
+      const endDate = new Date(request.endDate)
+      return snippetDate >= startDate && snippetDate <= endDate
+    })
+
+    const context: AssessmentContext = {
+      userProfile: {
+        jobTitle: userSettings.jobTitle || 'Software Engineer',
+        seniorityLevel: userSettings.seniorityLevel || 'Senior',
+        careerLadder: userSettings.careerLadderFile ? 'Available' : undefined
+      },
+      weeklySnippets: relevantSnippets.map(snippet => ({
+        weekNumber: snippet.weekNumber,
+        startDate: snippet.startDate,
+        endDate: snippet.endDate,
+        content: snippet.content
+      })),
+      previousFeedback: userSettings.performanceFeedback || undefined,
+      assessmentDirections: request.assessmentDirections,
+      cyclePeriod: {
+        startDate: request.startDate,
+        endDate: request.endDate,
+        cycleName: request.cycleName
+      }
+    }
+
+    // Use LLMProxy to generate the draft in background
+    console.log('Generating draft with context:', context)
+    
+    try {
+      const response = await llmProxy.generatePerformanceAssessment(context)
+      const generatedDraft = response.content
+      console.log('LLMProxy response:', { model: response.model, tokens: response.usage?.tokens })
+
+      // Update the assessment with the generated content
+      setAssessments(prev => 
+        prev.map(assessment => 
+          assessment.id === newAssessment.id 
+            ? { 
+                ...assessment, 
+                generatedDraft, 
+                isGenerating: false,
+                updatedAt: new Date().toISOString()
+              }
+            : assessment
+        )
+      )
+    } catch (error) {
+      console.error('Failed to generate draft:', error)
+      // Update assessment to show error state or remove it
+      setAssessments(prev => 
+        prev.filter(assessment => assessment.id !== newAssessment.id)
+      )
+      throw error // Let the component handle the error display
+    }
+  }, [snippets, userSettings])
+
+
+  /**
+   * Handle deleting a performance assessment
+   */
+  const handleDeleteAssessment = useCallback(async (assessmentId: string): Promise<void> => {
+    setAssessments(prev => prev.filter(a => a.id !== assessmentId))
+    console.log('Deleting assessment:', assessmentId)
+  }, [])
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <header className="mb-8 flex justify-between items-center">
+        <header className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">
-            Weekly Snippets
+            UserHub
           </h1>
           <button
             onClick={handleOpenSettings}
@@ -211,9 +312,39 @@ const Home = (): JSX.Element => {
             <span>Settings</span>
           </button>
         </header>
+
+        {/* Navigation Tabs */}
+        <nav className="mb-8">
+          <div className="border-b border-gray-200">
+            <div className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('snippets')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'snippets'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Weekly Snippets
+              </button>
+              <button
+                onClick={() => setActiveTab('performance')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'performance'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Performance Drafts
+              </button>
+            </div>
+          </div>
+        </nav>
         
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Tab Content */}
+        {activeTab === 'snippets' ? (
+          /* Weekly Snippets Content */
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Snippets Sidebar */}
           <aside className="lg:col-span-1">
@@ -294,6 +425,14 @@ const Home = (): JSX.Element => {
             )}
           </main>
         </div>
+        ) : (
+          /* Performance Assessments Content */
+          <PerformanceAssessmentComponent
+            assessments={assessments}
+            onGenerateDraft={handleGenerateDraft}
+            onDeleteAssessment={handleDeleteAssessment}
+          />
+        )}
 
         {/* Settings Modal */}
         {showSettings && (

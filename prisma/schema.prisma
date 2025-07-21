@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Performance Cycle Information
+  jobTitle            String? // Current job title
+  seniorityLevel      String? // Experience level (intern, junior, mid, senior, staff, principal, architect)
+  careerLadderFile    String? // File path or reference to uploaded career ladder document
+  performanceFeedback String? // Previous performance review feedback
+
+  // Integrations
+  googleCalendarToken String?
+  todoistToken        String?
+  
+  // Relations
+  snippets           WeeklySnippet[]
+  integrations       Integration[]
+  performanceAssessments PerformanceAssessment[]
+
+  @@map("users")
+}
+
+model WeeklySnippet {
+  id          String   @id @default(cuid())
+  userId      String
+  weekNumber  Int
+  startDate   DateTime // Monday
+  endDate     DateTime // Friday
+  content     String
+  
+  // Auto-generated content from integrations
+  extractedTasks    String? // JSON string
+  extractedMeetings String? // JSON string
+  
+  // AI-generated insights
+  aiSuggestions String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekNumber])
+  @@map("weekly_snippets")
+}
+
+model Integration {
+  id           String @id @default(cuid())
+  userId       String
+  type         String // "google_calendar", "todoist"
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("integrations")
+}
+
+model PerformanceAssessment {
+  id             String   @id @default(cuid())
+  userId         String
+  cycleName      String   // Human readable name like "H1 2025", "Q4 2024"
+  startDate      DateTime // Performance cycle start date
+  endDate        DateTime // Performance cycle end date
+  
+  // AI-generated content
+  generatedDraft String   // AI-generated self assessment draft (required)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cycleName])
+  @@map("performance_assessments")
+}
