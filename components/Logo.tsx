@@ -84,8 +84,8 @@ export const Logo: React.FC<LogoProps> = ({
 
   // Accessibility and brand compliance
   const altText = showTagline 
-    ? 'AdvanceWeekly - See beyond the busy.'
-    : 'AdvanceWeekly'
+    ? 'AdvanceWeekly logo - See beyond the busy.'
+    : 'AdvanceWeekly logo'
 
   return (
     <div 

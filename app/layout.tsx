@@ -23,8 +23,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/brand/06_icon_circle.png" />
       </head>
       <body className="font-sans text-neutral-900 bg-neutral-100 transition-advance">
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-pill focus:transition-advance">
+          Skip to main content
+        </a>
         <ErrorBoundary>
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
         </ErrorBoundary>
       </body>
     </html>
