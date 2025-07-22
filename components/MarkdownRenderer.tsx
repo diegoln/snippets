@@ -18,7 +18,7 @@ interface MarkdownRendererProps {
 }
 
 /**
- * Custom components for markdown rendering with Tailwind styling
+ * Custom components for markdown rendering with AdvanceWeekly design system
  */
 const markdownComponents = {
   // Headings
