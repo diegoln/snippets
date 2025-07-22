@@ -196,15 +196,15 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Performance Self-Assessment Drafts</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-heading-2 text-primary">Performance Self-Assessment Drafts</h2>
+          <p className="text-secondary mt-1">
             Generate AI-powered performance assessment drafts based on your weekly snippets
           </p>
         </div>
         {!isFormOpen && (
           <button
             onClick={() => dispatch({ type: 'OPEN_FORM' })}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="btn-accent px-4 py-2 rounded-pill font-medium transition-advance shadow-elevation-1"
             aria-label="Open form to generate new performance assessment"
           >
             + Generate Assessment
@@ -215,12 +215,12 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       {/* Generate Draft Form */}
       {isFormOpen && (
         <div 
-          className="bg-white border border-gray-200 rounded-lg p-6"
+          className="card bg-surface p-6"
           role="region" 
           aria-labelledby="form-heading"
           aria-describedby="form-description"
         >
-          <h3 id="form-heading" className="text-lg font-semibold text-gray-900 mb-4">Generate Performance Assessment Draft</h3>
+          <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Generate Performance Assessment Draft</h3>
           <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered performance assessment draft based on your weekly snippets</p>
           
           <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
@@ -332,10 +332,10 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 type="button"
                 disabled={isFormDisabled}
                 onClick={() => dispatch({ type: 'CLOSE_FORM' })}
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 rounded-pill transition-advance ${
                   isFormDisabled
-                    ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
-                    : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                    ? 'text-neutral-600/50 bg-neutral-100 cursor-not-allowed'
+                    : 'text-secondary bg-neutral-100 hover:bg-primary-100'
                 }`}
               >
                 Cancel
@@ -344,10 +344,10 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 type="submit"
                 disabled={isFormDisabled}
                 aria-describedby={isGenerating ? 'generation-status' : undefined}
-                className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 min-w-[140px] justify-center ${
+                className={`btn-primary px-4 py-2 rounded-pill flex items-center space-x-2 min-w-[140px] justify-center ${
                   isFormDisabled 
-                    ? 'bg-green-400 cursor-not-allowed' 
-                    : 'bg-green-600 hover:bg-green-700'
+                    ? 'opacity-50 cursor-not-allowed' 
+                    : ''
                 }`}
               >
                 {isGenerating ? (

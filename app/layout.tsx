@@ -1,12 +1,14 @@
 import './globals.css'
-import { Inter } from 'next/font/google'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
-const inter = Inter({ subsets: ['latin'] })
-
 export const metadata = {
-  title: 'Weekly Snippets Reminder',
-  description: 'A tool to help create and track weekly work summaries',
+  title: 'AdvanceWeekly - See beyond the busy.',
+  description: 'Transform your weekly work into meaningful insights with AI-powered performance assessments.',
+  icons: {
+    icon: '/brand/10_favicon32.png',
+    shortcut: '/brand/10_favicon32.png',
+    apple: '/brand/06_icon_circle.png',
+  },
 }
 
 export default function RootLayout({
@@ -15,8 +17,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="font-sans">
+      <head>
+        <link rel="icon" type="image/png" sizes="32x32" href="/brand/10_favicon32.png" />
+        <link rel="apple-touch-icon" href="/brand/06_icon_circle.png" />
+      </head>
+      <body className="font-sans text-neutral-900 bg-neutral-100 transition-advance">
         <ErrorBoundary>
           {children}
         </ErrorBoundary>

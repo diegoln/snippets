@@ -18,9 +18,12 @@ import React, { useState, useEffect, useCallback, useReducer, useMemo } from 're
 import { Settings } from '../components/Settings'
 import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { MarkdownRenderer } from '../components/MarkdownRenderer'
+import { Logo } from '../components/Logo'
 import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
+import { formatDateRangeWithYear } from '../lib/date-utils'
 
 /**
  * Interface for weekly snippet data structure
@@ -76,7 +79,7 @@ const sanitizeInput = (input: string): string => {
  */
 interface SnippetEditorProps {
   initialContent: string
-  onSave: (content: string) => void
+  onSave: (content: string) => Promise<void>
   onCancel: () => void
 }
 
@@ -92,6 +95,7 @@ const Home = (): JSX.Element => {
   const [showSettings, setShowSettings] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'snippets' | 'performance'>('snippets')
   const [assessments, dispatch] = useReducer(assessmentReducer, [])
+  const [currentPage, setCurrentPage] = useState<number>(0)
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
     jobTitle: '',
     seniorityLevel: '',
@@ -106,43 +110,64 @@ const Home = (): JSX.Element => {
     [assessments]
   )
 
+  // Pagination logic for snippets
+  const SNIPPETS_PER_PAGE = 4
+  const totalPages = Math.ceil(snippets.length / SNIPPETS_PER_PAGE)
+  const startIndex = currentPage * SNIPPETS_PER_PAGE
+  const endIndex = startIndex + SNIPPETS_PER_PAGE
+  const paginatedSnippets = snippets.slice(startIndex, endIndex)
+  
+  // Reset to first page when snippets change
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [snippets.length])
+
   /**
-   * Initialize component with mock data
-   * In production, this would fetch data from the API
+   * Load snippets from the database on component mount
    */
   useEffect(() => {
-    const mockSnippets: WeeklySnippet[] = [
-      {
-        id: '1',
-        weekNumber: 30,
-        startDate: '2024-07-21',
-        endDate: '2024-07-25',
-        content: 'This week I worked on the user authentication system and completed the API integration for the calendar feature.'
-      },
-      {
-        id: '2',
-        weekNumber: 29,
-        startDate: '2024-07-14',
-        endDate: '2024-07-18',
-        content: 'Focused on database schema design and implemented the core CRUD operations for weekly snippets.'
+    const fetchSnippets = async () => {
+      try {
+        const response = await fetch('/api/snippets')
+        if (response.ok) {
+          const snippetsData = await response.json()
+          setSnippets(snippetsData)
+          
+          // Auto-select the most recent snippet if available (first item since API returns desc order)
+          if (snippetsData.length > 0) {
+            setSelectedSnippet(snippetsData[0])
+          }
+        } else {
+          console.error('Failed to fetch snippets:', response.statusText)
+          // Fallback to empty state instead of mock data
+          setSnippets([])
+        }
+      } catch (error) {
+        console.error('Error fetching snippets:', error)
+        setSnippets([])
       }
-    ]
-    setSnippets(mockSnippets)
+    }
 
-    // Initialize mock performance assessments
-    const mockAssessments: PerformanceAssessment[] = [
-      {
-        id: '1',
-        userId: 'user-1',
-        cycleName: 'H1 2025 Performance Review',
-        startDate: '2025-01-01',
-        endDate: '2025-06-30',
-        generatedDraft: 'Sample draft content would be here...',
-        createdAt: '2025-07-01T00:00:00Z',
-        updatedAt: '2025-07-01T00:00:00Z'
+    fetchSnippets()
+
+    // Load assessments from the database
+    const fetchAssessments = async () => {
+      try {
+        const response = await fetch('/api/assessments')
+        if (response.ok) {
+          const assessmentsData = await response.json()
+          dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
+        } else {
+          console.error('Failed to fetch assessments:', response.statusText)
+          dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+        }
+      } catch (error) {
+        console.error('Error fetching assessments:', error)
+        dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
       }
-    ]
-    dispatch({ type: 'SET_ASSESSMENTS', payload: mockAssessments })
+    }
+
+    fetchAssessments()
   }, [])
 
   /**
@@ -151,18 +176,41 @@ const Home = (): JSX.Element => {
    * 
    * @param content - The updated snippet content
    */
-  const handleSaveSnippet = useCallback((content: string): void => {
+  const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
 
-    const updatedSnippets = snippets.map(snippet =>
-      snippet.id === selectedSnippet.id
-        ? { ...snippet, content }
-        : snippet
-    )
-    
-    setSnippets(updatedSnippets)
-    setSelectedSnippet({ ...selectedSnippet, content })
-    setIsEditing(false)
+    try {
+      const response = await fetch('/api/snippets', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedSnippet.id,
+          content
+        })
+      })
+
+      if (response.ok) {
+        const updatedSnippet = await response.json()
+        
+        const updatedSnippets = snippets.map(snippet =>
+          snippet.id === selectedSnippet.id
+            ? { ...snippet, content }
+            : snippet
+        )
+        
+        setSnippets(updatedSnippets)
+        setSelectedSnippet({ ...selectedSnippet, content })
+        setIsEditing(false)
+      } else {
+        console.error('Failed to save snippet:', response.statusText)
+        // Could show an error toast here
+      }
+    } catch (error) {
+      console.error('Error saving snippet:', error)
+      // Could show an error toast here
+    }
   }, [selectedSnippet, snippets])
 
   /**
@@ -179,7 +227,7 @@ const Home = (): JSX.Element => {
   }, [])
 
   /**
-   * Format date range for display (e.g., "Jul 21st - Jul 25th")
+   * Format date range for display (e.g., "Jul 21 - Jul 25, 2024")
    * 
    * @param startDate - Start date in YYYY-MM-DD format
    * @param endDate - End date in YYYY-MM-DD format
@@ -188,12 +236,7 @@ const Home = (): JSX.Element => {
   const formatDateRange = useCallback((startDate: string, endDate: string): string => {
     const start = new Date(startDate)
     const end = new Date(endDate)
-    const options: Intl.DateTimeFormatOptions = { 
-      month: 'short', 
-      day: 'numeric' 
-    }
-    
-    return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', options)}`
+    return formatDateRangeWithYear(start, end)
   }, [])
 
   /**
@@ -205,6 +248,17 @@ const Home = (): JSX.Element => {
     setSelectedSnippet(snippet)
     setIsEditing(false) // Reset edit mode when switching snippets
   }, [])
+
+  /**
+   * Handle pagination controls
+   */
+  const handlePreviousPage = useCallback((): void => {
+    setCurrentPage(prev => Math.max(0, prev - 1))
+  }, [])
+
+  const handleNextPage = useCallback((): void => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))
+  }, [totalPages])
 
   /**
    * Toggle edit mode for the selected snippet
@@ -258,76 +312,50 @@ const Home = (): JSX.Element => {
       assessmentDirections: request.assessmentDirections ? 
         sanitizeInput(request.assessmentDirections) : undefined
     }
-    // Create assessment immediately with generating state
-    const newAssessment: PerformanceAssessment = {
-      id: Date.now().toString(),
-      userId: 'user-1',
-      cycleName: sanitizedRequest.cycleName,
-      startDate: sanitizedRequest.startDate,
-      endDate: sanitizedRequest.endDate,
-      generatedDraft: '', // Empty initially
-      isGenerating: true, // Mark as generating
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    
-    // Add to list immediately so user sees it's being generated
-    dispatch({ type: 'ADD_ASSESSMENT', payload: newAssessment })
 
-    // Collect context for LLMProxy
-    const relevantSnippets = snippets.filter(snippet => {
-      const snippetDate = new Date(snippet.startDate)
-      const startDate = new Date(request.startDate)
-      const endDate = new Date(request.endDate)
-      return snippetDate >= startDate && snippetDate <= endDate
-    })
-
-    const context: AssessmentContext = {
-      userProfile: {
-        jobTitle: userSettings.jobTitle || 'Software Engineer',
-        seniorityLevel: userSettings.seniorityLevel || 'Senior',
-        careerLadder: userSettings.careerLadderFile ? 'Available' : undefined
-      },
-      weeklySnippets: relevantSnippets.map(snippet => ({
-        weekNumber: snippet.weekNumber,
-        startDate: snippet.startDate,
-        endDate: snippet.endDate,
-        content: snippet.content
-      })),
-      previousFeedback: userSettings.performanceFeedback || undefined,
-      assessmentDirections: sanitizedRequest.assessmentDirections,
-      cyclePeriod: {
-        startDate: sanitizedRequest.startDate,
-        endDate: sanitizedRequest.endDate,
-        cycleName: sanitizedRequest.cycleName
-      }
-    }
-
-    // Use LLMProxy to generate the draft in background
-    console.log('Generating draft with context:', context)
-    
     try {
-      const response = await llmProxy.generatePerformanceAssessment(context)
-      const generatedDraft = response.content
-      console.log('LLMProxy response:', { model: response.model, tokens: response.usage?.tokens })
-
-      // Update the assessment with the generated content
-      dispatch({
-        type: 'UPDATE_ASSESSMENT',
-        id: newAssessment.id,
-        updates: {
-          generatedDraft,
-          isGenerating: false,
-          updatedAt: new Date().toISOString()
-        }
+      console.log(`🔄 Generating assessment for ${sanitizedRequest.cycleName}...`)
+      
+      // Call the API to generate the assessment
+      const response = await fetch('/api/assessments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sanitizedRequest)
       })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to generate assessment')
+      }
+
+      const generatedAssessment = await response.json()
+      
+      // Add the completed assessment to the list
+      const newAssessment: PerformanceAssessment = {
+        id: generatedAssessment.id,
+        userId: 'user-1',
+        cycleName: generatedAssessment.cycleName,
+        startDate: generatedAssessment.startDate,
+        endDate: generatedAssessment.endDate,
+        generatedDraft: generatedAssessment.generatedDraft,
+        isGenerating: false,
+        createdAt: generatedAssessment.createdAt,
+        updatedAt: generatedAssessment.updatedAt
+      }
+      
+      dispatch({ type: 'ADD_ASSESSMENT', payload: newAssessment })
+
+      console.log(`✅ Assessment generated successfully!`, generatedAssessment.stats)
     } catch (error) {
-      console.error('Failed to generate draft:', error)
-      // Remove failed assessment from list
-      dispatch({ type: 'REMOVE_ASSESSMENT', id: newAssessment.id })
-      throw error // Let the component handle the error display
+      console.error('Failed to generate assessment:', error)
+      
+      // You might want to show an error message to the user here
+      // For now, we'll just log it
+      alert(`Failed to generate assessment: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
-  }, [snippets, userSettings])
+  }, [dispatch])
 
 
   /**
@@ -345,16 +373,19 @@ const Home = (): JSX.Element => {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-100">
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <header className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">
-            UserHub
-          </h1>
+          <div className="flex items-center space-x-4">
+            <Logo variant="horizontal" width={160} priority />
+            <div className="hidden sm:block">
+              <p className="text-sm text-secondary font-medium tracking-wide">See beyond the busy.</p>
+            </div>
+          </div>
           <button
             onClick={handleOpenSettings}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center space-x-2"
+            className="btn-primary px-4 py-2 rounded-pill flex items-center space-x-2 shadow-elevation-1"
             aria-label="Open performance cycle settings"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -367,24 +398,24 @@ const Home = (): JSX.Element => {
 
         {/* Navigation Tabs */}
         <nav className="mb-8">
-          <div className="border-b border-gray-200">
+          <div className="border-b border-neutral-600/20">
             <div className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('snippets')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition-advance ${
                   activeTab === 'snippets'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-accent-500 text-primary-600'
+                    : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
                 }`}
               >
                 Weekly Snippets
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-3 px-1 border-b-2 font-medium text-sm transition-advance ${
                   activeTab === 'performance'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-accent-500 text-primary-600'
+                    : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
                 }`}
               >
                 Performance Drafts
@@ -400,30 +431,59 @@ const Home = (): JSX.Element => {
           
           {/* Snippets Sidebar */}
           <aside className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold mb-4">Your Snippets</h2>
+            <div className="card bg-surface p-6">
+              <h2 className="text-heading-2 text-primary mb-6">Your Snippets</h2>
               
               {/* Snippets List */}
-              <nav className="space-y-3">
-                {snippets.map((snippet) => (
+              <nav className="space-y-2">
+                {paginatedSnippets.map((snippet) => (
                   <button
                     key={snippet.id}
                     onClick={() => handleSelectSnippet(snippet)}
-                    className={`w-full text-left p-3 rounded-md cursor-pointer transition-colors ${
+                    className={`w-full text-left p-4 rounded-card cursor-pointer transition-advance ${
                       selectedSnippet?.id === snippet.id
-                        ? 'bg-blue-50 border-blue-200 border'
-                        : 'bg-gray-50 hover:bg-gray-100'
+                        ? 'bg-primary-100 border-accent-500 border-2 shadow-elevation-1'
+                        : isEditing && selectedSnippet?.id === snippet.id
+                        ? 'bg-accent-500/10 border-accent-500/30 border'
+                        : 'bg-neutral-100 hover:bg-primary-100/50'
                     }`}
                     aria-pressed={selectedSnippet?.id === snippet.id}
                   >
-                    <div className="font-medium text-gray-900">
+                    <div className="font-semibold text-primary">
                       Week {snippet.weekNumber}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-secondary font-mono">
                       {formatDateRange(snippet.startDate, snippet.endDate)}
                     </div>
                   </button>
                 ))}
+                
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <button
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 0}
+                      className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Previous page"
+                    >
+                      Previous
+                    </button>
+                    
+                    <div className="text-sm text-gray-600">
+                      {currentPage + 1} of {totalPages}
+                    </div>
+                    
+                    <button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages - 1}
+                      className="px-3 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      aria-label="Next page"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
                 
                 {/* Add New Week Button */}
                 <button 
@@ -462,11 +522,10 @@ const Home = (): JSX.Element => {
                     onCancel={handleCancelEdit}
                   />
                 ) : (
-                  <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                      {selectedSnippet.content}
-                    </p>
-                  </div>
+                  <MarkdownRenderer 
+                    content={selectedSnippet.content}
+                    className="min-h-32"
+                  />
                 )}
               </article>
             ) : (
@@ -527,6 +586,7 @@ function SnippetEditor({
   onCancel 
 }: SnippetEditorProps): JSX.Element {
   const [content, setContent] = useState<string>(initialContent)
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
 
   /**
    * Handle content changes in the textarea
@@ -540,37 +600,98 @@ function SnippetEditor({
   /**
    * Handle save action
    */
-  const handleSave = useCallback((): void => {
-    onSave(content)
+  const handleSave = useCallback(async (): Promise<void> => {
+    await onSave(content)
   }, [content, onSave])
 
   return (
     <div className="space-y-4">
-      {/* Content Editor */}
-      <textarea
-        value={content}
-        onChange={handleContentChange}
-        className="w-full h-64 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-        placeholder="Describe what you accomplished this week and your plans for next week..."
-        aria-label="Snippet content editor"
-      />
+      {/* Editor Tabs */}
+      <div className="border-b border-gray-200">
+        <div className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('edit')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'edit'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => setActiveTab('preview')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'preview'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Preview
+          </button>
+        </div>
+      </div>
+
+      {/* Content Editor/Preview */}
+      {activeTab === 'edit' ? (
+        <textarea
+          value={content}
+          onChange={handleContentChange}
+          className="w-full h-64 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
+          placeholder="Describe what you accomplished this week and your plans for next week...
+
+You can use Markdown formatting:
+- **bold text** or __bold text__
+- *italic text* or _italic text_
+- [link](https://example.com)
+- `inline code`
+- ## Headings
+- - List items
+- > Blockquotes
+
+Examples:
+## Done
+- **Implemented** user authentication system
+- *Optimized* database queries by 40%
+- Fixed critical bug in payment processing
+
+## Next
+- [ ] Start working on new dashboard
+- [ ] Review code with team
+- Research GraphQL implementation"
+          aria-label="Snippet content editor"
+        />
+      ) : (
+        <div className="w-full h-64 p-3 border border-gray-300 rounded-md bg-gray-50 overflow-y-auto">
+          {content.trim() ? (
+            <MarkdownRenderer content={content} className="text-sm" />
+          ) : (
+            <p className="text-gray-500 italic">Nothing to preview yet. Switch to Edit mode to add content.</p>
+          )}
+        </div>
+      )}
       
       {/* Action Buttons */}
-      <div className="flex gap-3">
-        <button
-          onClick={handleSave}
-          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-          aria-label="Save snippet changes"
-        >
-          Save
-        </button>
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-          aria-label="Cancel editing"
-        >
-          Cancel
-        </button>
+      <div className="flex justify-between">
+        <div className="text-sm text-gray-500">
+          {activeTab === 'edit' ? 'Supports Markdown formatting' : 'Preview of your formatted content'}
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSave}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            aria-label="Save snippet changes"
+          >
+            Save
+          </button>
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            aria-label="Cancel editing"
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   )
