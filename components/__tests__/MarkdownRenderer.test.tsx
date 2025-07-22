@@ -152,10 +152,10 @@ describe('MarkdownRenderer', () => {
     expect(screen.getByText('Done')).toBeInTheDocument()
     expect(screen.getByText('Next')).toBeInTheDocument()
     
-    // Check mixed formatting
-    expect(screen.getByText('Implemented')).toBeInTheDocument()
-    expect(screen.getByText('Optimized')).toBeInTheDocument()
-    expect(screen.getByText('payment processing')).toBeInTheDocument()
+    // Check mixed formatting - text may be broken up by HTML tags
+    expect(screen.getByText(/Implemented/)).toBeInTheDocument()
+    expect(screen.getByText(/Optimized/)).toBeInTheDocument()
+    expect(screen.getByText(/payment processing/)).toBeInTheDocument()
     
     // Check task list
     const checkboxes = screen.getAllByRole('checkbox')
@@ -185,8 +185,8 @@ describe('MarkdownRenderer', () => {
     // Should render all the content with proper formatting
     expect(screen.getByText('Done')).toBeInTheDocument()
     expect(screen.getByText('Next')).toBeInTheDocument()
-    expect(screen.getByText('Completed user authentication system')).toBeInTheDocument()
-    expect(screen.getByText('Optimized database queries')).toBeInTheDocument()
+    expect(screen.getByText(/Completed user authentication system/)).toBeInTheDocument()
+    expect(screen.getByText(/Optimized database queries/)).toBeInTheDocument()
     
     // Check task list items
     const checkboxes = screen.getAllByRole('checkbox')

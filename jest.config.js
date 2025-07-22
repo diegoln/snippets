@@ -17,6 +17,11 @@ const customJestConfig = {
   // Test environment for React components
   testEnvironment: 'jsdom',
   
+  // JSDOM configuration to fix window issues
+  testEnvironmentOptions: {
+    url: 'http://localhost',
+  },
+  
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   

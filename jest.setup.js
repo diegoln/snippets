@@ -59,6 +59,15 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
+// Fix JSDOM window.document.addEventListener issue
+if (typeof window !== 'undefined' && window.document) {
+  if (!window.document.addEventListener) {
+    window.document.addEventListener = jest.fn()
+    window.document.removeEventListener = jest.fn()
+    window.document.dispatchEvent = jest.fn()
+  }
+}
+
 // Mock console methods to avoid noise in tests
 const originalError = console.error
 const originalWarn = console.warn
