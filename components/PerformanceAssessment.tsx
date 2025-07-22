@@ -7,31 +7,114 @@
 
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useReducer, useCallback } from 'react'
+import { MarkdownRenderer } from './MarkdownRenderer'
+import { LoadingSpinner } from './LoadingSpinner'
 import {
   PerformanceAssessment,
   PerformanceAssessmentProps,
   AssessmentFormData,
   PerformanceAssessmentErrors,
-  GenerationStatus,
+  PerformanceAssessmentState,
+  UIStateAction,
+  FormState,
+  GenerationState,
   ASSESSMENT_CONSTANTS
 } from '../types/performance'
+
+/**
+ * State reducer for managing UI state with proper state machine
+ */
+function uiStateReducer(state: PerformanceAssessmentState, action: UIStateAction): PerformanceAssessmentState {
+  switch (action.type) {
+    case 'OPEN_FORM':
+      return {
+        ...state,
+        formState: { type: 'open' },
+        generationState: { type: 'idle' },
+        errors: {}
+      }
+    
+    case 'CLOSE_FORM':
+      return {
+        ...state,
+        formState: { type: 'closed' },
+        generationState: { type: 'idle' },
+        formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+        errors: {}
+      }
+    
+    case 'START_GENERATION':
+      return {
+        ...state,
+        formState: { type: 'submitting' },
+        generationState: { type: 'generating' },
+        errors: {}
+      }
+    
+    case 'GENERATION_SUCCESS':
+      return {
+        ...state,
+        formState: { type: 'closed' },
+        generationState: { type: 'success' },
+        formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+        errors: {}
+      }
+    
+    case 'GENERATION_ERROR':
+      return {
+        ...state,
+        formState: { type: 'open' },
+        generationState: { type: 'error', message: action.message }
+      }
+    
+    case 'SET_FORM_DATA':
+      return {
+        ...state,
+        formData: { ...state.formData, ...action.data }
+      }
+    
+    case 'SET_ERRORS':
+      return {
+        ...state,
+        errors: action.errors
+      }
+    
+    case 'CLEAR_ERRORS':
+      return {
+        ...state,
+        generationState: { type: 'idle' },
+        errors: {}
+      }
+    
+    case 'SELECT_ASSESSMENT':
+      return {
+        ...state,
+        selectedAssessment: action.assessment
+      }
+    
+    default:
+      return state
+  }
+}
+
+/**
+ * Initial state for the UI state machine
+ */
+const initialUIState: PerformanceAssessmentState = {
+  formState: { type: 'closed' },
+  generationState: { type: 'idle' },
+  formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+  errors: {},
+  selectedAssessment: null
+}
 
 export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps> = ({
   assessments,
   onGenerateDraft,
   onDeleteAssessment
 }) => {
-  const [isGenerating, setIsGenerating] = useState<boolean>(false)
-  const [selectedAssessment, setSelectedAssessment] = useState<PerformanceAssessment | null>(null)
-  const [formData, setFormData] = useState<AssessmentFormData>({
-    cycleName: '',
-    startDate: '',
-    endDate: '',
-    assessmentDirections: ''
-  })
-  const [errors, setErrors] = useState<PerformanceAssessmentErrors>({})
-  const [generationError, setGenerationError] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(uiStateReducer, initialUIState)
 
   /**
    * Validate form data
@@ -61,9 +144,9 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       newErrors.assessmentDirections = `Directions must be less than ${ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH} characters`
     }
 
-    setErrors(newErrors)
+    dispatch({ type: 'SET_ERRORS', errors: newErrors })
     return Object.keys(newErrors).length === 0
-  }, [])
+  }, [dispatch])
 
   /**
    * Handle form submission to generate new draft
@@ -71,23 +154,30 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
   const handleGenerateNewDraft = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!validateForm(formData)) {
+    if (!validateForm(state.formData)) {
       return
     }
 
-    setGenerationError(null)
+    dispatch({ type: 'START_GENERATION' })
 
     try {
-      await onGenerateDraft(formData)
-      // Reset form and close generation form immediately
-      setFormData({ cycleName: '', startDate: '', endDate: '', assessmentDirections: '' })
-      setIsGenerating(false) // Close the form
-      setErrors({})
+      await onGenerateDraft(state.formData)
+      dispatch({ type: 'GENERATION_SUCCESS' })
     } catch (error) {
-      setGenerationError('Failed to generate performance assessment draft. Please try again.')
+      dispatch({ 
+        type: 'GENERATION_ERROR', 
+        message: error instanceof Error ? error.message : 'Failed to generate performance assessment draft. Please try again.'
+      })
     }
-  }, [formData, validateForm, onGenerateDraft])
+  }, [state.formData, validateForm, onGenerateDraft, dispatch])
 
+  /**
+   * Derived state helpers
+   */
+  const isFormOpen = state.formState.type === 'open' || state.formState.type === 'submitting'
+  const isGenerating = state.generationState.type === 'generating'
+  const isFormDisabled = state.formState.type === 'submitting'
+  const generationError = state.generationState.type === 'error' ? state.generationState.message : null
 
   /**
    * Format date for display
@@ -111,10 +201,11 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
             Generate AI-powered performance assessment drafts based on your weekly snippets
           </p>
         </div>
-        {!isGenerating && (
+        {!isFormOpen && (
           <button
-            onClick={() => setIsGenerating(true)}
+            onClick={() => dispatch({ type: 'OPEN_FORM' })}
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            aria-label="Open form to generate new performance assessment"
           >
             + Generate Assessment
           </button>
@@ -122,11 +213,17 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       </div>
 
       {/* Generate Draft Form */}
-      {isGenerating && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Generate Performance Assessment Draft</h3>
+      {isFormOpen && (
+        <div 
+          className="bg-white border border-gray-200 rounded-lg p-6"
+          role="region" 
+          aria-labelledby="form-heading"
+          aria-describedby="form-description"
+        >
+          <h3 id="form-heading" className="text-lg font-semibold text-gray-900 mb-4">Generate Performance Assessment Draft</h3>
+          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered performance assessment draft based on your weekly snippets</p>
           
-          <form onSubmit={handleGenerateNewDraft} className="space-y-4">
+          <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
             <div>
               <label htmlFor="cycleName" className="block text-sm font-medium text-gray-700 mb-1">
                 Performance Cycle Name
@@ -135,13 +232,20 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
               <input
                 type="text"
                 id="cycleName"
-                value={formData.cycleName}
-                onChange={(e) => setFormData(prev => ({ ...prev, cycleName: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={state.formData.cycleName}
+                onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { cycleName: e.target.value } })}
+                disabled={isFormDisabled}
+                required
+                aria-describedby={state.errors.cycleName ? 'cycleName-error' : 'cycleName-hint'}
+                aria-invalid={!!state.errors.cycleName}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
                 placeholder="e.g., H1 2025, Q4 2024, Annual Review 2025"
               />
-              {errors.cycleName && (
-                <p className="text-red-600 text-sm mt-1">{errors.cycleName}</p>
+              <span id="cycleName-hint" className="sr-only">A descriptive name for your performance review period</span>
+              {state.errors.cycleName && (
+                <p id="cycleName-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.cycleName}</p>
               )}
             </div>
 
@@ -154,12 +258,19 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 <input
                   type="date"
                   id="startDate"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={state.formData.startDate}
+                  onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { startDate: e.target.value } })}
+                  disabled={isFormDisabled}
+                  required
+                  aria-describedby={state.errors.startDate ? 'startDate-error' : 'startDate-hint'}
+                  aria-invalid={!!state.errors.startDate}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
                 />
-                {errors.startDate && (
-                  <p className="text-red-600 text-sm mt-1">{errors.startDate}</p>
+                <span id="startDate-hint" className="sr-only">The beginning date of your performance review cycle</span>
+                {state.errors.startDate && (
+                  <p id="startDate-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.startDate}</p>
                 )}
               </div>
 
@@ -171,12 +282,19 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 <input
                   type="date"
                   id="endDate"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={state.formData.endDate}
+                  onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { endDate: e.target.value } })}
+                  disabled={isFormDisabled}
+                  required
+                  aria-describedby={state.errors.endDate ? 'endDate-error' : 'endDate-hint'}
+                  aria-invalid={!!state.errors.endDate}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
+                  }`}
                 />
-                {errors.endDate && (
-                  <p className="text-red-600 text-sm mt-1">{errors.endDate}</p>
+                <span id="endDate-hint" className="sr-only">The ending date of your performance review cycle</span>
+                {state.errors.endDate && (
+                  <p id="endDate-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.endDate}</p>
                 )}
               </div>
             </div>
@@ -188,52 +306,84 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
               </label>
               <textarea
                 id="assessmentDirections"
-                value={formData.assessmentDirections || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, assessmentDirections: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={state.formData.assessmentDirections || ''}
+                onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { assessmentDirections: e.target.value } })}
+                disabled={isFormDisabled}
+                aria-describedby={state.errors.assessmentDirections ? 'assessmentDirections-error' : 'assessmentDirections-hint'}
+                aria-invalid={!!state.errors.assessmentDirections}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
+                }`}
                 rows={3}
                 placeholder="e.g., Focus on leadership achievements, include technical contributions, emphasize cross-team collaboration..."
               />
-              {errors.assessmentDirections && (
-                <p className="text-red-600 text-sm mt-1">{errors.assessmentDirections}</p>
+              <span id="assessmentDirections-hint" className="sr-only">Provide specific guidelines or focus areas to influence the AI-generated draft</span>
+              {state.errors.assessmentDirections && (
+                <p id="assessmentDirections-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.assessmentDirections}</p>
               )}
             </div>
 
-            {errors.general && (
-              <p className="text-red-600 text-sm">{errors.general}</p>
+            {state.errors.general && (
+              <p className="text-red-600 text-sm">{state.errors.general}</p>
             )}
 
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
-                onClick={() => {
-                  setIsGenerating(false)
-                  setFormData({ cycleName: '', startDate: '', endDate: '', assessmentDirections: '' })
-                  setErrors({})
-                }}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                disabled={isFormDisabled}
+                onClick={() => dispatch({ type: 'CLOSE_FORM' })}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isFormDisabled
+                    ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                    : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                }`}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                disabled={isFormDisabled}
+                aria-describedby={isGenerating ? 'generation-status' : undefined}
+                className={`px-4 py-2 text-white rounded-lg transition-colors flex items-center space-x-2 min-w-[140px] justify-center ${
+                  isFormDisabled 
+                    ? 'bg-green-400 cursor-not-allowed' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
-                Generate Draft
+                {isGenerating ? (
+                  <>
+                    <LoadingSpinner size="sm" color="white" />
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <span>Generate Draft</span>
+                )}
               </button>
+              {isGenerating && (
+                <span id="generation-status" className="sr-only" aria-live="polite">
+                  AI is generating your performance assessment draft. This may take up to 80 seconds.
+                </span>
+              )}
             </div>
           </form>
         </div>
       )}
 
+
       {/* Generation Error */}
       {generationError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800 font-medium">Generation Failed</p>
-          <p className="text-red-600 text-sm mt-1">{generationError}</p>
+        <div 
+          className="bg-red-50 border border-red-200 rounded-lg p-4" 
+          role="alert" 
+          aria-labelledby="error-title"
+          aria-describedby="error-message"
+        >
+          <p id="error-title" className="text-red-800 font-medium">Generation Failed</p>
+          <p id="error-message" className="text-red-600 text-sm mt-1">{generationError}</p>
           <button 
-            onClick={() => setGenerationError(null)}
+            onClick={() => dispatch({ type: 'CLEAR_ERRORS' })}
             className="text-red-600 text-sm underline mt-1"
+            aria-label="Dismiss error message"
           >
             Dismiss
           </button>
@@ -242,7 +392,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
 
       {/* Assessments List */}
       <div className="space-y-4">
-        {assessments.length === 0 && !isGenerating ? (
+        {assessments.length === 0 && !isFormOpen ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <div className="text-gray-400 text-4xl mb-4">📊</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Performance Assessment Drafts Yet</h3>
@@ -250,7 +400,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
               Generate your first AI-powered performance assessment draft based on your weekly snippets.
             </p>
             <button
-              onClick={() => setIsGenerating(true)}
+              onClick={() => dispatch({ type: 'OPEN_FORM' })}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
               Generate Your First Assessment
@@ -282,8 +432,11 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 ) : (
                   <>
                     <h4 className="font-medium text-gray-900 mb-2">Draft Preview</h4>
-                    <div className="bg-gray-50 p-3 rounded-md text-sm text-gray-700 max-h-32 overflow-y-auto">
-                      {assessment.generatedDraft.substring(0, ASSESSMENT_CONSTANTS.DRAFT_PREVIEW_LENGTH).replace(/[<>&"']/g, '')}...
+                    <div className="bg-gray-50 p-3 rounded-md text-sm max-h-32 overflow-y-auto">
+                      <MarkdownRenderer 
+                        content={assessment.generatedDraft.substring(0, ASSESSMENT_CONSTANTS.DRAFT_PREVIEW_LENGTH) + '...'}
+                        className="text-sm"
+                      />
                     </div>
                   </>
                 )}
@@ -303,7 +456,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                     </button>
                   ) : (
                     <button
-                      onClick={() => setSelectedAssessment(assessment)}
+                      onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment })}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                       View Draft
@@ -323,37 +476,42 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       </div>
 
       {/* Draft Viewer Modal */}
-      {selectedAssessment && selectedAssessment.generatedDraft && !selectedAssessment.isGenerating && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      {state.selectedAssessment && state.selectedAssessment.generatedDraft && !state.selectedAssessment.isGenerating && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  {selectedAssessment.cycleName} - Generated Draft
+                <h3 id="modal-title" className="text-xl font-semibold text-gray-900">
+                  {state.selectedAssessment.cycleName} - Generated Draft
                 </h3>
                 <button
-                  onClick={() => setSelectedAssessment(null)}
+                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="Close draft viewer"
                 >
                   ×
                 </button>
               </div>
             </div>
             <div className="p-6">
-              <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-sm text-gray-700 leading-relaxed">
-                  {selectedAssessment.generatedDraft.replace(/[<>&"']/g, '')}
-                </pre>
-              </div>
+              <MarkdownRenderer 
+                content={state.selectedAssessment.generatedDraft}
+                className="max-w-none"
+              />
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => navigator.clipboard.writeText(selectedAssessment.generatedDraft || '')}
+                  onClick={() => navigator.clipboard.writeText(state.selectedAssessment?.generatedDraft || '')}
                   className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
                 >
                   Copy to Clipboard
                 </button>
                 <button
-                  onClick={() => setSelectedAssessment(null)}
+                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Close

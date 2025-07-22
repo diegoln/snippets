@@ -62,6 +62,7 @@ export interface AssessmentContext {
     endDate: string
     cycleName: string
   }
+  snippetCount?: number
 }
 
 /**
@@ -86,12 +87,31 @@ export type PerformanceAssessmentErrors = {
 }
 
 /**
- * Assessment generation status
+ * Assessment generation status states
  */
-export interface GenerationStatus {
-  isGenerating: boolean
-  progress?: number
-  error?: string
+export type GenerationState = 
+  | { type: 'idle' }
+  | { type: 'generating' }
+  | { type: 'success' }
+  | { type: 'error'; message: string }
+
+/**
+ * Form UI states
+ */
+export type FormState = 
+  | { type: 'closed' }
+  | { type: 'open' }
+  | { type: 'submitting' }
+
+/**
+ * Combined UI state for the performance assessment component
+ */
+export interface PerformanceAssessmentState {
+  formState: FormState
+  generationState: GenerationState
+  formData: AssessmentFormData
+  errors: PerformanceAssessmentErrors
+  selectedAssessment: PerformanceAssessment | null
 }
 
 /**
@@ -102,6 +122,20 @@ export type AssessmentAction =
   | { type: 'UPDATE_ASSESSMENT'; id: string; updates: Partial<PerformanceAssessment> }
   | { type: 'REMOVE_ASSESSMENT'; id: string }
   | { type: 'SET_ASSESSMENTS'; payload: PerformanceAssessment[] }
+
+/**
+ * Actions for UI state management
+ */
+export type UIStateAction = 
+  | { type: 'OPEN_FORM' }
+  | { type: 'CLOSE_FORM' }
+  | { type: 'START_GENERATION' }
+  | { type: 'GENERATION_SUCCESS' }
+  | { type: 'GENERATION_ERROR'; message: string }
+  | { type: 'SET_FORM_DATA'; data: Partial<AssessmentFormData> }
+  | { type: 'SET_ERRORS'; errors: PerformanceAssessmentErrors }
+  | { type: 'CLEAR_ERRORS' }
+  | { type: 'SELECT_ASSESSMENT'; assessment: PerformanceAssessment | null }
 
 /**
  * Configuration constants
