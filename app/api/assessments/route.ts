@@ -5,13 +5,34 @@ import { PromptProcessor } from '../../../lib/prompt-processor'
 import { llmProxy } from '../../../lib/llmproxy'
 import { AssessmentContext } from '../../../types/performance'
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
+/**
+ * Prisma client singleton with lazy initialization
+ * 
+ * This pattern prevents database connection attempts during build time,
+ * which would cause Docker builds to fail. The client is only created
+ * when DATABASE_URL is available (runtime) and when first accessed.
+ * 
+ * @see app/api/snippets/route.ts for detailed explanation
+ */
+let prisma: PrismaClient | null = null
+
+/**
+ * Get or create the Prisma client instance
+ * 
+ * @returns PrismaClient instance or null if DATABASE_URL is not available
+ */
+function getPrismaClient(): PrismaClient | null {
+  if (!prisma && process.env.DATABASE_URL) {
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    })
   }
-})
+  return prisma
+}
 
 /**
  * POST /api/assessments - Generate a new performance assessment
@@ -20,6 +41,13 @@ export async function POST(request: NextRequest) {
   const snippetSelector = new SnippetSelector()
   
   try {
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
     const body = await request.json()
     const { 
       cycleName, 
@@ -113,7 +141,7 @@ export async function POST(request: NextRequest) {
     const llmResponse = await llmProxy.generatePerformanceAssessment(assessmentContext)
     
     // Create assessment record in database
-    const assessment = await prisma.performanceAssessment.create({
+    const assessment = await client.performanceAssessment.create({
       data: {
         userId: userProfile.id,
         cycleName,
@@ -168,7 +196,10 @@ export async function POST(request: NextRequest) {
     )
   } finally {
     await snippetSelector.disconnect()
-    await prisma.$disconnect()
+    const client = getPrismaClient()
+    if (client) {
+      await client.$disconnect()
+    }
   }
 }
 
@@ -177,8 +208,16 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
+
     // For development, get assessments for test user
-    const testUser = await prisma.user.findUnique({
+    const testUser = await client.user.findUnique({
       where: { email: 'test@example.com' }
     })
 
@@ -186,7 +225,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
-    const assessments = await prisma.performanceAssessment.findMany({
+    const assessments = await client.performanceAssessment.findMany({
       where: { userId: testUser.id },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -218,6 +257,9 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   } finally {
-    await prisma.$disconnect()
+    const client = getPrismaClient()
+    if (client) {
+      await client.$disconnect()
+    }
   }
 }

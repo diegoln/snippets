@@ -8,8 +8,12 @@ const nextConfig = {
     GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
     TODOIST_CLIENT_ID: process.env.TODOIST_CLIENT_ID,
     TODOIST_CLIENT_SECRET: process.env.TODOIST_CLIENT_SECRET,
-    AWS_API_ENDPOINT: process.env.AWS_API_ENDPOINT,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
+  // Skip database operations during build time
+  experimental: {
+    skipTrailingSlashRedirect: true,
+  }
 }
 
 module.exports = nextConfig

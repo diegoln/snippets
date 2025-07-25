@@ -1,0 +1,113 @@
+#
+# Google Cloud Build Configuration for AdvanceWeekly
+#
+# This configuration file defines the build and deployment pipeline for
+# the AdvanceWeekly application to Google Cloud Run. The pipeline consists of:
+#
+# 1. Build Stage: Creates a multi-stage Docker image with:
+#    - Dependencies layer (optimized for caching)
+#    - Build layer (compiles Next.js application)
+#    - Runtime layer (minimal production image)
+#
+# 2. Push Stage: Stores the built image in Google Artifact Registry
+#    with both commit-specific and 'latest' tags
+#
+# 3. Deploy Stage: Deploys the image to Cloud Run with:
+#    - Cloud SQL database connection
+#    - Secret Manager integration for sensitive variables
+#    - Auto-scaling configuration for production workloads
+#
+# Environment Variables:
+# - PROJECT_ID: Google Cloud project ID (auto-populated)
+# - BUILD_ID: Unique build identifier (auto-populated)
+#
+# Prerequisites:
+# - Cloud Build API enabled
+# - Artifact Registry repository created
+# - Cloud SQL instance running
+# - Secrets stored in Secret Manager: database-url, openai-api-key
+#
+
+timeout: 1200s  # 20 minutes for build + deployment
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # Faster build with more CPU
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-image'
+    args: 
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
+      - '--cache-from'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
+      - '.'
+    timeout: 900s  # 15 minutes for build
+
+  # Step 2: Push the images to Artifact Registry  
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-build-id'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+    waitFor: ['build-image']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
+    waitFor: ['build-image']
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-cloud-run'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'advanceweekly'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--port'
+      - '8080'
+      - '--allow-unauthenticated'
+      - '--max-instances'
+      - '10'
+      - '--min-instances'
+      - '0'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--concurrency'
+      - '80'
+      - '--timeout'
+      - '300'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
+      - '--set-secrets'
+      - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest'
+      - '--add-cloudsql-instances'
+      - 'advanceweekly-prod:us-central1:advanceweekly-db'
+      - '--execution-environment'
+      - 'gen2'
+    waitFor: ['push-build-id', 'push-latest']
+    timeout: 300s  # 5 minutes for deployment
+
+# Images to store in Artifact Registry
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
+
+# Substitutions for environment variables (currently unused but defined for future use)
+# substitutions:
+#   _SERVICE_NAME: 'advanceweekly'
+#   _REGION: 'us-central1'

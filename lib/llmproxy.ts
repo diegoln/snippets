@@ -30,10 +30,14 @@ export interface LLMProxyResponse {
 export class LLMProxyClient {
   private baseUrl: string
   private model: string
+  private isProduction: boolean
+  private openaiApiKey?: string
 
   constructor() {
+    this.isProduction = process.env.NODE_ENV === 'production'
     this.baseUrl = process.env.OLLAMA_API_URL || 'http://localhost:11434'
-    this.model = process.env.LLM_MODEL || 'llama3.2:1b' // Small, fast model for development
+    this.model = this.isProduction ? 'gpt-3.5-turbo' : (process.env.LLM_MODEL || 'llama3.2:1b')
+    this.openaiApiKey = process.env.OPENAI_API_KEY
   }
 
   /**
@@ -43,14 +47,18 @@ export class LLMProxyClient {
     const prompt = this.buildPerformanceAssessmentPrompt(context)
     
     try {
-      // Add fake lag for testing generation states
-      const delay = ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN + 
-        Math.random() * (ASSESSMENT_CONSTANTS.GENERATION_DELAY_MAX - ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN)
-      await new Promise(resolve => setTimeout(resolve, delay))
-      
-      // For development, we'll provide a mock response
-      // In a real implementation, this would call the Ollama API
-      return this.getMockAssessmentResponse(context)
+      if (this.isProduction && this.openaiApiKey) {
+        // Production: Use OpenAI API
+        return await this.callOpenAI(prompt)
+      } else {
+        // Development: Add fake lag for testing generation states
+        const delay = ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN + 
+          Math.random() * (ASSESSMENT_CONSTANTS.GENERATION_DELAY_MAX - ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        
+        // For development, provide mock response
+        return this.getMockAssessmentResponse(context)
+      }
     } catch (error) {
       console.error('LLMProxy error:', error)
       return this.getMockAssessmentResponse(context)
@@ -62,18 +70,75 @@ export class LLMProxyClient {
    */
   async request(request: LLMProxyRequest): Promise<LLMProxyResponse> {
     try {
-      // For development, return mock response
-      return {
-        content: "This is a mock response for development. The local LLM is not yet implemented.",
-        model: this.model,
-        usage: {
-          tokens: 100
+      if (this.isProduction && this.openaiApiKey) {
+        // Production: Use OpenAI API
+        return await this.callOpenAI(request.prompt, request.temperature, request.maxTokens)
+      } else {
+        // For development, return mock response
+        return {
+          content: "This is a mock response for development. The local LLM is not yet implemented.",
+          model: this.model,
+          usage: {
+            tokens: 100
+          }
         }
       }
     } catch (error) {
       console.error('LLMProxy request error:', error)
       throw new Error('LLMProxy request failed')
     }
+  }
+
+  /**
+   * Call OpenAI API (production only)
+   */
+  private async callOpenAI(prompt: string, temperature = 0.7, maxTokens = 2000): Promise<LLMProxyResponse> {
+    if (!this.openaiApiKey) {
+      throw new Error('OpenAI API key not configured')
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: this.model,
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature,
+        max_tokens: maxTokens,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    
+    return {
+      content: data.choices[0]?.message?.content || '',
+      model: data.model,
+      usage: {
+        tokens: data.usage?.total_tokens || 0,
+        cost: this.calculateCost(data.usage?.total_tokens || 0)
+      }
+    }
+  }
+
+  /**
+   * Calculate approximate cost for OpenAI usage
+   */
+  private calculateCost(tokens: number): number {
+    // GPT-3.5-turbo pricing: ~$0.0015 per 1K tokens (input) + $0.002 per 1K tokens (output)
+    // Rough estimate: $0.002 per 1K tokens average
+    return (tokens / 1000) * 0.002
   }
 
   /**

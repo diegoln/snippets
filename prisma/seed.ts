@@ -103,7 +103,7 @@ async function main() {
 
   // Generate proper calendar weeks for past 6 months
   const weekData = generatePast6MonthsWeeks()
-  const snippetsData = []
+  const snippetsData: any[] = []
 
   console.log(`📝 Generating ${weekData.length} weeks of realistic snippet data with proper calendar weeks...`)
 

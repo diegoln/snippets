@@ -56,7 +56,7 @@ export class PromptProcessor {
       return array.map(item => {
         let itemContent = itemTemplate
         // Replace {{property}} with item.property for each iteration
-        itemContent = itemContent.replace(/\{\{([^}#/]+)\}\}/g, (match, prop) => {
+        itemContent = itemContent.replace(/\{\{([^}#/]+)\}\}/g, (match: string, prop: string) => {
           const value = item[prop.trim()]
           return value !== undefined ? String(value) : ''
         })

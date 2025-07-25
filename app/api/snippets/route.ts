@@ -1,13 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL
-    }
+/**
+ * Prisma client singleton with lazy initialization
+ * 
+ * This pattern prevents database connection attempts during build time,
+ * which would cause Docker builds to fail. The client is only created
+ * when DATABASE_URL is available (runtime) and when first accessed.
+ * 
+ * In production, DATABASE_URL comes from Google Secret Manager and
+ * uses Cloud SQL Unix socket connection format:
+ * postgresql://user:pass@localhost/db?host=/cloudsql/PROJECT:REGION:INSTANCE
+ */
+let prisma: PrismaClient | null = null
+
+/**
+ * Get or create the Prisma client instance
+ * 
+ * @returns PrismaClient instance or null if DATABASE_URL is not available
+ */
+function getPrismaClient(): PrismaClient | null {
+  if (!prisma && process.env.DATABASE_URL) {
+    prisma = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      }
+    })
   }
-})
+  return prisma
+}
 
 /**
  * GET /api/snippets - Fetch all weekly snippets for a user
@@ -15,9 +38,17 @@ const prisma = new PrismaClient({
  */
 export async function GET(request: NextRequest) {
   try {
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
+
     // For now, get snippets for the test user
     // In production, this would be based on authenticated user session
-    const testUser = await prisma.user.findUnique({
+    const testUser = await client.user.findUnique({
       where: { email: 'test@example.com' }
     })
 
@@ -28,7 +59,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const snippets = await prisma.weeklySnippet.findMany({
+    const snippets = await client.weeklySnippet.findMany({
       where: { userId: testUser.id },
       orderBy: { startDate: 'desc' }, // Most recent first
       select: {
@@ -55,7 +86,10 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   } finally {
-    await prisma.$disconnect()
+    const client = getPrismaClient()
+    if (client) {
+      await client.$disconnect()
+    }
   }
 }
 
@@ -64,6 +98,14 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const { weekNumber, content } = body
 
@@ -76,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For now, create for test user
-    const testUser = await prisma.user.findUnique({
+    const testUser = await client.user.findUnique({
       where: { email: 'test@example.com' }
     })
 
@@ -94,7 +136,7 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
     const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
 
-    const newSnippet = await prisma.weeklySnippet.create({
+    const newSnippet = await client.weeklySnippet.create({
       data: {
         userId: testUser.id,
         weekNumber,
@@ -116,7 +158,10 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   } finally {
-    await prisma.$disconnect()
+    const client = getPrismaClient()
+    if (client) {
+      await client.$disconnect()
+    }
   }
 }
 
@@ -125,6 +170,14 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
+      )
+    }
+
     const body = await request.json()
     const { id, content } = body
 
@@ -135,7 +188,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const updatedSnippet = await prisma.weeklySnippet.update({
+    const updatedSnippet = await client.weeklySnippet.update({
       where: { id },
       data: { content }
     })
@@ -152,6 +205,9 @@ export async function PUT(request: NextRequest) {
       { status: 500 }
     )
   } finally {
-    await prisma.$disconnect()
+    const client = getPrismaClient()
+    if (client) {
+      await client.$disconnect()
+    }
   }
 }

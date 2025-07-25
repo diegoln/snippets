@@ -14,6 +14,9 @@
 
 'use client'
 
+// Force dynamic rendering to avoid build-time database issues
+export const dynamic = 'force-dynamic'
+
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { Settings } from '../components/Settings'
 import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
