@@ -129,6 +129,24 @@ resource "google_secret_manager_secret" "nextauth_secret" {
   }
 }
 
+# Secret for Google OAuth Client ID
+resource "google_secret_manager_secret" "google_client_id" {
+  secret_id = "google-client-id"
+  
+  replication {
+    automatic = true
+  }
+}
+
+# Secret for Google OAuth Client Secret
+resource "google_secret_manager_secret" "google_client_secret" {
+  secret_id = "google-client-secret"
+  
+  replication {
+    automatic = true
+  }
+}
+
 resource "google_secret_manager_secret_version" "nextauth_secret" {
   secret      = google_secret_manager_secret.nextauth_secret.secret_id
   secret_data = random_password.nextauth_secret.result
@@ -213,6 +231,26 @@ resource "google_cloud_run_service" "app" {
           value_from {
             secret_key_ref {
               name = google_secret_manager_secret.openai_key.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "GOOGLE_CLIENT_ID"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.google_client_id.secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "GOOGLE_CLIENT_SECRET"
+          value_from {
+            secret_key_ref {
+              name = google_secret_manager_secret.google_client_secret.secret_id
               key  = "latest"
             }
           }

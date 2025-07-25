@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Logo } from '../../components/Logo'
 import { LoadingSpinner } from '../../components/LoadingSpinner'
 
@@ -29,43 +30,75 @@ const mockUsers = [
 export default function OnboardingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session, status } = useSession()
   const [currentStep, setCurrentStep] = useState(0)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     console.log('Onboarding page loaded')
-    // Check localStorage for user session
-    try {
-      const sessionData = localStorage.getItem('dev-session')
-      if (sessionData) {
-        const user = JSON.parse(sessionData)
-        console.log('Found user in localStorage:', user)
-        
-        // If user has already completed onboarding, redirect to dashboard
-        if (user.hasCompletedOnboarding) {
-          console.log('User already completed onboarding, redirecting to dashboard')
-          router.push('/dashboard')
-          return
+    
+    if (process.env.NODE_ENV === 'production') {
+      // Production: Use NextAuth session
+      if (status === 'loading') return
+      
+      if (!session) {
+        console.log('No session found, redirecting to signin')
+        router.push('/')
+        return
+      }
+      
+      // Use session user data
+      setCurrentUser(session.user)
+      setIsLoading(false)
+    } else {
+      // Development: Use localStorage (existing logic)
+      try {
+        const sessionData = localStorage.getItem('dev-session')
+        if (sessionData) {
+          const user = JSON.parse(sessionData)
+          console.log('Found user in localStorage:', user)
+          
+          // If user has already completed onboarding, redirect to dashboard
+          if (user.hasCompletedOnboarding) {
+            console.log('User already completed onboarding, redirecting to dashboard')
+            router.push('/dashboard')
+            return
+          }
+          
+          setCurrentUser(user)
+        } else {
+          console.log('No user session found, redirecting to mock-signin')
+          router.push('/mock-signin')
         }
-        
-        setCurrentUser(user)
-      } else {
-        console.log('No user session found, redirecting to mock-signin')
+      } catch (error) {
+        console.error('Error loading user session:', error)
         router.push('/mock-signin')
       }
-    } catch (error) {
-      console.error('Error loading user session:', error)
-      router.push('/mock-signin')
+      setIsLoading(false)
     }
-    setIsLoading(false)
-  }, [router])
+  }, [router, session, status])
 
   const handleContinue = () => {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
     } else {
-      // Mark user as having completed onboarding
+      completeOnboarding()
+    }
+  }
+
+  const handleSkip = () => {
+    completeOnboarding()
+  }
+
+  const completeOnboarding = () => {
+    if (process.env.NODE_ENV === 'production') {
+      // Production: Update user in database via API
+      // For now, just redirect to dashboard
+      // TODO: Add API call to mark onboarding as complete
+      router.push('/dashboard')
+    } else {
+      // Development: Use localStorage (existing logic)
       if (currentUser) {
         const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
         localStorage.setItem('dev-session', JSON.stringify(updatedUser))
@@ -74,17 +107,6 @@ export default function OnboardingPage() {
       }
       router.push('/dashboard')
     }
-  }
-
-  const handleSkip = () => {
-    // Mark user as having completed onboarding even if skipped
-    if (currentUser) {
-      const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
-      localStorage.setItem('dev-session', JSON.stringify(updatedUser))
-      // Also set a separate flag for this specific user
-      localStorage.setItem(`user_${currentUser.id}_onboarded`, 'true')
-    }
-    router.push('/dashboard')
   }
 
   if (isLoading) {

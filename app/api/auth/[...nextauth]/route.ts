@@ -68,6 +68,27 @@ const handler = NextAuth({
   adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
   providers,
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // In production, always allow Google OAuth sign-in
+      if (process.env.NODE_ENV === 'production') {
+        return true
+      }
+      
+      // Development logic (existing)
+      return true
+    },
+    async redirect({ url, baseUrl }) {
+      // Custom redirect logic for onboarding flow
+      if (process.env.NODE_ENV === 'production') {
+        // In production, new users should go to onboarding
+        // Returning users should go to dashboard
+        // For now, always redirect to onboarding - we'll add user check later
+        return `${baseUrl}/onboarding`
+      }
+      
+      // Development uses our custom flow
+      return url.startsWith(baseUrl) ? url : baseUrl
+    },
     session: async ({ session, token, user }) => {
       if (session?.user) {
         if (user && 'id' in user) {
