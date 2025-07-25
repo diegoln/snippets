@@ -37,8 +37,16 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
+
+  // Only run client-side logic after hydration
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
+    if (!isClient) return
+    
     console.log('Onboarding page loaded')
     
     if (process.env.NODE_ENV === 'production') {
@@ -80,7 +88,7 @@ export default function OnboardingPage() {
       }
       setIsLoading(false)
     }
-  }, [router, session, status])
+  }, [router, session, status, isClient])
 
   const handleContinue = () => {
     if (currentStep < 2) {
