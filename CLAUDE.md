@@ -2,54 +2,103 @@
 
 ## Design System Reference
 
-This project follows a comprehensive design system that maintains visual consistency and professional aesthetics throughout the application. All new components and modifications should adhere to these established patterns.
+**🎨 For all design system information, refer to [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)**
 
-### Color Palette
+This project follows a comprehensive design system documented in the dedicated design system file. The design system includes:
+- Complete color palette and design tokens
+- Typography system and spacing guidelines  
+- Component patterns and interactive element styling
+- Brand assets and usage guidelines
+- Tailwind integration and CSS implementation
+- Accessibility requirements and testing specifications
 
-The design system uses semantic color naming with CSS custom properties:
+All new components and modifications must adhere to the established patterns documented in the design system file.
 
-- **Primary Colors**: `text-primary-600`, `bg-primary-100`, `border-primary-600`
-- **Secondary Colors**: `text-secondary`, `bg-surface`
-- **Accent Colors**: `text-accent-500`, `bg-accent-500/10`, `border-accent-500`
-- **Neutral Colors**: `bg-neutral-100`, `border-neutral-600/30`, `text-neutral-900`
+## Development Server (Dev Server) Definition
 
-### Component Classes
+### What is the Dev Server?
 
-#### Buttons
-- **Primary**: `btn-primary px-4 py-2 rounded-pill`
-- **Accent**: `btn-accent px-8 py-4 rounded-pill`
-- **With Shadow**: Add `shadow-elevation-1 hover:shadow-lg`
+The **dev server** refers to the local Next.js development server that runs on your machine during development. It is started using `npm run dev` and typically runs on `http://localhost:3000` (or port 3001 if 3000 is occupied).
 
-#### Cards
-- **Standard**: `card p-6` or `card p-8`
-- **Background**: `bg-surface` or `bg-white`
-- **Borders**: `border-neutral-600/20` for subtle separators
+### Key Characteristics of the Dev Server:
 
-#### Layout
-- **Container**: `container mx-auto px-4`
-- **Grid**: `grid grid-cols-1 md:grid-cols-3 gap-8`
-- **Spacing**: Use consistent spacing with `mb-6`, `mt-8`, `space-y-4`
+1. **Hot Module Replacement (HMR)**: Automatic page refresh when code changes
+2. **Development Mode**: Uses development builds with helpful error messages
+3. **Mock Authentication**: Uses localStorage-based mock auth instead of real OAuth
+4. **Environment Variables**: Reads from `.env.local` for local configuration
+5. **Fast Refresh**: React components update without losing state
+6. **TypeScript Checking**: Real-time type checking and error reporting
 
-#### Typography
-- **Headings**: `text-heading-2 text-primary` for section headers
-- **Body**: `text-secondary leading-relaxed` for descriptions
-- **Emphasis**: `font-semibold text-primary-600` for important text
+### Dev Server Architecture:
 
-#### Interactive Elements
-- **Transitions**: `transition-advance` for smooth animations
-- **Hover States**: Consistent hover effects with color and shadow changes
-- **Focus States**: `focus:ring-2 focus:ring-accent-500 focus:ring-offset-2`
+```
+npm run dev
+    │
+    ├─→ Next.js Development Server (port 3000)
+    │   ├─→ App Router Pages
+    │   ├─→ API Routes (/api/*)
+    │   ├─→ Static Assets (/public/*)
+    │   └─→ Dev-specific Features:
+    │       ├─→ Mock Authentication (DevAuthProvider)
+    │       ├─→ localStorage Sessions
+    │       ├─→ SQLite Database (dev.db)
+    │       └─→ Development Error Overlay
+    │
+    └─→ Development Tools
+        ├─→ TypeScript Compiler
+        ├─→ Tailwind CSS JIT
+        └─→ React Fast Refresh
+```
 
-### Authentication Design Patterns
+### Dev Server Requirements:
 
-The authentication flow maintains design consistency:
+**CRITICAL**: The dev server must ALWAYS be in a working state before any changes are pushed. This means:
 
-1. **Landing Page**: Hero section with centered logo, compelling headline, and prominent CTA
-2. **Auth Buttons**: Google OAuth styling with SVG icons and environment indicators
-3. **Onboarding**: Step indicators, progress visualization, and guided content
-4. **Loading States**: Consistent spinner components and loading messages
+1. **Pre-Push Checklist**:
+   - ✅ `npm run dev` starts without errors
+   - ✅ Landing page loads at `http://localhost:3000`
+   - ✅ Mock authentication flow works (click through mock users)
+   - ✅ Main application is accessible after auth
+   - ✅ No TypeScript errors in the console
+   - ✅ No React hydration errors
 
-### Component Structure
+2. **Testing Dev Server Health**:
+   ```bash
+   # Start the server
+   npm run dev
+   
+   # In another terminal, verify it's running
+   curl -s http://localhost:3000 | head -1
+   # Should return: <!DOCTYPE html>
+   ```
+
+3. **Common Dev Server Commands**:
+   - `npm run dev` - Start the development server
+   - `npm run build` - Build for production (test build locally)
+   - `npm run lint` - Check for linting errors
+   - `npm run type-check` - Run TypeScript compiler check
+
+### Dev Server vs Production:
+
+| Feature | Dev Server | Production |
+|---------|------------|------------|
+| Port | 3000 (configurable) | Cloud Run managed |
+| Database | SQLite (dev.db) | PostgreSQL |
+| Auth | Mock (localStorage) | Google OAuth |
+| Build | Development (unoptimized) | Production (optimized) |
+| Errors | Detailed with stack traces | User-friendly messages |
+| Environment | NODE_ENV=development | NODE_ENV=production |
+
+### Maintaining Dev Server Health:
+
+Before ANY commit or push:
+1. Ensure dev server runs without errors
+2. Test the complete authentication flow
+3. Verify main application functionality
+4. Check browser console for errors
+5. Run `node run-basic-tests.js` to validate
+
+## Component Structure
 
 All components follow these patterns:
 
@@ -83,7 +132,7 @@ export function ComponentName({ props }: ComponentProps) {
 }
 ```
 
-### Environment Considerations
+## Environment Considerations
 
 The application uses environment-aware patterns:
 
@@ -91,7 +140,7 @@ The application uses environment-aware patterns:
 - **Production Mode**: Real OAuth, PostgreSQL, secure session management
 - **Responsive Design**: Mobile-first approach with `sm:`, `md:`, `lg:` breakpoints
 
-### Testing Standards
+## Testing Standards
 
 All components should:
 - Pass TypeScript compilation without errors
@@ -99,7 +148,7 @@ All components should:
 - Handle loading and error states appropriately
 - Follow the established testing patterns in `run-basic-tests.js`
 
-### File Organization
+## File Organization
 
 ```
 app/
@@ -118,7 +167,7 @@ components/
 └── [existing components]  # Maintain existing structure
 ```
 
-### Key Implementation Notes
+## Key Implementation Notes
 
 1. **Authentication Flow**: Landing → Auth → Onboarding → Dashboard
 2. **Session Management**: NextAuth for production, localStorage for development
@@ -126,14 +175,38 @@ components/
 4. **Error Handling**: Comprehensive try/catch blocks with user-friendly messages
 5. **Accessibility**: Proper ARIA labels, keyboard navigation, focus management
 
-### Future Development Guidelines
+## Future Development Guidelines
 
 When adding new features:
 
-1. **Check Design System**: Ensure components use existing classes and patterns
-2. **Environment Awareness**: Handle both development and production modes
-3. **TypeScript**: Maintain full type safety with proper interfaces
-4. **Testing**: Update tests to cover new functionality
-5. **Documentation**: Add thorough comments explaining component purpose and behavior
+1. **Check Dev Server First**: Ensure it's running properly before starting work
+2. **Follow Design System**: Reference DESIGN_SYSTEM.md for all styling
+3. **Environment Awareness**: Handle both development and production modes
+4. **TypeScript**: Maintain full type safety with proper interfaces
+5. **Testing**: Update tests to cover new functionality
+6. **Documentation**: Add thorough comments explaining component purpose
+7. **Verify Dev Server**: Always test changes in dev server before pushing
 
-This design system ensures the application maintains its professional, cohesive appearance while providing an excellent user experience across all features and environments.
+## Git Workflow with Dev Server Verification
+
+```bash
+# Before starting work
+npm run dev  # Ensure it starts cleanly
+
+# After making changes
+npm run dev  # Verify changes work
+# Test authentication flow
+# Check console for errors
+
+# Before committing
+node run-basic-tests.js  # Run validation tests
+npm run lint  # Check for linting issues
+npm run type-check  # Verify TypeScript
+
+# Only then commit and push
+git add .
+git commit -m "feat: your changes"
+git push
+```
+
+This documentation ensures the application maintains its professional, cohesive appearance while keeping the development server in a consistently working state.
