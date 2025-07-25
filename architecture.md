@@ -1,130 +1,282 @@
-# System Architecture
+# AdvanceWeekly System Architecture
 
 ## Overview
 
-The Weekly Snippets Reminder system is built around a central UserHub component that manages user interactions, data persistence, and external integrations. The architecture follows a modular design with clear separation between the frontend interface, authentication services, LLM processing, and external API integrations.
+AdvanceWeekly is a Next.js application that helps professionals track their weekly accomplishments and generate AI-powered performance assessments. The system combines manual snippet creation with automated data collection from third-party tools, processing everything through LLM analysis to provide meaningful career insights.
 
-## Architecture Diagram
+## Development Server Architecture
+
+### What is the Dev Server?
+
+The **development server** is the cornerstone of AdvanceWeekly's development workflow, running locally on `http://localhost:3000` via `npm run dev`. It provides a complete working environment that mirrors production functionality while using simplified authentication and local data storage.
+
+### Dev vs Production Environment Matrix
+
+| Feature | Development Server | Production |
+|---------|-------------------|------------|
+| **Port** | 3000 (configurable) | Cloud Run managed |
+| **Database** | SQLite (dev.db) | PostgreSQL (Cloud SQL) |
+| **Authentication** | Mock users (localStorage) | Google OAuth (NextAuth) |
+| **Build** | Development (unoptimized) | Production (optimized) |
+| **Errors** | Detailed with stack traces | User-friendly messages |
+| **Integrations** | Mock data / Disabled | Live OAuth connections |
+| **LLM Processing** | Local model (Ollama) | OpenAI API |
+| **Session Storage** | localStorage | Database sessions |
+
+## System Architecture Diagram
 
 ![System Architecture](docs/architecture-diagram.svg)
 
-The diagram shows the flow of data and interactions between system components:
-- Users interact with the UserHub frontend for all CRUD operations
-- Authentication services handle user login and external service OAuth
-- Data sources (PostgreSQL, Google Calendar, Todoist) provide information to the system
-- LLMProxy acts as a centralized gateway for all OpenAI API interactions
+The diagram illustrates the layered architecture with clear separation between:
+- **User Interface Layer**: Landing page, snippets, performance assessments, and integration management
+- **Authentication Layer**: Environment-aware auth with NextAuth supporting both mock and Google OAuth
+- **API Layer**: RESTful endpoints for all system operations including scheduled processing
+- **Data Storage**: Dual database support (SQLite dev, PostgreSQL prod)
+- **Integration Services**: Third-party connections to Google Calendar, Todoist, and GitHub
+- **AI Processing**: Environment-aware LLM integration (local models for dev, OpenAI for production)
+- **Scheduled Processing**: GCP-based batch jobs for weekly data collection and analysis
+
+## Integration System Architecture
+
+### Scheduled Data Collection Flow
+
+The system implements a weekly batch processing pipeline that:
+
+1. **Cloud Scheduler** triggers data collection every Monday at 9:00 AM
+2. **Cloud Run Jobs** execute the data processing pipeline
+3. **Integration Collectors** gather data from each user's connected services
+4. **Data Aggregator** combines and processes the collected information
+5. **LLM Processor** generates insights and recommendations using AI analysis
+6. **Database Storage** persists both raw data and processed insights
 
 ## Core Components
 
-### UserHub (Primary Component)
+### AuthenticatedApp.tsx (Main Application)
 
-The UserHub serves as the central frontend application providing a comprehensive CRUD interface for managing weekly snippets and user configuration.
+The central React component that orchestrates the entire user experience:
 
-#### Key Features
-- **User Authentication**: Secure login and session management
-- **Weekly Snippet Management**: Create, read, update, and delete weekly work summaries
-- **Integration Management**: Configure and authenticate external service connections
-- **Profile Configuration**: Set user career information and preferences
+**Key Features:**
+- **Tab-based Navigation**: Weekly Snippets vs Performance Assessments
+- **Snippet Management**: CRUD operations with Markdown support
+- **Assessment Generation**: AI-powered performance draft creation
+- **Settings Integration**: User profile and integration management
+- **Pagination**: Efficient handling of large snippet collections
 
-#### Weekly Snippet Structure
-Each weekly snippet is organized by:
-- **Week Number**: Calendar week number (e.g., Week 30)
-- **Date Range**: Monday to Friday dates (e.g., Jul 21st - Jul 25th)
-- **Content**: User-generated summaries of accomplishments and plans
+**State Management:**
+- useReducer for complex assessment operations
+- useState for UI state and snippet data
+- Custom hooks for authentication and data fetching
 
-Example: `Week 30 Jul 21st - Jul 25th`
+### Authentication System
 
-#### User Profile Configuration
-The UserHub allows users to optionally configure:
-- **Current Seniority Level**: User's specific role and level (e.g., Senior Software Engineer L5)
-- **Company Career Ladder**: Complete organizational level structure defining expectations for all engineering levels
-- **Performance Feedback**: Insights from previous review cycles to guide future development
+**Environment-Aware Design:**
+- **Development**: Mock authentication with localStorage persistence
+- **Production**: Google OAuth with NextAuth and database sessions
 
-### Authentication Services
+**Session Management:**
+- Development: JWT strategy with localStorage persistence
+- Production: Database sessions with Prisma adapter
 
-#### User Authentication
-- Secure login/logout functionality
-- Session management and token handling
-- User profile persistence
+### Database Schema
 
-#### Integration Authentication
-- **Google Calendar OAuth**: Secure connection to Google Calendar for meeting data
-- **Todoist OAuth**: Authentication for task management integration
-- Token refresh and credential management for external services
+```sql
+-- Core Models
+User {
+  id, name, email, image
+  jobTitle, seniorityLevel
+  performanceFeedback, careerLadderFile
+  integrations[]
+  snippets[]
+  assessments[]
+}
 
-### LLMProxy (API Gateway Component)
+WeeklySnippet {
+  id, userId, weekNumber, startDate, endDate
+  content                    -- User-written content
+  extractedTasks            -- JSON from integrations
+  extractedMeetings         -- JSON from integrations  
+  aiSuggestions            -- AI-generated recommendations
+}
 
-The LLMProxy serves as a centralized gateway for all OpenAI API interactions, providing a single point of access for LLM operations across the system.
+Integration {
+  id, userId, type          -- "google_calendar", "todoist", "github"
+  accessToken, refreshToken -- Encrypted OAuth tokens
+  expiresAt, isActive
+  metadata                  -- JSON config per integration
+  lastSyncAt
+}
 
-#### Core Responsibilities
-- **API Gateway**: Single entry point for all OpenAI API calls from system components
-- **Request Management**: Handles rate limiting, retry logic, and request queuing for OpenAI services
-- **Security & Authentication**: Manages OpenAI API keys and authentication centrally
-- **Response Processing**: Standardizes OpenAI API responses for consistent consumption across the system
-- **Error Handling**: Provides robust error handling and fallback mechanisms for API failures
+IntegrationData {
+  id, userId, integrationType
+  weekNumber, year, dataType -- "tasks", "meetings", "commits"
+  rawData                   -- Original API response
+  processedData            -- Cleaned/transformed data
+}
 
-#### Technical Capabilities
-- **Request Routing**: Routes different types of LLM requests to appropriate OpenAI models and endpoints
-- **Response Caching**: Implements intelligent caching strategies to optimize API usage and reduce costs
-- **Token Management**: Monitors and manages token usage across all system requests
-- **Request Logging**: Logs all API interactions for debugging, monitoring, and usage analysis
-- **Configuration Management**: Handles model selection, temperature settings, and other LLM parameters
+PerformanceAssessment {
+  id, userId, cycleName
+  startDate, endDate
+  generatedDraft           -- AI-generated self-assessment
+}
+```
 
-#### Integration Points
-- **OpenAI API**: Direct integration with OpenAI services (GPT, embeddings, etc.)
-- **UserHub**: Receives LLM requests from frontend components
-- **External Services**: Processes requests for analyzing data from Google Calendar and Todoist
-- **Database**: Stores request logs, usage metrics, and cached responses
+### LLM Integration (llmproxy.ts)
 
-### External Integrations
+**Environment-Aware AI Processing:**
 
-#### Google Calendar Integration
-- **Meeting Extraction**: Retrieves scheduled meetings and events
-- **Data Synchronization**: Syncs meeting data to system database
-- **API Integration**: Handles OAuth authentication and API rate limiting
+**Development Environment:**
+- **Local LLM**: Uses Ollama or similar local model for testing
+- **Fast Iteration**: Quick responses without API costs
+- **Offline Development**: Works without internet connection
+- **Mock Responses**: Predictable outputs for testing
 
-#### Todoist Integration
-- **Task Synchronization**: Imports completed and pending tasks
-- **Data Integration**: Syncs task and project data to system database
-- **API Management**: Handles OAuth authentication and API interactions
+**Production Environment:**
+- **OpenAI API Gateway**: Single point for all LLM requests
+- **Request Management**: Rate limiting, retry logic, queuing
+- **Response Processing**: Standardized output formatting
+- **Cost Optimization**: Intelligent caching and token management
 
-## Data Flow
+**Usage Patterns:**
+```typescript
+// Performance assessment generation
+const assessmentDraft = await llmProxy.generateAssessment({
+  snippets: userSnippets,
+  feedback: userFeedback,
+  careerLadder: careerLadderDoc
+});
 
-1. **User Input**: Users create and edit weekly snippets through the UserHub interface
-2. **Data Collection**: System automatically pulls relevant data from Google Calendar and Todoist
-3. **API Requests**: UserHub and other components make LLM requests through LLMProxy
-4. **Request Processing**: LLMProxy handles authentication, rate limiting, and routes requests to OpenAI API
-5. **Response Management**: LLMProxy processes OpenAI responses and returns standardized results
-6. **Data Integration**: Processed AI insights are integrated back into the user interface and database
-7. **Caching & Optimization**: LLMProxy caches responses and manages token usage for cost efficiency
+// Integration data analysis
+const weeklyInsights = await llmProxy.analyzeWeeklyData({
+  meetings: calendarData,
+  tasks: todoistData,
+  commits: githubData
+});
+```
 
-## Deployment Architecture
+### Integration Framework
 
-### Local Development
-- **Frontend**: Next.js development server
-- **API**: Local serverless functions or Express server
-- **Database**: Local PostgreSQL instance or connection to AWS RDS
+**Base Integration Architecture:**
+```typescript
+abstract class BaseIntegration {
+  abstract authenticate(): Promise<AuthResult>;
+  abstract fetchWeeklyData(weekStart: Date): Promise<IntegrationData>;
+  abstract refreshTokens(): Promise<void>;
+}
 
-### Production Deployment
-- **Frontend**: Vercel (Next.js)
-- **API**: AWS Lambda functions
-- **Database**: AWS RDS PostgreSQL
-- **Authentication**: AWS Cognito or Auth0
-- **File Storage**: AWS S3 (for any uploaded content)
+class GoogleCalendarIntegration extends BaseIntegration {
+  async fetchWeeklyData(weekStart: Date) {
+    // Fetch meetings, events, calendar data
+    // Transform to standard format
+    // Store in integration_data table
+  }
+}
 
-### Technology Stack
-- **Frontend**: Next.js 14+ with TypeScript
-- **API**: AWS Lambda with Node.js/TypeScript
-- **LLM Integration**: OpenAI API for document processing and snippet generation
-- **Database**: PostgreSQL on AWS RDS
-- **ORM**: Prisma for database management
-- **Infrastructure**: AWS CDK or Terraform for IaC
-- **Deployment**: Vercel for frontend, AWS SAM/CDK for backend
+class TodoistIntegration extends BaseIntegration {
+  async fetchWeeklyData(weekStart: Date) {
+    // Fetch completed/pending tasks
+    // Extract project and label information
+    // Store in integration_data table
+  }
+}
 
-## System Benefits
+class GitHubIntegration extends BaseIntegration {
+  async fetchWeeklyData(weekStart: Date) {
+    // Fetch commits, PRs, issues
+    // Extract repository and contribution data
+    // Store in integration_data table
+  }
+}
+```
 
-- **Modular Architecture**: UserHub operates as a standalone CRUD system, allowing smart functionalities to be added incrementally around the core interface
-- **Scalable Deployment**: Seamless transition from local development to AWS production with independent scaling of frontend and backend components
-- **Service Separation**: Clear boundaries between authentication, data persistence, and external integrations enable independent development and maintenance
-- **Technology Flexibility**: Modern stack with TypeScript throughout ensures maintainability and developer experience
-- **Infrastructure as Code**: Automated deployment and configuration management for consistent environments
+## GCP Production Deployment
+
+### Infrastructure Components
+
+**Cloud Run Services:**
+- **Main Application**: Next.js app with auto-scaling (0-10 instances)
+- **Scheduled Jobs**: Weekly data collection processors
+- **Memory/CPU**: 1GB RAM, 1 CPU per instance
+
+**Cloud SQL PostgreSQL:**
+- **Instance**: db-f1-micro (cost-optimized for 50 users)
+- **Storage**: 10GB SSD with auto-resize
+- **Backups**: Daily automated backups at 3:00 AM
+- **Maintenance**: Sunday 4:00 AM window
+
+**Secret Manager:**
+- **Database credentials**: Connection string with Unix socket format
+- **OAuth secrets**: Google Client ID/Secret, NextAuth secret
+- **API keys**: OpenAI API key, integration API keys
+- **Encryption keys**: For token encryption/decryption
+
+**Cloud Build Pipeline:**
+```yaml
+# Automated deployment on git push
+1. Build multi-stage Docker image
+2. Push to Artifact Registry
+3. Deploy to Cloud Run with:
+   - Database connection via Cloud SQL Proxy
+   - Secrets injection via Secret Manager
+   - Auto-scaling configuration
+```
+
+### Cost Structure (50 users)
+
+**Monthly Estimates:**
+- **Cloud Run**: $5-10 (request-based pricing)
+- **Cloud SQL**: $7 (db-f1-micro instance)
+- **Secret Manager**: $1 (secret access)
+- **Storage**: $2 (database + images)
+- **Cloud Build**: $2 (automated deployments)
+- **Integration APIs**: Variable (Google/Todoist quotas)
+- **Total**: ~$17-25/month
+
+## Data Flow Architecture
+
+### User Interaction Flow
+1. **Authentication**: User signs in via Google OAuth (prod) or mock selection (dev)
+2. **Dashboard Access**: Route to weekly snippets or performance assessments
+3. **Snippet Management**: Create/edit weekly summaries with Markdown support
+4. **Integration Setup**: Connect third-party accounts via OAuth flows
+5. **Automated Collection**: Background jobs gather integration data weekly
+6. **AI Processing**: LLM analyzes collected data and generates insights
+7. **Recommendation Display**: AI suggestions appear in snippet interface
+
+### Weekly Processing Flow
+1. **Trigger**: Cloud Scheduler initiates weekly data collection (Mondays 9 AM)
+2. **User Iteration**: Process each user with active integrations
+3. **Data Collection**: Parallel API calls to Google Calendar, Todoist, GitHub
+4. **Data Storage**: Raw responses stored in integration_data table
+5. **Data Processing**: Clean, transform, and aggregate collected data
+6. **LLM Analysis**: Send aggregated data to OpenAI for insight generation
+7. **Result Storage**: Update weekly_snippets with AI recommendations
+8. **Error Handling**: Retry failed operations, log issues for investigation
+
+## Security & Privacy
+
+### Data Protection
+- **Token Encryption**: All OAuth tokens encrypted before database storage
+- **API Security**: Rate limiting and authentication on all endpoints
+- **Data Retention**: Auto-delete integration data after 90 days
+- **User Consent**: Clear permission flows for each integration
+
+### GCP Security Features
+- **IAM Roles**: Minimal service account permissions
+- **VPC Integration**: Private database connections via Cloud SQL Proxy
+- **Secret Management**: No hardcoded credentials, all via Secret Manager
+- **HTTPS Enforcement**: TLS 1.2+ for all communications
+
+## Technology Stack Summary
+
+**Frontend Framework**: Next.js 14 with App Router
+**Language**: TypeScript throughout
+**Styling**: Tailwind CSS with custom design system
+**Authentication**: NextAuth.js with Google OAuth
+**Database**: PostgreSQL (prod) / SQLite (dev) via Prisma ORM
+**Cloud Platform**: Google Cloud Platform
+**Container Runtime**: Cloud Run with Docker
+**AI Integration**: OpenAI API (prod) / Local LLM (dev) via custom proxy
+**External APIs**: Google Calendar, Todoist, GitHub
+**Infrastructure**: Terraform for GCP resource management
+**CI/CD**: Cloud Build with automated deployments
+**Monitoring**: Built-in GCP logging and metrics
