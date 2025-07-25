@@ -209,4 +209,62 @@ git commit -m "feat: your changes"
 git push
 ```
 
+## Branch Management Strategy
+
+**CRITICAL**: Always start new tasks from a new branch (never work directly on main after merging a PR)
+
+### Post-PR Merge Workflow:
+
+1. **After PR is merged**:
+   ```bash
+   git checkout main
+   git pull origin main  # Sync with remote
+   ```
+
+2. **Before starting next task**:
+   ```bash
+   # Create new feature branch from main
+   git checkout -b feat/descriptive-task-name
+   
+   # Verify dev server works on new branch
+   npm run dev
+   ```
+
+3. **Branch naming conventions**:
+   - `feat/` - New features (feat/user-settings)
+   - `fix/` - Bug fixes (fix/authentication-redirect)
+   - `docs/` - Documentation updates (docs/api-reference)
+   - `refactor/` - Code restructuring (refactor/auth-provider)
+   - `test/` - Testing improvements (test/e2e-coverage)
+
+4. **Working on feature branch**:
+   ```bash
+   # Make changes, test in dev server
+   npm run dev  # Always verify changes work
+   
+   # Commit and push to feature branch
+   git add .
+   git commit -m "feat: implement user settings"
+   git push origin feat/user-settings
+   
+   # Create PR from feature branch to main
+   gh pr create --title "feat: implement user settings"
+   ```
+
+5. **After PR is merged, repeat cycle**:
+   ```bash
+   git checkout main
+   git pull origin main
+   git branch -d feat/user-settings  # Clean up old branch
+   # Ready for next task - create new branch
+   ```
+
+### Why This Workflow Matters:
+
+- **Clean history**: Each feature gets its own branch and PR
+- **Safe development**: Main branch stays stable
+- **Code review**: All changes go through PR process
+- **Rollback capability**: Easy to revert specific features
+- **Collaboration**: Multiple features can be developed in parallel
+
 This documentation ensures the application maintains its professional, cohesive appearance while keeping the development server in a consistently working state.
