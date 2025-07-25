@@ -375,6 +375,56 @@ const Home = (): JSX.Element => {
     }
   }, [])
 
+  /**
+   * Handle adding a new snippet for the current week
+   * Creates a new snippet with current week number and blank content
+   */
+  const handleAddCurrentWeek = useCallback(async (): Promise<void> => {
+    try {
+      const currentWeek = getCurrentWeek()
+      
+      // Check if snippet for current week already exists
+      const existingSnippet = snippets.find(snippet => snippet.weekNumber === currentWeek)
+      if (existingSnippet) {
+        // If it exists, just select it
+        setSelectedSnippet(existingSnippet)
+        setIsEditing(true)
+        return
+      }
+
+      // Create new snippet for current week
+      const response = await fetch('/api/snippets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          weekNumber: currentWeek,
+          content: '## Done\n\n- \n\n## Next\n\n- \n\n## Notes\n\n'
+        })
+      })
+
+      if (response.ok) {
+        const newSnippet = await response.json()
+        
+        // Add to snippets list and select it
+        const updatedSnippets = [newSnippet, ...snippets]
+        setSnippets(updatedSnippets)
+        setSelectedSnippet(newSnippet)
+        setIsEditing(true) // Start in edit mode
+        
+        // Reset pagination to show the new snippet
+        setCurrentPage(0)
+      } else {
+        console.error('Failed to create snippet:', response.statusText)
+        alert('Failed to create new snippet. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error creating snippet:', error)
+      alert('Failed to create new snippet. Please try again.')
+    }
+  }, [getCurrentWeek, snippets])
+
   return (
     <div className="min-h-screen bg-neutral-100">
       <div className="container mx-auto px-4 py-8">
@@ -490,7 +540,8 @@ const Home = (): JSX.Element => {
                 
                 {/* Add New Week Button */}
                 <button 
-                  className="w-full p-3 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
+                  onClick={handleAddCurrentWeek}
+                  className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
                   aria-label="Add current week snippet"
                 >
                   + Add Current Week

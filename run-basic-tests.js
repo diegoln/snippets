@@ -148,6 +148,23 @@ test('Database connections are properly managed', () => {
   return true;
 });
 
+test('Add Current Week button has proper functionality', () => {
+  const homePage = fs.readFileSync('app/page.tsx', 'utf8');
+  if (!homePage.includes('handleAddCurrentWeek')) {
+    return 'Missing handleAddCurrentWeek function';
+  }
+  if (!homePage.includes('onClick={handleAddCurrentWeek}')) {
+    return 'Button missing onClick handler';
+  }
+  if (!homePage.includes('border-neutral-600/30')) {
+    return 'Button missing design system styling';
+  }
+  if (!homePage.includes('POST')) {
+    return 'Missing API call logic';
+  }
+  return true;
+});
+
 // Results
 console.log('\n' + '='.repeat(50));
 console.log(`📊 Test Results: ${testsPassed}/${testsTotal} passed`);
