@@ -40,12 +40,9 @@ export default function Home() {
     )
   }
 
-  // In development, use dev auth; in production, use NextAuth
-  const isAuthenticated = process.env.NODE_ENV === 'development' 
-    ? !!user 
-    : !!session
-
-  // Show landing page for unauthenticated users, main app for authenticated users
-  return isAuthenticated ? <AuthenticatedApp /> : <LandingPage />
+  // IMPORTANT: For the root page, we ALWAYS show the landing page
+  // The user must explicitly navigate to /dashboard or other authenticated routes
+  // This prevents the auto-redirect issue where having a session shows the app immediately
+  return <LandingPage />
 }
 

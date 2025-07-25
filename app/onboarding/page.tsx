@@ -69,6 +69,8 @@ export default function OnboardingPage() {
       if (currentUser) {
         const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
         localStorage.setItem('dev-session', JSON.stringify(updatedUser))
+        // Also set a separate flag for this specific user
+        localStorage.setItem(`user_${currentUser.id}_onboarded`, 'true')
       }
       router.push('/dashboard')
     }
@@ -79,6 +81,8 @@ export default function OnboardingPage() {
     if (currentUser) {
       const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
       localStorage.setItem('dev-session', JSON.stringify(updatedUser))
+      // Also set a separate flag for this specific user
+      localStorage.setItem(`user_${currentUser.id}_onboarded`, 'true')
     }
     router.push('/dashboard')
   }

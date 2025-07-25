@@ -35,15 +35,13 @@ export default function MockSignInPage() {
     try {
       const user = mockUsers.find(u => u.id === userId)
       if (user) {
-        // Check if user has already completed onboarding
-        const existingSession = localStorage.getItem('dev-session')
-        let userWithOnboarding = { ...user }
+        // Check if this specific user has already completed onboarding
+        const onboardingKey = `user_${userId}_onboarded`
+        const hasCompletedOnboarding = localStorage.getItem(onboardingKey) === 'true'
         
-        if (existingSession) {
-          const existingUser = JSON.parse(existingSession)
-          if (existingUser.id === userId && existingUser.hasCompletedOnboarding) {
-            userWithOnboarding.hasCompletedOnboarding = true
-          }
+        let userWithOnboarding = { 
+          ...user,
+          hasCompletedOnboarding 
         }
         
         localStorage.setItem('dev-session', JSON.stringify(userWithOnboarding))
