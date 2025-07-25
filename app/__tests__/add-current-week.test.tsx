@@ -121,6 +121,63 @@ describe('Add Current Week Button', () => {
     })
   })
 
+  it('should work with mock database in local development', async () => {
+    // Mock initial snippets from mock database
+    const mockSnippets = [
+      {
+        id: 'snippet-1',
+        weekNumber: 28,
+        startDate: '2024-07-07',
+        endDate: '2024-07-11',
+        content: '## Done\n\n- Test content',
+        createdAt: '2024-07-07T00:00:00.000Z',
+        updatedAt: '2024-07-07T00:00:00.000Z'
+      }
+    ]
+
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockSnippets
+    } as Response)
+
+    // Mock empty assessments
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => []
+    } as Response)
+
+    // Mock successful snippet creation
+    const mockNewSnippet = {
+      id: 'snippet-mock-123',
+      weekNumber: 31,
+      startDate: '2024-07-28',
+      endDate: '2024-08-01',
+      content: '## Done\\n\\n- \\n\\n## Next\\n\\n- \\n\\n## Notes\\n\\n'
+    }
+
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockNewSnippet
+    } as Response)
+
+    render(<Home />)
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add current week snippet/i })).toBeInTheDocument()
+      expect(screen.getByText('Week 28')).toBeInTheDocument() // Shows existing snippet
+    })
+
+    const addButton = screen.getByRole('button', { name: /add current week snippet/i })
+    fireEvent.click(addButton)
+
+    await waitFor(() => {
+      // Should have created new snippet and show it in edit mode
+      expect(fetch).toHaveBeenCalledWith('/api/snippets', expect.objectContaining({
+        method: 'POST'
+      }))
+    })
+  })
+
   it('should select existing snippet when current week already exists', async () => {
     const currentWeek = 30
     const existingSnippet = {

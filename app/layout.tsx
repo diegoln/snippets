@@ -1,5 +1,7 @@
 import './globals.css'
 import { ErrorBoundary } from '../components/ErrorBoundary'
+import { AuthProvider } from '../components/AuthProvider'
+import { DevAuthProvider } from '../components/DevAuthProvider'
 
 export const metadata = {
   title: 'AdvanceWeekly - See beyond the busy.',
@@ -26,11 +28,15 @@ export default function RootLayout({
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary-600 focus:text-white focus:rounded-pill focus:transition-advance">
           Skip to main content
         </a>
-        <ErrorBoundary>
-          <main id="main-content">
-            {children}
-          </main>
-        </ErrorBoundary>
+        <AuthProvider>
+          <DevAuthProvider>
+            <ErrorBoundary>
+              <main id="main-content">
+                {children}
+              </main>
+            </ErrorBoundary>
+          </DevAuthProvider>
+        </AuthProvider>
       </body>
     </html>
   )

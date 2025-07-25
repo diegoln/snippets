@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { getMockDatabase, shouldUseMockDatabase } from '../../../lib/mock-data'
 
 /**
  * Prisma client singleton with lazy initialization
@@ -38,6 +39,32 @@ function getPrismaClient(): PrismaClient | null {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Use mock database for local development
+    if (shouldUseMockDatabase()) {
+      console.log('Using mock database for local development')
+      const mockDb = getMockDatabase()
+      const testUser = await mockDb.findUserByEmail('test@example.com')
+      
+      if (!testUser) {
+        return NextResponse.json(
+          { error: 'Test user not found' },
+          { status: 404 }
+        )
+      }
+
+      const snippets = await mockDb.findAllSnippets(testUser.id)
+      
+      // Convert dates to ISO strings for JSON serialization
+      const serializedSnippets = snippets.map(snippet => ({
+        ...snippet,
+        startDate: snippet.startDate.toISOString().split('T')[0],
+        endDate: snippet.endDate.toISOString().split('T')[0]
+      }))
+
+      return NextResponse.json(serializedSnippets)
+    }
+
+    // Use real database for production
     const client = getPrismaClient()
     if (!client) {
       return NextResponse.json(
@@ -98,14 +125,6 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const client = getPrismaClient()
-    if (!client) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
     const body = await request.json()
     const { weekNumber, content } = body
 
@@ -114,6 +133,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'weekNumber and content are required' },
         { status: 400 }
+      )
+    }
+
+    // Use mock database for local development
+    if (shouldUseMockDatabase()) {
+      console.log('Using mock database for snippet creation')
+      const mockDb = getMockDatabase()
+      const testUser = await mockDb.findUserByEmail('test@example.com')
+      
+      if (!testUser) {
+        return NextResponse.json(
+          { error: 'Test user not found' },
+          { status: 404 }
+        )
+      }
+
+      // Calculate start and end dates for the week
+      const currentYear = new Date().getFullYear()
+      const startOfYear = new Date(currentYear, 0, 1)
+      const daysToAdd = (weekNumber - 1) * 7
+      const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
+      const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
+
+      const newSnippet = await mockDb.createSnippet({
+        userId: testUser.id,
+        weekNumber,
+        startDate,
+        endDate,
+        content
+      })
+
+      return NextResponse.json({
+        ...newSnippet,
+        startDate: newSnippet.startDate.toISOString().split('T')[0],
+        endDate: newSnippet.endDate.toISOString().split('T')[0]
+      })
+    }
+
+    // Use real database for production
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
       )
     }
 
@@ -170,14 +233,6 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const client = getPrismaClient()
-    if (!client) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
     const body = await request.json()
     const { id, content } = body
 
@@ -185,6 +240,35 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json(
         { error: 'id and content are required' },
         { status: 400 }
+      )
+    }
+
+    // Use mock database for local development
+    if (shouldUseMockDatabase()) {
+      console.log('Using mock database for snippet update')
+      const mockDb = getMockDatabase()
+      const updatedSnippet = await mockDb.updateSnippet(id, content)
+      
+      if (!updatedSnippet) {
+        return NextResponse.json(
+          { error: 'Snippet not found' },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({
+        ...updatedSnippet,
+        startDate: updatedSnippet.startDate.toISOString().split('T')[0],
+        endDate: updatedSnippet.endDate.toISOString().split('T')[0]
+      })
+    }
+
+    // Use real database for production
+    const client = getPrismaClient()
+    if (!client) {
+      return NextResponse.json(
+        { error: 'Database not available' },
+        { status: 503 }
       )
     }
 
