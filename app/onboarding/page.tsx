@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to avoid build-time issues with localStorage
+export const dynamic = 'force-dynamic'
+
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'

@@ -1,5 +1,8 @@
 'use client'
 
+// Force dynamic rendering to avoid build-time issues with localStorage
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { useDevAuth } from '../../components/DevAuthProvider'
 import { Logo } from '../../components/Logo'
