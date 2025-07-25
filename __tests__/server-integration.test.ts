@@ -162,7 +162,7 @@ describe('Server Integration Tests', () => {
 
   describe('API Endpoints Data Loading', () => {
     it('should return snippets from /api/snippets', async () => {
-      const mockFetch = fetch as jest.MockedFunction<typeof fetch>
+      const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => [
@@ -183,7 +183,7 @@ describe('Server Integration Tests', () => {
     })
 
     it('should return performance assessments from /api/assessments', async () => {
-      const mockFetch = fetch as jest.MockedFunction<typeof fetch>
+      const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => []
