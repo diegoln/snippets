@@ -5,16 +5,9 @@
  * and Node.js server code with TypeScript support.
  */
 
-const nextJest = require('next/jest')
-
-const createJestConfig = nextJest({
-  // Provide the path to your Next.js app to load next.config.js and .env files
-  dir: './',
-})
-
 /** @type {import('jest').Config} */
-const customJestConfig = {
-  // Test environment for React components
+const jestConfig = {
+  // Default test environment for React components
   testEnvironment: 'jsdom',
   
   // JSDOM configuration to fix window issues
@@ -63,9 +56,9 @@ const customJestConfig = {
     }
   },
   
-  // Transform configuration for TypeScript
+  // Transform configuration for TypeScript and JavaScript
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }]
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest']
   },
   
   // Transform ignore patterns
@@ -81,5 +74,4 @@ const customJestConfig = {
   verbose: true
 }
 
-// Create the Jest config with Next.js integration
-module.exports = createJestConfig(customJestConfig)
+module.exports = jestConfig
