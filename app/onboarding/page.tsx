@@ -148,7 +148,7 @@ export default function OnboardingPage() {
             </svg>
           </div>
           <p className="text-lg text-secondary leading-relaxed mb-8">
-            Every week, capture what you accomplished, what you learned, and what you're planning next. 
+            Every week, capture what you accomplished, what you learned, and what you&apos;re planning next. 
             This becomes your professional journal and the foundation for performance reviews.
           </p>
           <div className="bg-white rounded-lg p-6 text-left max-w-md mx-auto shadow-elevation-1">
