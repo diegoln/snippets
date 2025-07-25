@@ -33,16 +33,31 @@ export default function MockSignInPage() {
     console.log('Sign in clicked for user:', userId)
     setIsLoading(userId)
     try {
-      // Set user in localStorage first
       const user = mockUsers.find(u => u.id === userId)
       if (user) {
-        localStorage.setItem('dev-session', JSON.stringify(user))
-        console.log('User stored in localStorage:', user)
+        // Check if user has already completed onboarding
+        const existingSession = localStorage.getItem('dev-session')
+        let userWithOnboarding = { ...user }
+        
+        if (existingSession) {
+          const existingUser = JSON.parse(existingSession)
+          if (existingUser.id === userId && existingUser.hasCompletedOnboarding) {
+            userWithOnboarding.hasCompletedOnboarding = true
+          }
+        }
+        
+        localStorage.setItem('dev-session', JSON.stringify(userWithOnboarding))
+        console.log('User stored in localStorage:', userWithOnboarding)
         
         // Use a small delay before redirect to ensure localStorage is set
         setTimeout(() => {
-          console.log('Redirecting to onboarding...')
-          window.location.href = `/onboarding?user=${userId}`
+          if (userWithOnboarding.hasCompletedOnboarding) {
+            console.log('Returning user, redirecting to dashboard...')
+            window.location.href = '/dashboard'
+          } else {
+            console.log('New user, redirecting to onboarding...')
+            window.location.href = '/onboarding'
+          }
         }, 100)
       }
     } catch (error) {

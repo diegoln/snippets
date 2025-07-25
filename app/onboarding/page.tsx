@@ -41,6 +41,14 @@ export default function OnboardingPage() {
       if (sessionData) {
         const user = JSON.parse(sessionData)
         console.log('Found user in localStorage:', user)
+        
+        // If user has already completed onboarding, redirect to dashboard
+        if (user.hasCompletedOnboarding) {
+          console.log('User already completed onboarding, redirecting to dashboard')
+          router.push('/dashboard')
+          return
+        }
+        
         setCurrentUser(user)
       } else {
         console.log('No user session found, redirecting to mock-signin')
@@ -57,11 +65,21 @@ export default function OnboardingPage() {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1)
     } else {
+      // Mark user as having completed onboarding
+      if (currentUser) {
+        const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
+        localStorage.setItem('dev-session', JSON.stringify(updatedUser))
+      }
       router.push('/dashboard')
     }
   }
 
   const handleSkip = () => {
+    // Mark user as having completed onboarding even if skipped
+    if (currentUser) {
+      const updatedUser = { ...currentUser, hasCompletedOnboarding: true }
+      localStorage.setItem('dev-session', JSON.stringify(updatedUser))
+    }
     router.push('/dashboard')
   }
 

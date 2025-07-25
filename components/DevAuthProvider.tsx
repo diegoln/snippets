@@ -27,6 +27,7 @@ interface User {
   name: string
   email: string
   image: string
+  hasCompletedOnboarding?: boolean
 }
 
 /**
@@ -49,27 +50,25 @@ const DevAuthContext = createContext<DevAuthContextType | undefined>(undefined)
  * @returns JSX element wrapping children with auth context
  */
 export function DevAuthProvider({ children }: { children: ReactNode }) {
-  // Initialize user state from localStorage if available
-  // This ensures session persistence across page reloads
-  const [user, setUser] = useState<User | null>(() => {
+  // Initialize user state as null to prevent SSR issues
+  const [user, setUser] = useState<User | null>(null)
+  // Start with loading true to prevent flash of wrong content
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Check localStorage for existing session after component mounts
     if (typeof window !== 'undefined') {
       try {
         const sessionData = localStorage.getItem('dev-session')
-        return sessionData ? JSON.parse(sessionData) : null
-      } catch {
-        // If localStorage is corrupted or unavailable, start with no user
-        return null
+        if (sessionData) {
+          setUser(JSON.parse(sessionData))
+        }
+      } catch (error) {
+        console.error('Error loading session:', error)
       }
+      // Set loading to false after checking
+      setLoading(false)
     }
-    return null
-  })
-  // No loading state needed for localStorage-based auth
-  // Real auth providers typically have loading states for API calls
-  const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    // Just to keep the checkSession function available for other uses
-    // but we don't need to call it since we initialize from localStorage above
   }, [])
 
   // Mock user data for development testing

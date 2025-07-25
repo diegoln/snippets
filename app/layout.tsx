@@ -2,6 +2,7 @@ import './globals.css'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { AuthProvider } from '../components/AuthProvider'
 import { DevAuthProvider } from '../components/DevAuthProvider'
+import { DevTools } from '../components/DevTools'
 
 export const metadata = {
   title: 'AdvanceWeekly - See beyond the busy.',
@@ -37,6 +38,7 @@ export default function RootLayout({
             </ErrorBoundary>
           </DevAuthProvider>
         </AuthProvider>
+        <DevTools />
       </body>
     </html>
   )
