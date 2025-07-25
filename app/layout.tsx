@@ -4,6 +4,9 @@ import { AuthProvider } from '../components/AuthProvider'
 import { DevAuthProvider } from '../components/DevAuthProvider'
 import { DevTools } from '../components/DevTools'
 
+// Force dynamic rendering for all pages to avoid build-time issues
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'AdvanceWeekly - See beyond the busy.',
   description: 'Transform your weekly work into meaningful insights with AI-powered performance assessments.',
