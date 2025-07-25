@@ -127,7 +127,7 @@ export function Tooltip({
    * Arrow classes for different positions
    */
   const getArrowClasses = useCallback((): string => {
-    const baseArrow = 'absolute w-2 h-2 bg-gray-900 transform rotate-45'
+    const baseArrow = 'absolute w-2 h-2 bg-white border border-neutral-600/30 transform rotate-45'
     
     switch (actualPosition) {
       case 'top':
@@ -187,7 +187,7 @@ export function Tooltip({
             animation: 'fadeIn 0.2s ease-out'
           }}
         >
-          <div className="bg-gray-900 text-white text-xs rounded-md px-3 py-2 w-48 max-w-48 shadow-lg">
+          <div className="bg-white border border-neutral-600/30 shadow-lg text-neutral-900 text-xs rounded-md px-3 py-2 w-48 max-w-48">
             {content}
             {/* Arrow */}
             <div className={getArrowClasses()} />
