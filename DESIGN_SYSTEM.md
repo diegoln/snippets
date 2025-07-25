@@ -78,6 +78,11 @@ Mono: 14px / 24px, weight 500
 - `bg-primary-100` - Light primary tint
 - `bg-accent-500` - Accent background
 
+**Background Strategy:**
+- **Light-first approach**: Use light backgrounds with subtle differentiation
+- **No dark backgrounds**: Avoid `bg-neutral-900`, `bg-gray-900`, `bg-black` for surfaces
+- **Specialty backgrounds**: Code blocks, tooltips, and overlays use light variants with borders/shadows
+
 ### Typography
 - `text-heading-1` - H1 styles (32px/40px, 700)
 - `text-heading-2` - H2 styles (24px/32px, 600)
