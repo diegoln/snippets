@@ -25,7 +25,7 @@ The **development server** is the cornerstone of AdvanceWeekly's development wor
 
 ## System Architecture Diagram
 
-![System Architecture](docs/architecture-diagram.svg)
+![System Architecture](https://raw.githubusercontent.com/diegoln/snippets/main/docs/architecture-diagram.svg)
 
 The diagram illustrates the layered architecture with clear separation between:
 - **User Interface Layer**: Landing page, snippets, performance assessments, and integration management
