@@ -39,7 +39,7 @@ export default function MockSignInPage() {
         const onboardingKey = `user_${userId}_onboarded`
         const hasCompletedOnboarding = localStorage.getItem(onboardingKey) === 'true'
         
-        let userWithOnboarding = { 
+        const userWithOnboarding = { 
           ...user,
           hasCompletedOnboarding 
         }

@@ -86,7 +86,7 @@ export function LandingPage() {
               Weekly Snippets
             </h3>
             <p className="text-secondary leading-relaxed">
-              Capture your weekly accomplishments in a structured format. Never forget what you've achieved or lose track of your progress.
+              Capture your weekly accomplishments in a structured format. Never forget what you&apos;ve achieved or lose track of your progress.
             </p>
           </div>
 

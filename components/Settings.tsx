@@ -38,7 +38,7 @@ import type {
  */
 export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProps): JSX.Element {
   const isDev = process.env.NODE_ENV === 'development'
-  const devAuth = isDev ? useDevAuth() : { signOut: () => {} }
+  const devAuth = useDevAuth() // Always call hooks
   // Form state management with memoized initial state
   const initialFormState = useMemo<PerformanceSettings>(() => ({
     jobTitle: initialSettings.jobTitle || '',

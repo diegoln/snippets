@@ -60,7 +60,7 @@ interface SnippetEditorProps {
 export const AuthenticatedApp = (): JSX.Element => {
   const isDev = process.env.NODE_ENV === 'development'
   const { data: session } = useSession()
-  const devAuth = isDev ? useDevAuth() : { user: null, signOut: () => {} }
+  const devAuth = useDevAuth() // Always call hooks
   
   const currentUser = isDev ? devAuth.user : session?.user
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])

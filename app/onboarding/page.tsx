@@ -132,8 +132,8 @@ export default function OnboardingPage() {
             </svg>
           </div>
           <p className="text-lg text-secondary leading-relaxed mb-8">
-            You're now part of a community of professionals who are taking control of their career growth. 
-            Let's get you set up with everything you need to start tracking your weekly progress.
+            You&apos;re now part of a community of professionals who are taking control of their career growth. 
+            Let&apos;s get you set up with everything you need to start tracking your weekly progress.
           </p>
         </div>
       )
