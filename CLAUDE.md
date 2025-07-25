@@ -2,52 +2,17 @@
 
 ## Design System Reference
 
-This project follows a comprehensive design system that maintains visual consistency and professional aesthetics throughout the application. All new components and modifications should adhere to these established patterns.
+**🎨 For all design system information, refer to [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)**
 
-### Color Palette
+This project follows a comprehensive design system documented in the dedicated design system file. The design system includes:
+- Complete color palette and design tokens
+- Typography system and spacing guidelines  
+- Component patterns and interactive element styling
+- Brand assets and usage guidelines
+- Tailwind integration and CSS implementation
+- Accessibility requirements and testing specifications
 
-The design system uses semantic color naming with CSS custom properties:
-
-- **Primary Colors**: `text-primary-600`, `bg-primary-100`, `border-primary-600`
-- **Secondary Colors**: `text-secondary`, `bg-surface`
-- **Accent Colors**: `text-accent-500`, `bg-accent-500/10`, `border-accent-500`
-- **Neutral Colors**: `bg-neutral-100`, `border-neutral-600/30`, `text-neutral-900`
-
-### Component Classes
-
-#### Buttons
-- **Primary**: `btn-primary px-4 py-2 rounded-pill`
-- **Accent**: `btn-accent px-8 py-4 rounded-pill`
-- **With Shadow**: Add `shadow-elevation-1 hover:shadow-lg`
-
-#### Cards
-- **Standard**: `card p-6` or `card p-8`
-- **Background**: `bg-surface` or `bg-white`
-- **Borders**: `border-neutral-600/20` for subtle separators
-
-#### Layout
-- **Container**: `container mx-auto px-4`
-- **Grid**: `grid grid-cols-1 md:grid-cols-3 gap-8`
-- **Spacing**: Use consistent spacing with `mb-6`, `mt-8`, `space-y-4`
-
-#### Typography
-- **Headings**: `text-heading-2 text-primary` for section headers
-- **Body**: `text-secondary leading-relaxed` for descriptions
-- **Emphasis**: `font-semibold text-primary-600` for important text
-
-#### Interactive Elements
-- **Transitions**: `transition-advance` for smooth animations
-- **Hover States**: Consistent hover effects with color and shadow changes
-- **Focus States**: `focus:ring-2 focus:ring-accent-500 focus:ring-offset-2`
-
-### Authentication Design Patterns
-
-The authentication flow maintains design consistency:
-
-1. **Landing Page**: Hero section with centered logo, compelling headline, and prominent CTA
-2. **Auth Buttons**: Google OAuth styling with SVG icons and environment indicators
-3. **Onboarding**: Step indicators, progress visualization, and guided content
-4. **Loading States**: Consistent spinner components and loading messages
+All new components and modifications must adhere to the established patterns documented in the design system file.
 
 ### Component Structure
 
