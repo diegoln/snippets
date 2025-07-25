@@ -94,7 +94,7 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
       - '--set-secrets'
-      - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest'
+      - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
       - '--add-cloudsql-instances'
       - 'advanceweekly-prod:us-central1:advanceweekly-db'
       - '--execution-environment'
