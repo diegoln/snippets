@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '../../../lib/auth-utils'
 import { createUserDataService } from '../../../lib/user-scoped-data'
+import { isWeekInFuture, isValidWeekNumber } from '../../../lib/week-utils'
 
 /**
  * GET /api/snippets - Fetch all weekly snippets for the authenticated user
@@ -78,6 +79,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate weekNumber is a valid integer
+    if (!isValidWeekNumber(weekNumber)) {
+      return NextResponse.json(
+        { error: 'weekNumber must be a valid week number (1-53)' },
+        { status: 400 }
+      )
+    }
+
     // Calculate start and end dates for the week
     const currentYear = new Date().getFullYear()
     const startOfYear = new Date(currentYear, 0, 1)
@@ -86,10 +95,7 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
 
     // Prevent creation of future snippets
-    const now = new Date()
-    const currentWeekNumber = Math.ceil((Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + startOfYear.getDay() + 1) / 7)
-    
-    if (weekNumber > currentWeekNumber) {
+    if (isWeekInFuture(weekNumber)) {
       return NextResponse.json(
         { error: 'Cannot create snippets for future weeks' },
         { status: 400 }

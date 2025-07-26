@@ -11,6 +11,7 @@ import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
+import { getCurrentWeekNumber } from '../lib/week-utils'
 
 interface WeeklySnippet {
   id: string
@@ -167,10 +168,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [selectedSnippet, snippets])
 
   const getCurrentWeek = useCallback((): number => {
-    const now = new Date()
-    const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-    return Math.ceil((days + startOfYear.getDay() + 1) / 7)
+    return getCurrentWeekNumber()
   }, [])
 
   const formatDateRange = useCallback((startDate: string, endDate: string): string => {

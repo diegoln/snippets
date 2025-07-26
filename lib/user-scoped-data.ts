@@ -201,12 +201,13 @@ export class UserScopedDataService {
   async createSnippet(data: SnippetInput) {
     try {
       // Prevent creation of future snippets
-      const now = new Date()
-      const currentYear = now.getFullYear()
-      const startOfYear = new Date(currentYear, 0, 1)
-      const currentWeekNumber = Math.ceil((Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + startOfYear.getDay() + 1) / 7)
+      const { isWeekInFuture, isValidWeekNumber } = await import('./week-utils')
       
-      if (data.weekNumber > currentWeekNumber) {
+      if (!isValidWeekNumber(data.weekNumber)) {
+        throw new Error('weekNumber must be a valid week number (1-53)')
+      }
+      
+      if (isWeekInFuture(data.weekNumber)) {
         throw new Error('Cannot create snippets for future weeks')
       }
 
