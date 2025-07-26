@@ -468,8 +468,9 @@ export const AuthenticatedApp = (): JSX.Element => {
                   onClick={handleAddCurrentWeek}
                   className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
                   aria-label="Add current week snippet"
+                  title={`Add snippet for week ${getCurrentWeek()}`}
                 >
-                  + Add Current Week
+                  + Add Current Week (Week {getCurrentWeek()})
                 </button>
               </nav>
             </div>

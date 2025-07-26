@@ -85,6 +85,17 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
     const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
 
+    // Prevent creation of future snippets
+    const now = new Date()
+    const currentWeekNumber = Math.ceil((Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + startOfYear.getDay() + 1) / 7)
+    
+    if (weekNumber > currentWeekNumber) {
+      return NextResponse.json(
+        { error: 'Cannot create snippets for future weeks' },
+        { status: 400 }
+      )
+    }
+
     // Create user-scoped data service
     const dataService = createUserDataService(userId)
 

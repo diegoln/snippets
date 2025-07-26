@@ -200,6 +200,16 @@ export class UserScopedDataService {
    */
   async createSnippet(data: SnippetInput) {
     try {
+      // Prevent creation of future snippets
+      const now = new Date()
+      const currentYear = now.getFullYear()
+      const startOfYear = new Date(currentYear, 0, 1)
+      const currentWeekNumber = Math.ceil((Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000)) + startOfYear.getDay() + 1) / 7)
+      
+      if (data.weekNumber > currentWeekNumber) {
+        throw new Error('Cannot create snippets for future weeks')
+      }
+
       const snippet = await this.prisma.weeklySnippet.create({
         data: {
           ...data,
