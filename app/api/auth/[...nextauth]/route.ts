@@ -72,6 +72,16 @@ const providers = process.env.NODE_ENV === 'development'
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        authorization: {
+          params: {
+            scope: [
+              "openid",
+              "email", 
+              "profile",
+              "https://www.googleapis.com/auth/calendar.readonly"
+            ].join(" ")
+          }
+        }
       })
     ]
 
@@ -100,6 +110,14 @@ export const authOptions = {
         token.picture = user.image
         console.log('✅ JWT token updated with user data')
       }
+      
+      // Store Google OAuth tokens securely in database, not JWT
+      if (account && account.provider === 'google' && account.access_token) {
+        // Store tokens in database via Account model (handled by NextAuth adapter)
+        // Don't store in JWT for security reasons
+        console.log('✅ Google tokens will be stored securely via adapter')
+      }
+      
       return token
     },
     async session({ session, token }) {

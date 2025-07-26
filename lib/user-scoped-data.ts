@@ -353,6 +353,8 @@ export class UserScopedDataService {
           id: true,
           type: true,
           expiresAt: true,
+          lastSyncAt: true,
+          isActive: true,
           createdAt: true,
           updatedAt: true
         }
@@ -362,6 +364,63 @@ export class UserScopedDataService {
     } catch (error) {
       console.error('Error fetching integrations:', error)
       throw new Error('Failed to fetch integrations')
+    }
+  }
+
+  /**
+   * Create a new integration
+   */
+  async createIntegration(data: {
+    type: string
+    accessToken: string
+    refreshToken?: string | null
+    expiresAt?: Date | null
+    metadata?: any
+    isActive?: boolean
+  }) {
+    try {
+      const integration = await this.prisma.integration.create({
+        data: {
+          userId: this.userId,
+          type: data.type,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          expiresAt: data.expiresAt,
+          metadata: data.metadata || {},
+          isActive: data.isActive ?? true
+        },
+        select: {
+          id: true,
+          type: true,
+          isActive: true,
+          expiresAt: true,
+          lastSyncAt: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+
+      return integration
+    } catch (error) {
+      console.error('Error creating integration:', error)
+      throw new Error('Failed to create integration')
+    }
+  }
+
+  /**
+   * Delete an integration
+   */
+  async deleteIntegration(integrationId: string) {
+    try {
+      await this.prisma.integration.delete({
+        where: {
+          id: integrationId,
+          userId: this.userId // Ensure user can only delete their own integrations
+        }
+      })
+    } catch (error) {
+      console.error('Error deleting integration:', error)
+      throw new Error('Failed to delete integration')
     }
   }
 
