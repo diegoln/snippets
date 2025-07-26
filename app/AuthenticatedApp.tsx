@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
-import { useDevAuth } from '../components/DevAuthProvider'
 import { Settings } from '../components/Settings'
 import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
 import { ErrorBoundary } from '../components/ErrorBoundary'
@@ -58,11 +57,8 @@ interface SnippetEditorProps {
 }
 
 export const AuthenticatedApp = (): JSX.Element => {
-  const isDev = process.env.NODE_ENV === 'development'
   const { data: session } = useSession()
-  const devAuth = isDev ? useDevAuth() : { user: null, signOut: () => {} }
-  
-  const currentUser = isDev ? devAuth.user : session?.user
+  const currentUser = session?.user
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
@@ -318,11 +314,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [getCurrentWeek, snippets])
 
   const handleSignOut = () => {
-    if (isDev) {
-      devAuth.signOut()
-    } else {
-      signOut({ callbackUrl: '/' })
-    }
+    signOut({ callbackUrl: '/' })
   }
 
   return (

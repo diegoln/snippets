@@ -17,7 +17,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useSession } from 'next-auth/react'
-import { useDevAuth } from '../components/DevAuthProvider'
 import { LandingPage } from '../components/LandingPage'
 import { AuthenticatedApp } from './AuthenticatedApp'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -25,14 +24,19 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 /**
  * Main application root component that handles authentication routing
  * 
+ * Uses NextAuth sessions consistently in both development and production.
+ * Development uses mock credentials provider, production uses Google OAuth.
+ * 
  * @returns JSX element for the appropriate page based on auth state
  */
 export default function Home() {
   const { data: session, status } = useSession()
-  const { user, loading } = useDevAuth()
+
+  console.log('🏠 Root page - Session status:', status, 'Session:', session)
 
   // Show loading spinner while checking auth state
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
+    console.log('⏳ Root page - Loading session...')
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -40,12 +44,17 @@ export default function Home() {
     )
   }
 
-  // In development, use dev auth; in production, use NextAuth
-  const isAuthenticated = process.env.NODE_ENV === 'development' 
-    ? !!user 
-    : !!session
+  // Use NextAuth session consistently for both dev and production
+  const isAuthenticated = !!session?.user
 
-  // Show landing page for unauthenticated users, main app for authenticated users
-  return isAuthenticated ? <AuthenticatedApp /> : <LandingPage />
+  console.log('🔐 Root page - Is authenticated:', isAuthenticated)
+  
+  if (isAuthenticated) {
+    console.log('✅ Root page - Showing AuthenticatedApp for user:', session.user.name)
+    return <AuthenticatedApp />
+  } else {
+    console.log('👋 Root page - Showing LandingPage (no session)')
+    return <LandingPage />
+  }
 }
 

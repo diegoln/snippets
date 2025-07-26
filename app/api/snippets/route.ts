@@ -1,130 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { getMockDatabase, shouldUseMockDatabase } from '../../../lib/mock-data'
+import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { createUserDataService } from '../../../lib/user-scoped-data'
 
 /**
- * Prisma client singleton with lazy initialization
+ * GET /api/snippets - Fetch all weekly snippets for the authenticated user
  * 
- * This pattern prevents database connection attempts during build time,
- * which would cause Docker builds to fail. The client is only created
- * when DATABASE_URL is available (runtime) and when first accessed.
- * 
- * In production, DATABASE_URL comes from Google Secret Manager and
- * uses Cloud SQL Unix socket connection format:
- * postgresql://user:pass@localhost/db?host=/cloudsql/PROJECT:REGION:INSTANCE
- */
-let prisma: PrismaClient | null = null
-
-/**
- * Get or create the Prisma client instance
- * 
- * @returns PrismaClient instance or null if DATABASE_URL is not available
- */
-function getPrismaClient(): PrismaClient | null {
-  if (!prisma && process.env.DATABASE_URL) {
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL
-        }
-      }
-    })
-  }
-  return prisma
-}
-
-/**
- * GET /api/snippets - Fetch all weekly snippets for a user
- * Returns snippets ordered by week number (ascending)
+ * Uses session-based authentication to ensure users only see their own data.
+ * Returns snippets ordered by start date (most recent first).
  */
 export async function GET(request: NextRequest) {
   try {
-    // Use mock database for local development
-    if (shouldUseMockDatabase()) {
-      console.log('Using mock database for local development')
-      const mockDb = getMockDatabase()
-      const testUser = await mockDb.findUserByEmail('test@example.com')
-      
-      if (!testUser) {
-        return NextResponse.json(
-          { error: 'Test user not found' },
-          { status: 404 }
-        )
-      }
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
 
-      const snippets = await mockDb.findAllSnippets(testUser.id)
-      
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
+
+    try {
+      // Get snippets for the authenticated user
+      const snippets = await dataService.getSnippets()
+
       // Convert dates to ISO strings for JSON serialization
       const serializedSnippets = snippets.map(snippet => ({
-        ...snippet,
+        id: snippet.id,
+        weekNumber: snippet.weekNumber,
         startDate: snippet.startDate.toISOString().split('T')[0],
-        endDate: snippet.endDate.toISOString().split('T')[0]
+        endDate: snippet.endDate.toISOString().split('T')[0],
+        content: snippet.content,
+        extractedTasks: snippet.extractedTasks,
+        extractedMeetings: snippet.extractedMeetings,
+        aiSuggestions: snippet.aiSuggestions,
+        createdAt: snippet.createdAt.toISOString(),
+        updatedAt: snippet.updatedAt.toISOString()
       }))
 
       return NextResponse.json(serializedSnippets)
+    } finally {
+      await dataService.disconnect()
     }
-
-    // Use real database for production
-    const client = getPrismaClient()
-    if (!client) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    // For now, get snippets for the test user
-    // In production, this would be based on authenticated user session
-    const testUser = await client.user.findUnique({
-      where: { email: 'test@example.com' }
-    })
-
-    if (!testUser) {
-      return NextResponse.json(
-        { error: 'Test user not found. Run npm run setup:dev to initialize.' },
-        { status: 404 }
-      )
-    }
-
-    const snippets = await client.weeklySnippet.findMany({
-      where: { userId: testUser.id },
-      orderBy: { startDate: 'desc' }, // Most recent first
-      select: {
-        id: true,
-        weekNumber: true,
-        startDate: true,
-        endDate: true,
-        content: true
-      }
-    })
-
-    // Convert dates to ISO strings for JSON serialization
-    const serializedSnippets = snippets.map(snippet => ({
-      ...snippet,
-      startDate: snippet.startDate.toISOString().split('T')[0], // YYYY-MM-DD format
-      endDate: snippet.endDate.toISOString().split('T')[0]
-    }))
-
-    return NextResponse.json(serializedSnippets)
   } catch (error) {
     console.error('Error fetching snippets:', error)
     return NextResponse.json(
       { error: 'Failed to fetch snippets' },
       { status: 500 }
     )
-  } finally {
-    const client = getPrismaClient()
-    if (client) {
-      await client.$disconnect()
-    }
   }
 }
 
 /**
- * POST /api/snippets - Create a new weekly snippet
+ * POST /api/snippets - Create a new weekly snippet for the authenticated user
  */
 export async function POST(request: NextRequest) {
   try {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { weekNumber, content } = body
 
@@ -136,62 +78,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Use mock database for local development
-    if (shouldUseMockDatabase()) {
-      console.log('Using mock database for snippet creation')
-      const mockDb = getMockDatabase()
-      const testUser = await mockDb.findUserByEmail('test@example.com')
-      
-      if (!testUser) {
-        return NextResponse.json(
-          { error: 'Test user not found' },
-          { status: 404 }
-        )
-      }
-
-      // Calculate start and end dates for the week
-      const currentYear = new Date().getFullYear()
-      const startOfYear = new Date(currentYear, 0, 1)
-      const daysToAdd = (weekNumber - 1) * 7
-      const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
-      const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
-
-      const newSnippet = await mockDb.createSnippet({
-        userId: testUser.id,
-        weekNumber,
-        startDate,
-        endDate,
-        content
-      })
-
-      return NextResponse.json({
-        ...newSnippet,
-        startDate: newSnippet.startDate.toISOString().split('T')[0],
-        endDate: newSnippet.endDate.toISOString().split('T')[0]
-      })
-    }
-
-    // Use real database for production
-    const client = getPrismaClient()
-    if (!client) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    // For now, create for test user
-    const testUser = await client.user.findUnique({
-      where: { email: 'test@example.com' }
-    })
-
-    if (!testUser) {
-      return NextResponse.json(
-        { error: 'Test user not found' },
-        { status: 404 }
-      )
-    }
-
     // Calculate start and end dates for the week
     const currentYear = new Date().getFullYear()
     const startOfYear = new Date(currentYear, 0, 1)
@@ -199,40 +85,58 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)
     const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
 
-    const newSnippet = await client.weeklySnippet.create({
-      data: {
-        userId: testUser.id,
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
+
+    try {
+      const newSnippet = await dataService.createSnippet({
         weekNumber,
         startDate,
         endDate,
         content
-      }
-    })
+      })
 
-    return NextResponse.json({
-      ...newSnippet,
-      startDate: newSnippet.startDate.toISOString().split('T')[0],
-      endDate: newSnippet.endDate.toISOString().split('T')[0]
-    })
+      return NextResponse.json({
+        id: newSnippet.id,
+        weekNumber: newSnippet.weekNumber,
+        startDate: newSnippet.startDate.toISOString().split('T')[0],
+        endDate: newSnippet.endDate.toISOString().split('T')[0],
+        content: newSnippet.content,
+        createdAt: newSnippet.createdAt.toISOString(),
+        updatedAt: newSnippet.updatedAt.toISOString()
+      })
+    } finally {
+      await dataService.disconnect()
+    }
   } catch (error) {
     console.error('Error creating snippet:', error)
+    
+    // Return more detailed error in development
+    const errorMessage = process.env.NODE_ENV === 'development' && error instanceof Error
+      ? error.message
+      : 'Failed to create snippet'
+    
     return NextResponse.json(
-      { error: 'Failed to create snippet' },
+      { error: errorMessage },
       { status: 500 }
     )
-  } finally {
-    const client = getPrismaClient()
-    if (client) {
-      await client.$disconnect()
-    }
   }
 }
 
 /**
- * PUT /api/snippets - Update an existing snippet
+ * PUT /api/snippets - Update an existing snippet for the authenticated user
  */
 export async function PUT(request: NextRequest) {
   try {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { id, content } = body
 
@@ -243,55 +147,37 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Use mock database for local development
-    if (shouldUseMockDatabase()) {
-      console.log('Using mock database for snippet update')
-      const mockDb = getMockDatabase()
-      const updatedSnippet = await mockDb.updateSnippet(id, content)
-      
-      if (!updatedSnippet) {
-        return NextResponse.json(
-          { error: 'Snippet not found' },
-          { status: 404 }
-        )
-      }
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
+
+    try {
+      const updatedSnippet = await dataService.updateSnippet(id, content)
 
       return NextResponse.json({
-        ...updatedSnippet,
+        id: updatedSnippet.id,
+        weekNumber: updatedSnippet.weekNumber,
         startDate: updatedSnippet.startDate.toISOString().split('T')[0],
-        endDate: updatedSnippet.endDate.toISOString().split('T')[0]
+        endDate: updatedSnippet.endDate.toISOString().split('T')[0],
+        content: updatedSnippet.content,
+        updatedAt: updatedSnippet.updatedAt.toISOString()
       })
+    } finally {
+      await dataService.disconnect()
     }
-
-    // Use real database for production
-    const client = getPrismaClient()
-    if (!client) {
-      return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
-      )
-    }
-
-    const updatedSnippet = await client.weeklySnippet.update({
-      where: { id },
-      data: { content }
-    })
-
-    return NextResponse.json({
-      ...updatedSnippet,
-      startDate: updatedSnippet.startDate.toISOString().split('T')[0],
-      endDate: updatedSnippet.endDate.toISOString().split('T')[0]
-    })
   } catch (error) {
     console.error('Error updating snippet:', error)
+    
+    // Handle specific error cases
+    if (error instanceof Error && error.message.includes('access denied')) {
+      return NextResponse.json(
+        { error: 'Snippet not found or access denied' },
+        { status: 404 }
+      )
+    }
+    
     return NextResponse.json(
       { error: 'Failed to update snippet' },
       { status: 500 }
     )
-  } finally {
-    const client = getPrismaClient()
-    if (client) {
-      await client.$disconnect()
-    }
   }
 }
