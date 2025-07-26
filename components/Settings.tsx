@@ -18,6 +18,7 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 import { Tooltip } from './Tooltip'
+import { Integrations } from './Integrations'
 import { useFileUpload } from '../hooks/useFileUpload'
 import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
 import type { 
@@ -45,6 +46,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     performanceFeedbackFile: initialSettings.performanceFeedbackFile || null
   }), [initialSettings])
 
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'integrations'>('performance')
   const [settings, setSettings] = useState<PerformanceSettings>(initialFormState)
   const [errors, setErrors] = useState<SettingsErrors>({})
   const [formState, setFormState] = useState<FormState>({
@@ -215,7 +217,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Performance Cycle Settings</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
             <button
               onClick={handleClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -227,14 +229,43 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
             </button>
           </div>
 
-          {/* Submit Error Display */}
-          {formState.submitError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm text-red-700">{formState.submitError}</p>
-            </div>
-          )}
+          {/* Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveSettingsTab('performance')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeSettingsTab === 'performance'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Performance
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('integrations')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeSettingsTab === 'integrations'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Integrations
+              </button>
+            </nav>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Tab Content */}
+          {activeSettingsTab === 'performance' ? (
+            <>
+              {/* Submit Error Display */}
+              {formState.submitError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-700">{formState.submitError}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Title Field */}
             <div>
               <label htmlFor={FORM_FIELDS.JOB_TITLE} className="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -464,7 +495,11 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                 {formState.isSubmitting ? 'Saving...' : 'Save Settings'}
               </button>
             </div>
-          </form>
+              </form>
+            </>
+          ) : (
+            <Integrations />
+          )}
         </div>
       </div>
     </div>

@@ -41,7 +41,7 @@ npm run dev
     │   └─→ Dev-specific Features:
     │       ├─→ Mock Authentication (DevAuthProvider)
     │       ├─→ localStorage Sessions
-    │       ├─→ SQLite Database (dev.db)
+    │       ├─→ PostgreSQL Database (Docker)
     │       └─→ Development Error Overlay
     │
     └─→ Development Tools
@@ -83,7 +83,7 @@ npm run dev
 | Feature | Dev Server | Production |
 |---------|------------|------------|
 | Port | 3000 (configurable) | Cloud Run managed |
-| Database | SQLite (dev.db) | PostgreSQL |
+| Database | PostgreSQL (Docker) | PostgreSQL (Cloud SQL) |
 | Auth | Mock (localStorage) | Google OAuth |
 | Build | Development (unoptimized) | Production (optimized) |
 | Errors | Detailed with stack traces | User-friendly messages |
