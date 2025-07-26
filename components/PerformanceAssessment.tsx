@@ -478,7 +478,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       {/* Draft Viewer Modal */}
       {state.selectedAssessment && state.selectedAssessment.generatedDraft && !state.selectedAssessment.isGenerating && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-neutral-600/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"

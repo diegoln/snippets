@@ -44,17 +44,9 @@ export default function Home() {
     )
   }
 
-  // Use NextAuth session consistently for both dev and production
-  const isAuthenticated = !!session?.user
-
-  console.log('🔐 Root page - Is authenticated:', isAuthenticated)
-  
-  if (isAuthenticated) {
-    console.log('✅ Root page - Showing AuthenticatedApp for user:', session.user.name)
-    return <AuthenticatedApp />
-  } else {
-    console.log('👋 Root page - Showing LandingPage (no session)')
-    return <LandingPage />
-  }
+  // IMPORTANT: For the root page, we ALWAYS show the landing page
+  // The user must explicitly navigate to /dashboard or other authenticated routes
+  // This prevents the auto-redirect issue where having a session shows the app immediately
+  return <LandingPage />
 }
 

@@ -84,7 +84,7 @@ const markdownComponents = {
   },
   
   pre: ({ children }: { children: React.ReactNode }) => (
-    <pre className="bg-neutral-900 text-neutral-100 p-4 rounded-card overflow-x-auto mb-4">
+    <pre className="bg-neutral-100 border border-neutral-600/20 text-neutral-900 p-4 rounded-card overflow-x-auto mb-4">
       {children}
     </pre>
   ),

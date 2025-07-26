@@ -119,12 +119,19 @@ export const authOptions = {
     },
     async signIn({ user, account, profile }) {
       console.log('🔧 SignIn Callback - user:', user, 'account:', account)
-      // Always allow sign in for development
+      // Always allow sign in for development and production
       return true
     },
     async redirect({ url, baseUrl }) {
       console.log('🔧 Redirect Callback - url:', url, 'baseUrl:', baseUrl)
-      // Custom redirect logic
+      
+      // Custom redirect logic for onboarding flow
+      if (process.env.NODE_ENV === 'production') {
+        // In production, new users should go to onboarding
+        return `${baseUrl}/onboarding`
+      }
+      
+      // Development uses our custom flow
       if (url.startsWith('/')) return `${baseUrl}${url}`
       if (new URL(url).origin === baseUrl) return url
       return `${baseUrl}/dashboard`
