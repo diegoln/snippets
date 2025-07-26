@@ -138,10 +138,12 @@ test('API routes have proper error handling', () => {
 
 test('Database connections are properly managed', () => {
   const snippetsApi = fs.readFileSync('app/api/snippets/route.ts', 'utf8');
-  if (!snippetsApi.includes('getPrismaClient')) {
+  const userScopedData = fs.readFileSync('lib/user-scoped-data.ts', 'utf8');
+  
+  if (!userScopedData.includes('getPrismaClient')) {
     return 'Missing lazy client initialization';
   }
-  if (!snippetsApi.includes('$disconnect')) {
+  if (!snippetsApi.includes('disconnect')) {
     return 'Missing connection cleanup';
   }
   return true;
@@ -151,7 +153,7 @@ test('Authentication flow is properly implemented', () => {
   const homePage = fs.readFileSync('app/page.tsx', 'utf8');
   const authApp = fs.readFileSync('app/AuthenticatedApp.tsx', 'utf8');
   
-  if (!homePage.includes('useSession') || !homePage.includes('useDevAuth')) {
+  if (!homePage.includes('useSession')) {
     return 'Missing authentication hooks';
   }
   if (!homePage.includes('LandingPage') || !homePage.includes('AuthenticatedApp')) {

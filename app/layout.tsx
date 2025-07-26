@@ -1,7 +1,6 @@
 import './globals.css'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { AuthProvider } from '../components/AuthProvider'
-import { DevAuthProvider } from '../components/DevAuthProvider'
 import { DevTools } from '../components/DevTools'
 
 export const metadata = {
@@ -30,13 +29,11 @@ export default function RootLayout({
           Skip to main content
         </a>
         <AuthProvider>
-          <DevAuthProvider>
-            <ErrorBoundary>
-              <main id="main-content">
-                {children}
-              </main>
-            </ErrorBoundary>
-          </DevAuthProvider>
+          <ErrorBoundary>
+            <main id="main-content">
+              {children}
+            </main>
+          </ErrorBoundary>
         </AuthProvider>
         <DevTools />
       </body>

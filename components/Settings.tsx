@@ -17,7 +17,6 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
-import { useDevAuth } from './DevAuthProvider'
 import { Tooltip } from './Tooltip'
 import { useFileUpload } from '../hooks/useFileUpload'
 import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
@@ -37,8 +36,6 @@ import type {
  * with proper validation, help tooltips, and accessibility features.
  */
 export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProps): JSX.Element {
-  const isDev = process.env.NODE_ENV === 'development'
-  const devAuth = isDev ? useDevAuth() : { signOut: () => {} }
   // Form state management with memoized initial state
   const initialFormState = useMemo<PerformanceSettings>(() => ({
     jobTitle: initialSettings.jobTitle || '',
@@ -442,13 +439,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
               <h3 className="text-lg font-medium text-gray-900 mb-4">Account</h3>
               <button
                 type="button"
-                onClick={() => {
-                  if (isDev) {
-                    devAuth.signOut()
-                  } else {
-                    signOut({ callbackUrl: '/' })
-                  }
-                }}
+                onClick={() => signOut({ callbackUrl: '/' })}
                 className="px-4 py-2 text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 Sign Out
