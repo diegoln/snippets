@@ -200,6 +200,17 @@ export class UserScopedDataService {
    */
   async createSnippet(data: SnippetInput) {
     try {
+      // Prevent creation of future snippets
+      const { isWeekInFuture, isValidWeekNumber } = await import('./week-utils')
+      
+      if (!isValidWeekNumber(data.weekNumber)) {
+        throw new Error('weekNumber must be a valid week number (1-53)')
+      }
+      
+      if (isWeekInFuture(data.weekNumber)) {
+        throw new Error('Cannot create snippets for future weeks')
+      }
+
       const snippet = await this.prisma.weeklySnippet.create({
         data: {
           ...data,

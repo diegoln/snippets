@@ -11,6 +11,7 @@ import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
+import { getCurrentWeekNumber } from '../lib/week-utils'
 
 interface WeeklySnippet {
   id: string
@@ -167,10 +168,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [selectedSnippet, snippets])
 
   const getCurrentWeek = useCallback((): number => {
-    const now = new Date()
-    const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-    return Math.ceil((days + startOfYear.getDay() + 1) / 7)
+    return getCurrentWeekNumber()
   }, [])
 
   const formatDateRange = useCallback((startDate: string, endDate: string): string => {
@@ -468,8 +466,9 @@ export const AuthenticatedApp = (): JSX.Element => {
                   onClick={handleAddCurrentWeek}
                   className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
                   aria-label="Add current week snippet"
+                  title={`Add snippet for week ${getCurrentWeek()}`}
                 >
-                  + Add Current Week
+                  + Add Current Week (Week {getCurrentWeek()})
                 </button>
               </nav>
             </div>

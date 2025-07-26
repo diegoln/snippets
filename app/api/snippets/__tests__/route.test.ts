@@ -3,7 +3,7 @@
  * Tests that the API returns data in reverse chronological order
  */
 
-import { GET, PUT } from '../route'
+import { GET, POST, PUT } from '../route'
 import { NextRequest } from 'next/server'
 
 // Mock Prisma
@@ -13,6 +13,7 @@ const mockPrisma = {
   },
   weeklySnippet: {
     findMany: jest.fn(),
+    create: jest.fn(),
     update: jest.fn()
   },
   $disconnect: jest.fn()
@@ -196,6 +197,317 @@ describe('/api/snippets', () => {
         endDate: '2025-07-25',
         content: 'Test content for week 30'
       })
+    })
+  })
+
+  describe('POST /api/snippets', () => {
+    beforeEach(() => {
+      // Mock the current date to be predictable for tests
+      jest.useFakeTimers()
+      jest.setSystemTime(new Date('2025-07-26T10:00:00.000Z')) // Week 30 of 2025
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('should create snippet for current week successfully', async () => {
+      const newSnippet = {
+        id: 'snippet-new',
+        weekNumber: 30,
+        startDate: new Date('2025-07-21'),
+        endDate: new Date('2025-07-25'),
+        content: '## Done\n\n- Test task\n\n## Next\n\n- Next task',
+        createdAt: new Date('2025-07-26T10:00:00.000Z'),
+        updatedAt: new Date('2025-07-26T10:00:00.000Z')
+      }
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+      mockPrisma.weeklySnippet.create.mockResolvedValue(newSnippet)
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30,
+          content: '## Done\n\n- Test task\n\n## Next\n\n- Next task'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(mockPrisma.weeklySnippet.create).toHaveBeenCalledWith({
+        data: {
+          weekNumber: 30,
+          startDate: expect.any(Date),
+          endDate: expect.any(Date),
+          content: '## Done\n\n- Test task\n\n## Next\n\n- Next task',
+          userId: 'user-1'
+        },
+        select: {
+          id: true,
+          weekNumber: true,
+          startDate: true,
+          endDate: true,
+          content: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      })
+
+      expect(data).toEqual({
+        id: 'snippet-new',
+        weekNumber: 30,
+        startDate: '2025-07-21',
+        endDate: '2025-07-25',
+        content: '## Done\n\n- Test task\n\n## Next\n\n- Next task',
+        createdAt: '2025-07-26T10:00:00.000Z',
+        updatedAt: '2025-07-26T10:00:00.000Z'
+      })
+    })
+
+    it('should create snippet for past week successfully', async () => {
+      const newSnippet = {
+        id: 'snippet-past',
+        weekNumber: 29,
+        startDate: new Date('2025-07-14'),
+        endDate: new Date('2025-07-18'),
+        content: 'Past week content',
+        createdAt: new Date('2025-07-26T10:00:00.000Z'),
+        updatedAt: new Date('2025-07-26T10:00:00.000Z')
+      }
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+      mockPrisma.weeklySnippet.create.mockResolvedValue(newSnippet)
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 29, // Past week
+          content: 'Past week content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.weekNumber).toBe(29)
+    })
+
+    it('should reject future week with 400 error', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 31, // Future week (current is 30)
+          content: 'Future content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Cannot create snippets for future weeks')
+      expect(mockPrisma.weeklySnippet.create).not.toHaveBeenCalled()
+    })
+
+    it('should reject far future week with 400 error', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 52, // Way in the future
+          content: 'Far future content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Cannot create snippets for future weeks')
+      expect(mockPrisma.weeklySnippet.create).not.toHaveBeenCalled()
+    })
+
+    it('should return 400 if weekNumber is missing', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          content: 'Content without week number'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('weekNumber and content are required')
+    })
+
+    it('should return 400 for invalid week numbers', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 0, // Invalid week number
+          content: 'Content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('weekNumber must be a valid week number (1-53)')
+    })
+
+    it('should return 400 for negative week numbers', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: -1, // Invalid week number
+          content: 'Content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('weekNumber must be a valid week number (1-53)')
+    })
+
+    it('should return 400 if content is missing', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('weekNumber and content are required')
+    })
+
+    it('should return 401 if user not authenticated', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30,
+          content: 'Content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(404)
+      expect(data.error).toBe('Test user not found. Run npm run setup:dev to initialize.')
+    })
+
+    it('should handle database errors gracefully', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+      mockPrisma.weeklySnippet.create.mockRejectedValue(new Error('Database error'))
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30,
+          content: 'Content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toContain('Failed to create snippet')
+    })
+
+    it('should calculate correct start and end dates for week', async () => {
+      const newSnippet = {
+        id: 'snippet-dates',
+        weekNumber: 30,
+        startDate: new Date('2025-07-21'), // Monday of week 30
+        endDate: new Date('2025-07-25'),   // Friday of week 30
+        content: 'Test content',
+        createdAt: new Date('2025-07-26T10:00:00.000Z'),
+        updatedAt: new Date('2025-07-26T10:00:00.000Z')
+      }
+
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'user-1',
+        email: 'test@example.com'
+      })
+      mockPrisma.weeklySnippet.create.mockResolvedValue(newSnippet)
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30,
+          content: 'Test content'
+        })
+      })
+
+      const response = await POST(request)
+      await response.json()
+
+      // Verify the dates passed to create are correct
+      const createCall = mockPrisma.weeklySnippet.create.mock.calls[0][0]
+      const startDate = createCall.data.startDate
+      const endDate = createCall.data.endDate
+
+      // Should be Monday to Friday
+      expect(startDate.getDay()).toBe(1) // Monday
+      expect(endDate.getDay()).toBe(5)   // Friday
+      
+      // End date should be 4 days after start date
+      const daysDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+      expect(daysDiff).toBe(4)
     })
   })
 
