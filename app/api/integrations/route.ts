@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../lib/auth-utils'
 import { createUserDataService } from '../../../lib/user-scoped-data'
-// import { GoogleCalendarIntegration } from '../../../lib/integrations/providers/GoogleCalendarIntegration'
+import { GoogleCalendarService } from '../../../lib/calendar-integration'
+
+// Input validation schemas
+const ConnectIntegrationSchema = z.object({
+  type: z.literal('google_calendar')
+})
 
 /**
- * GET /api/integrations - Get user's integration settings
+ * GET /api/integrations - Get user's integrations
  * GET /api/integrations?test=true - Test Google Calendar integration
- * 
- * Returns all configured integrations for the authenticated user
- * Or tests the Google Calendar integration if test=true
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const isTest = searchParams.get('test') === 'true'
     
-    // Handle test request
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Handle test request with mock data
     if (isTest) {
       try {
-        // Get current week dates
         const now = new Date()
         const weekStart = new Date(now)
         weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1) // Monday
@@ -28,83 +38,42 @@ export async function GET(request: NextRequest) {
         weekEnd.setDate(weekEnd.getDate() + 4) // Friday
         weekEnd.setHours(23, 59, 59, 999)
 
-        // Create simple mock events without using date-fns
-        const mockEvents = [
-          {
-            id: 'test-event-1',
-            summary: 'Sprint Planning',
-            description: 'Weekly sprint planning session',
-            start: { dateTime: weekStart.toISOString() },
-            end: { dateTime: new Date(weekStart.getTime() + 2 * 60 * 60 * 1000).toISOString() },
-            attendees: [
-              { email: 'john@company.com', displayName: 'John Developer' },
-              { email: 'manager@company.com', displayName: 'Team Manager' }
-            ],
-            status: 'confirmed'
-          },
-          {
-            id: 'test-event-2',
-            summary: '1:1 with Manager',
-            description: 'Weekly check-in meeting',
-            start: { dateTime: new Date(weekStart.getTime() + 24 * 60 * 60 * 1000).toISOString() },
-            end: { dateTime: new Date(weekStart.getTime() + 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString() },
-            attendees: [
-              { email: 'john@company.com', displayName: 'John Developer' },
-              { email: 'manager@company.com', displayName: 'Team Manager' }
-            ],
-            status: 'confirmed'
-          }
-        ]
+        const mockData = GoogleCalendarService.generateMockData({
+          weekStart,
+          weekEnd,
+          userId
+        })
 
         return NextResponse.json({
           success: true,
-          message: 'Google Calendar integration test successful (basic)',
+          message: 'Google Calendar integration test successful',
           integration: {
             type: 'google_calendar',
             connectionStatus: true,
             mockMode: true
           },
           weekData: {
-            weekNumber: Math.ceil((weekStart.getTime() - new Date(weekStart.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)),
-            year: weekStart.getFullYear(),
             dateRange: {
               start: weekStart.toISOString(),
               end: weekEnd.toISOString()
             },
-            events: {
-              total: mockEvents.length,
-              samples: mockEvents.map(event => ({
-                summary: event.summary,
-                start: event.start.dateTime,
-                attendees: event.attendees?.length || 0
-              }))
-            },
-            mockEventsGenerated: mockEvents.length
+            ...mockData
           }
         })
-      } catch (testError) {
-        console.error('Test error:', testError)
+      } catch (error) {
+        console.error('Integration test error:', error)
         return NextResponse.json({
           success: false,
           error: 'Integration test failed',
-          details: testError instanceof Error ? testError.message : 'Unknown error',
-          stack: testError instanceof Error ? testError.stack : undefined
+          details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 })
       }
     }
 
-    const userId = await getUserIdFromRequest(request)
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
+    // Get user's integrations from database
     const dataService = createUserDataService(userId)
 
     try {
-      // Get user's integration settings from database
       const integrations = await dataService.getIntegrations()
 
       return NextResponse.json({
@@ -129,9 +98,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/integrations/google-calendar/connect
- * 
- * Enable Google Calendar integration for the user
+ * POST /api/integrations - Create new integration
  */
 export async function POST(request: NextRequest) {
   try {
@@ -143,27 +110,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { type } = body
-
-    if (type !== 'google_calendar') {
+    // Validate request body
+    let body
+    try {
+      body = await request.json()
+    } catch {
       return NextResponse.json(
-        { error: 'Only Google Calendar integration is currently supported' },
+        { error: 'Invalid JSON in request body' },
         { status: 400 }
       )
     }
 
+    const validationResult = ConnectIntegrationSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid request data',
+          details: validationResult.error.errors
+        },
+        { status: 400 }
+      )
+    }
+
+    const { type } = validationResult.data
+
     const dataService = createUserDataService(userId)
 
     try {
-      // For now, we'll create a placeholder integration
-      // In production, this would handle the OAuth flow
+      // Check if integration already exists
+      const existingIntegrations = await dataService.getIntegrations()
+      const existingIntegration = existingIntegrations.find(i => i.type === type)
+      
+      if (existingIntegration) {
+        return NextResponse.json(
+          { error: 'Integration already exists for this service' },
+          { status: 409 }
+        )
+      }
+
+      // Create placeholder integration (OAuth flow would happen here in production)
       const integration = await dataService.createIntegration({
         type: 'google_calendar',
-        accessToken: 'placeholder-token', // Will be replaced with real OAuth tokens
+        accessToken: 'placeholder-token', // Would be real OAuth token in production
         refreshToken: null,
         expiresAt: null,
-        metadata: {},
+        metadata: { 
+          status: 'placeholder',
+          note: 'This is a development placeholder. Real OAuth implementation needed for production.'
+        },
         isActive: true
       })
 
@@ -183,6 +177,51 @@ export async function POST(request: NextRequest) {
     console.error('Error creating integration:', error)
     return NextResponse.json(
       { error: 'Failed to create integration' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * DELETE /api/integrations/[id] - Remove integration
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const integrationId = searchParams.get('id')
+    
+    if (!integrationId) {
+      return NextResponse.json(
+        { error: 'Integration ID required' },
+        { status: 400 }
+      )
+    }
+
+    const dataService = createUserDataService(userId)
+
+    try {
+      // Delete integration (this would also revoke OAuth tokens in production)
+      await dataService.deleteIntegration(integrationId)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Integration removed successfully'
+      })
+    } finally {
+      await dataService.disconnect()
+    }
+  } catch (error) {
+    console.error('Error deleting integration:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete integration' },
       { status: 500 }
     )
   }

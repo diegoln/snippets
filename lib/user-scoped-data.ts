@@ -408,6 +408,23 @@ export class UserScopedDataService {
   }
 
   /**
+   * Delete an integration
+   */
+  async deleteIntegration(integrationId: string) {
+    try {
+      await this.prisma.integration.delete({
+        where: {
+          id: integrationId,
+          userId: this.userId // Ensure user can only delete their own integrations
+        }
+      })
+    } catch (error) {
+      console.error('Error deleting integration:', error)
+      throw new Error('Failed to delete integration')
+    }
+  }
+
+  /**
    * Create or update an integration
    */
   async upsertIntegration(type: string, accessToken: string, refreshToken?: string, expiresAt?: Date) {

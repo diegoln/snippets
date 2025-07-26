@@ -17,6 +17,11 @@ interface Integration {
   createdAt: string
 }
 
+interface ApiErrorResponse {
+  error: string
+  details?: any
+}
+
 export const Integrations = (): JSX.Element => {
   const [integrations, setIntegrations] = useState<Integration[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -44,8 +49,6 @@ export const Integrations = (): JSX.Element => {
   const handleConnectCalendar = async () => {
     setIsConnecting(true)
     try {
-      // For now, create a placeholder integration
-      // In production, this would trigger OAuth flow
       const response = await fetch('/api/integrations', {
         method: 'POST',
         headers: {
@@ -57,7 +60,6 @@ export const Integrations = (): JSX.Element => {
       })
 
       if (response.ok) {
-        const data = await response.json()
         // Refresh integrations list
         const refreshResponse = await fetch('/api/integrations')
         if (refreshResponse.ok) {
@@ -65,10 +67,14 @@ export const Integrations = (): JSX.Element => {
           setIntegrations(refreshData.integrations || [])
         }
       } else {
-        console.error('Failed to connect calendar')
+        const errorData = await response.json()
+        console.error('Failed to connect calendar:', errorData.error)
+        // In a real app, show user-friendly error message
+        alert(`Failed to connect calendar: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error connecting calendar:', error)
+      alert('Failed to connect calendar. Please try again.')
     } finally {
       setIsConnecting(false)
     }

@@ -111,12 +111,11 @@ export const authOptions = {
         console.log('✅ JWT token updated with user data')
       }
       
-      // Store Google OAuth tokens for calendar access
-      if (account && account.provider === 'google') {
-        token.accessToken = account.access_token
-        token.refreshToken = account.refresh_token
-        token.expiresAt = account.expires_at
-        console.log('✅ Google tokens stored in JWT')
+      // Store Google OAuth tokens securely in database, not JWT
+      if (account && account.provider === 'google' && account.access_token) {
+        // Store tokens in database via Account model (handled by NextAuth adapter)
+        // Don't store in JWT for security reasons
+        console.log('✅ Google tokens will be stored securely via adapter')
       }
       
       return token
