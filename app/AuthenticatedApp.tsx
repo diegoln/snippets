@@ -443,6 +443,27 @@ export const AuthenticatedApp = (): JSX.Element => {
                   </div>
                 )}
                 
+                {/* Calendar Integration Prompt */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start space-x-3">
+                    <svg className="flex-shrink-0 w-5 h-5 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">Get more from your snippets</h4>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Connect your Google Calendar to automatically include meeting context in your weekly snippets.
+                      </p>
+                      <button
+                        onClick={() => setShowSettings(true)}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                      >
+                        Connect calendar in Settings →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
                 <button 
                   onClick={handleAddCurrentWeek}
                   className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
@@ -506,6 +527,7 @@ export const AuthenticatedApp = (): JSX.Element => {
             />
           </ErrorBoundary>
         )}
+
 
         {showSettings && (
           <Settings

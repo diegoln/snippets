@@ -72,6 +72,16 @@ const providers = process.env.NODE_ENV === 'development'
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        authorization: {
+          params: {
+            scope: [
+              "openid",
+              "email", 
+              "profile",
+              "https://www.googleapis.com/auth/calendar.readonly"
+            ].join(" ")
+          }
+        }
       })
     ]
 
@@ -100,6 +110,15 @@ export const authOptions = {
         token.picture = user.image
         console.log('✅ JWT token updated with user data')
       }
+      
+      // Store Google OAuth tokens for calendar access
+      if (account && account.provider === 'google') {
+        token.accessToken = account.access_token
+        token.refreshToken = account.refresh_token
+        token.expiresAt = account.expires_at
+        console.log('✅ Google tokens stored in JWT')
+      }
+      
       return token
     },
     async session({ session, token }) {

@@ -110,6 +110,9 @@ model Integration {
   accessToken  String
   refreshToken String?
   expiresAt    DateTime?
+  isActive     Boolean @default(true)
+  lastSyncAt   DateTime?
+  metadata     Json @default("{}")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
