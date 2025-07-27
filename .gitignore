@@ -36,6 +36,7 @@ yarn-error.log*
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
+prisma/schema.prisma  # Generated from template
 
 # Logs
 logs
