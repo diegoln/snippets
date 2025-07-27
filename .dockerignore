@@ -69,8 +69,9 @@ docker-compose.yml
 terraform/
 aws-lambda/
 
-# Scripts not needed in container
+# Scripts not needed in container  
 scripts/
+!scripts/generate-schema.js
 deploy*.sh
 quick-deploy.sh
 get-docker.sh
