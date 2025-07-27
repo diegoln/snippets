@@ -1,0 +1,75 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+  SERVICE_NAME: advanceweekly
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      - name: Submit build to Cloud Build
+        run: |
+          gcloud builds submit \
+            --config=cloudbuild.yaml \
+            --project=$PROJECT_ID
+
+      - name: Update OAuth redirect URIs
+        run: |
+          # Make the script executable
+          chmod +x ./scripts/update-oauth-uris.sh
+          
+          # Run the OAuth URI update script
+          ./scripts/update-oauth-uris.sh
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ env.GOOGLE_OAUTH_CLIENT_ID }}
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+
+      - name: Verify deployment
+        run: |
+          # Get the service URL
+          SERVICE_URL=$(gcloud run services describe $SERVICE_NAME \
+            --region=$REGION \
+            --project=$PROJECT_ID \
+            --format="value(status.url)")
+          
+          echo "Service deployed to: $SERVICE_URL"
+          
+          # Wait for service to be ready
+          sleep 10
+          
+          # Check if service is responding
+          if curl -f -s -o /dev/null "$SERVICE_URL"; then
+            echo "✅ Service is responding successfully!"
+          else
+            echo "❌ Service health check failed"
+            exit 1
+          fi

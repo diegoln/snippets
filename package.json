@@ -17,7 +17,17 @@
     "test:ci": "node run-basic-tests.js && node validate-project.js",
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
-    "test:jest:coverage": "jest --coverage"
+    "test:jest:coverage": "jest --coverage",
+    "update-oauth-uris": "./scripts/update-oauth-uris.sh",
+    "open-oauth-setup": "./scripts/open-oauth-setup.sh", 
+    "setup-domain": "./scripts/setup-custom-domain.sh",
+    "setup-oauth-domain": "./scripts/update-oauth-custom-domain.sh",
+    "setup-oauth-2025": "./scripts/update-oauth-2025.sh",
+    "oauth-diagnostic": "./scripts/oauth-diagnostic.sh",
+    "deep-oauth-debug": "./scripts/deep-oauth-debug.sh",
+    "test-oauth-different-account": "./scripts/test-oauth-different-account.sh",
+    "fix-production-database": "./scripts/fix-production-database.sh",
+    "setup-cloud-sql": "./scripts/setup-cloud-sql.sh"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

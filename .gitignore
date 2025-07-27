@@ -108,3 +108,7 @@ temp/
 *.tfstate.backup
 *.tfvars
 .terraform.lock.hcl
+
+# OAuth configuration backups
+.env.local.backup
+.oauth-config.local.json

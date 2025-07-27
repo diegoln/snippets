@@ -1,0 +1,18 @@
+{
+  "project": {
+    "id": "advanceweekly-prod",
+    "defaultRegion": "us-central1",
+    "serviceName": "advanceweekly"
+  },
+  "oauth": {
+    "clientIdEnvVars": ["GOOGLE_OAUTH_CLIENT_ID", "GOOGLE_CLIENT_ID"],
+    "redirectUris": {
+      "development": "http://localhost:3000/api/auth/callback/google",
+      "production": "{SERVICE_URL}/api/auth/callback/google"
+    }
+  },
+  "environments": {
+    "local": [".env.local", ".env"],
+    "deploy": ["deploy.sh", "terraform/terraform.tfvars"]
+  }
+}
