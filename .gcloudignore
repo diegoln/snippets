@@ -85,8 +85,9 @@ terraform/
 *.tfstate.backup
 .terraform/
 
-# Scripts (not needed for build)
+# Scripts (not needed for build, except schema generation)
 scripts/
+!scripts/generate-schema.js
 deploy.sh
 quick-deploy.sh
 get-docker.sh
