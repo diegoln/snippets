@@ -1,10 +1,15 @@
 'use client'
 
-// Force dynamic rendering to avoid build-time issues with localStorage
-export const dynamic = 'force-dynamic'
+/**
+ * Mock Sign-In Page for Development
+ * 
+ * This page provides a development-only interface for testing with multiple users.
+ * It integrates with NextAuth's credentials provider to create proper session tokens
+ * that work with our authentication utilities.
+ */
 
+import { signIn } from 'next-auth/react'
 import { useState } from 'react'
-import { useDevAuth } from '../../components/DevAuthProvider'
 import { Logo } from '../../components/Logo'
 
 const mockUsers = [
@@ -12,58 +17,61 @@ const mockUsers = [
     id: '1',
     name: 'John Developer',
     email: 'john@example.com',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
+    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+    role: 'Senior Software Engineer'
   },
   {
     id: '2', 
     name: 'Sarah Engineer',
     email: 'sarah@example.com',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b9f2d30c?w=100&h=100&fit=crop&crop=face'
+    image: 'https://images.unsplash.com/photo-1494790108755-2616b9f2d30c?w=100&h=100&fit=crop&crop=face',
+    role: 'Staff Engineer'
   },
   {
     id: '3',
     name: 'Alex Designer',
     email: 'alex@example.com', 
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+    role: 'Senior Product Designer'
   }
 ]
 
 export default function MockSignInPage() {
-  const [isLoading, setIsLoading] = useState<string | null>(null)
-  const { signIn } = useDevAuth()
+  const [signingIn, setSigningIn] = useState<string | null>(null)
 
   const handleSignIn = async (userId: string) => {
-    console.log('Sign in clicked for user:', userId)
-    setIsLoading(userId)
     try {
-      const user = mockUsers.find(u => u.id === userId)
-      if (user) {
-        // Check if this specific user has already completed onboarding
-        const onboardingKey = `user_${userId}_onboarded`
-        const hasCompletedOnboarding = localStorage.getItem(onboardingKey) === 'true'
+      setSigningIn(userId)
+      
+      console.log('🔐 Starting sign-in for user:', userId)
+      
+      // Use redirect: false to control the redirect manually
+      const result = await signIn('credentials', {
+        userId,
+        callbackUrl: '/dashboard',
+        redirect: false
+      })
+      
+      console.log('🔐 Sign-in result:', result)
+      
+      if (result?.error) {
+        console.error('Sign in error:', result.error)
+        setSigningIn(null)
+      } else if (result?.ok) {
+        console.log('✅ Sign-in successful, refreshing session...')
         
-        const userWithOnboarding = { 
-          ...user,
-          hasCompletedOnboarding 
-        }
-        
-        localStorage.setItem('dev-session', JSON.stringify(userWithOnboarding))
-        console.log('User stored in localStorage:', userWithOnboarding)
-        
-        // Use a small delay before redirect to ensure localStorage is set
+        // Wait a moment for session to be established, then redirect
         setTimeout(() => {
-          if (userWithOnboarding.hasCompletedOnboarding) {
-            console.log('Returning user, redirecting to dashboard...')
-            window.location.href = '/dashboard'
-          } else {
-            console.log('New user, redirecting to onboarding...')
-            window.location.href = '/onboarding'
-          }
-        }, 100)
+          console.log('🔄 Redirecting to dashboard...')
+          window.location.href = '/dashboard'
+        }, 500)
+      } else {
+        console.log('⚠️ Unexpected sign-in result:', result)
+        setSigningIn(null)
       }
     } catch (error) {
       console.error('Sign in error:', error)
-      setIsLoading(null)
+      setSigningIn(null)
     }
   }
 
@@ -94,10 +102,12 @@ export default function MockSignInPage() {
                 <button
                   key={user.id}
                   onClick={() => handleSignIn(user.id)}
-                  disabled={!!isLoading}
+                  disabled={signingIn !== null}
                   className={`w-full p-4 border-2 rounded-lg transition-all duration-200 flex items-center space-x-4 ${
-                    isLoading === user.id
+                    signingIn === user.id
                       ? 'border-blue-500 bg-blue-50 cursor-not-allowed'
+                      : signingIn !== null
+                      ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-50'
                       : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
                   }`}
                 >
@@ -109,9 +119,16 @@ export default function MockSignInPage() {
                   <div className="text-left flex-1">
                     <h3 className="font-semibold text-gray-900">{user.name}</h3>
                     <p className="text-gray-600 text-sm">{user.email}</p>
+                    <p className="text-gray-500 text-xs mt-1">{user.role}</p>
                   </div>
-                  {isLoading === user.id && (
+                  {signingIn === user.id ? (
                     <div className="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                  ) : (
+                    <div className="text-blue-600">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   )}
                 </button>
               ))}

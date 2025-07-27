@@ -127,31 +127,42 @@ const mockUsers = [
   }
 ]
 
-// Use mock credentials provider in development, real Google OAuth in production
+// Use mock credentials provider in development, real Google OAuth in production  
 const providers = process.env.NODE_ENV === 'development' 
   ? [
       CredentialsProvider({
-        id: 'mock-google',
-        name: 'Google (Dev)',
+        name: 'credentials',
         credentials: {
-          userId: { label: 'User', type: 'text' }
+          userId: { 
+            label: 'User ID', 
+            type: 'text',
+            placeholder: 'Enter user ID' 
+          }
         },
-        async authorize(credentials) {
-          try {
-            if (!credentials?.userId) return null
-            
-            const user = mockUsers.find(u => u.id === credentials.userId)
-            if (!user) return null
-            
-            return {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              image: user.image
-            }
-          } catch (error) {
-            console.error('Auth error:', error)
+        async authorize(credentials, req) {
+          authLog('AUTHORIZE FUNCTION CALLED!');
+          authLog('Credentials received:', credentials);
+          authLog('Request object:', req ? 'Present' : 'Missing');
+          
+          if (!credentials?.userId) {
+            authLog('❌ No userId provided in credentials');
             return null
+          }
+          
+          const user = mockUsers.find(u => u.id === credentials.userId)
+          if (!user) {
+            authLog('❌ User not found for ID:', credentials.userId);
+            return null
+          }
+          
+          authLog('✅ User found, authenticating:', user.name);
+          
+          // Return user object for JWT
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            image: user.image
           }
         },
       })
@@ -160,8 +171,24 @@ const providers = process.env.NODE_ENV === 'development'
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        authorization: {
+          params: {
+            scope: [
+              "openid",
+              "email", 
+              "profile",
+              "https://www.googleapis.com/auth/calendar.readonly"
+            ].join(" ")
+          }
+        }
       })
     ]
+
+// Debug environment variables
+authLog('NextAuth Environment Check:');
+authLog('NODE_ENV:', process.env.NODE_ENV);
+authLog('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+authLog('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'Set' : 'Not set');
 
 const handler = NextAuth({
   adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),

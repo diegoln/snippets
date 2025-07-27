@@ -1,60 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { SnippetSelector } from '../../../lib/snippet-selector'
+import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { createUserDataService } from '../../../lib/user-scoped-data'
 import { PromptProcessor } from '../../../lib/prompt-processor'
 import { llmProxy } from '../../../lib/llmproxy'
 import { AssessmentContext } from '../../../types/performance'
 
 /**
- * Prisma client singleton with lazy initialization
- * 
- * This pattern prevents database connection attempts during build time,
- * which would cause Docker builds to fail. The client is only created
- * when DATABASE_URL is available (runtime) and when first accessed.
- * 
- * @see app/api/snippets/route.ts for detailed explanation
- */
-let prisma: PrismaClient | null = null
-
-/**
- * Get or create the Prisma client instance
- * 
- * @returns PrismaClient instance or null if DATABASE_URL is not available
- */
-function getPrismaClient(): PrismaClient | null {
-  if (!prisma && process.env.DATABASE_URL) {
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL
-        }
-      }
-    })
-  }
-  return prisma
-}
-
-/**
- * POST /api/assessments - Generate a new performance assessment
+ * POST /api/assessments - Generate a new performance assessment for the authenticated user
  */
 export async function POST(request: NextRequest) {
-  const snippetSelector = new SnippetSelector()
-  
   try {
-    const client = getPrismaClient()
-    if (!client) {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
+        { error: 'Authentication required' },
+        { status: 401 }
       )
     }
+
     const body = await request.json()
     const { 
       cycleName, 
       startDate, 
       endDate, 
-      assessmentDirections,
-      userEmail = 'test@example.com' // Default to test user for development
+      assessmentDirections
     } = body
 
     // Validate required fields
@@ -77,99 +47,99 @@ export async function POST(request: NextRequest) {
 
     console.log(`🔍 Generating assessment for ${cycleName} (${startDate} to ${endDate})`)
 
-    // Get user profile
-    const userProfile = await snippetSelector.getUserByEmail(userEmail)
-    if (!userProfile) {
-      return NextResponse.json(
-        { error: 'User not found. Make sure test data is seeded.' },
-        { status: 404 }
-      )
-    }
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
 
-    // Get snippets within the timeframe
-    const allSnippets = await snippetSelector.getSnippetsInTimeframe(
-      userProfile.id, 
-      startDate, 
-      endDate
-    )
+    try {
+      // Get user profile
+      const userProfile = await dataService.getUserProfile()
+      if (!userProfile) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        )
+      }
 
-    // Filter for meaningful content
-    const meaningfulSnippets = snippetSelector.filterMeaningfulSnippets(allSnippets)
-    
-    if (meaningfulSnippets.length === 0) {
-      return NextResponse.json(
-        { 
-          error: 'No work snippets found for the specified date range',
-          suggestion: 'Try adjusting the date range or ensure snippets exist for this period'
+      // Get snippets within the timeframe
+      const allSnippets = await dataService.getSnippetsInDateRange(start, end)
+
+      // Filter for meaningful content (simple filtering logic)
+      const meaningfulSnippets = allSnippets.filter(snippet => {
+        const content = snippet.content.trim()
+        return content && content.length >= 20 && !content.toLowerCase().includes('placeholder')
+      })
+      
+      if (meaningfulSnippets.length === 0) {
+        return NextResponse.json(
+          { 
+            error: 'No work snippets found for the specified date range',
+            suggestion: 'Try adjusting the date range or ensure snippets exist for this period'
+          },
+          { status: 404 }
+        )
+      }
+
+      console.log(`📊 Found ${meaningfulSnippets.length} meaningful snippets`)
+
+      // Build assessment context
+      const assessmentContext: AssessmentContext = {
+        userProfile: {
+          jobTitle: userProfile.jobTitle || 'Software Engineer',
+          seniorityLevel: userProfile.seniorityLevel || 'Senior'
         },
-        { status: 404 }
-      )
-    }
+        cyclePeriod: {
+          cycleName,
+          startDate,
+          endDate
+        },
+        weeklySnippets: meaningfulSnippets.map(snippet => ({
+          weekNumber: snippet.weekNumber,
+          startDate: snippet.startDate.toISOString().split('T')[0],
+          endDate: snippet.endDate.toISOString().split('T')[0],
+          content: snippet.content
+        })),
+        previousFeedback: userProfile.performanceFeedback || undefined,
+        assessmentDirections: assessmentDirections || undefined,
+        snippetCount: meaningfulSnippets.length
+      }
 
-    // Get assessment stats
-    const stats = snippetSelector.getAssessmentStats(meaningfulSnippets)
-    console.log(`📊 Found ${stats.totalWeeks} weeks of snippets (${stats.dateRange.start} to ${stats.dateRange.end})`)
-
-    // Build assessment context
-    const assessmentContext: AssessmentContext = {
-      userProfile: {
-        jobTitle: userProfile.jobTitle || 'Software Engineer',
-        seniorityLevel: userProfile.seniorityLevel || 'Senior'
-      },
-      cyclePeriod: {
-        cycleName,
-        startDate,
-        endDate
-      },
-      weeklySnippets: meaningfulSnippets.map(snippet => ({
-        weekNumber: snippet.weekNumber,
-        startDate: snippet.startDate,
-        endDate: snippet.endDate,
-        content: snippet.content
-      })),
-      previousFeedback: userProfile.performanceFeedback || undefined,
-      assessmentDirections: assessmentDirections || undefined,
-      snippetCount: meaningfulSnippets.length
-    }
-
-    // Generate prompt from template
-    console.log('📝 Processing prompt template...')
-    const prompt = await PromptProcessor.processPerformanceAssessmentPrompt(assessmentContext)
-    
-    // Generate assessment using LLM
-    console.log('🤖 Generating assessment with LLM...')
-    const llmResponse = await llmProxy.generatePerformanceAssessment(assessmentContext)
-    
-    // Create assessment record in database
-    const assessment = await client.performanceAssessment.create({
-      data: {
-        userId: userProfile.id,
+      // Generate prompt from template
+      console.log('📝 Processing prompt template...')
+      const prompt = await PromptProcessor.processPerformanceAssessmentPrompt(assessmentContext)
+      
+      // Generate assessment using LLM
+      console.log('🤖 Generating assessment with LLM...')
+      const llmResponse = await llmProxy.generatePerformanceAssessment(assessmentContext)
+      
+      // Create assessment record
+      const assessment = await dataService.createAssessment({
         cycleName,
         startDate: start,
         endDate: end,
         generatedDraft: llmResponse.content
-      }
-    })
+      })
 
-    console.log(`✅ Assessment generated successfully (${llmResponse.usage?.tokens || 0} tokens)`)
+      console.log(`✅ Assessment generated successfully (${llmResponse.usage?.tokens || 0} tokens)`)
 
-    return NextResponse.json({
-      id: assessment.id,
-      cycleName: assessment.cycleName,
-      startDate: assessment.startDate.toISOString().split('T')[0],
-      endDate: assessment.endDate.toISOString().split('T')[0],
-      generatedDraft: assessment.generatedDraft,
-      createdAt: assessment.createdAt.toISOString(),
-      updatedAt: assessment.updatedAt.toISOString(),
-      isGenerating: false,
-      stats: {
-        snippetsUsed: meaningfulSnippets.length,
-        dateRange: stats.dateRange,
-        tokensGenerated: llmResponse.usage?.tokens || 0,
-        model: llmResponse.model,
-        cost: llmResponse.usage?.cost || 0
-      }
-    })
+      return NextResponse.json({
+        id: assessment.id,
+        cycleName: assessment.cycleName,
+        startDate: assessment.startDate.toISOString().split('T')[0],
+        endDate: assessment.endDate.toISOString().split('T')[0],
+        generatedDraft: assessment.generatedDraft,
+        createdAt: assessment.createdAt.toISOString(),
+        updatedAt: assessment.updatedAt.toISOString(),
+        isGenerating: false,
+        stats: {
+          snippetsUsed: meaningfulSnippets.length,
+          tokensGenerated: llmResponse.usage?.tokens || 0,
+          model: llmResponse.model,
+          cost: llmResponse.usage?.cost || 0
+        }
+      })
+    } finally {
+      await dataService.disconnect()
+    }
 
   } catch (error) {
     console.error('Error generating assessment:', error)
@@ -194,72 +164,50 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to generate performance assessment' },
       { status: 500 }
     )
-  } finally {
-    await snippetSelector.disconnect()
-    const client = getPrismaClient()
-    if (client) {
-      await client.$disconnect()
-    }
   }
 }
 
 /**
- * GET /api/assessments - Get all performance assessments for a user
+ * GET /api/assessments - Get all performance assessments for the authenticated user
  */
 export async function GET(request: NextRequest) {
   try {
-    const client = getPrismaClient()
-    if (!client) {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Database not available' },
-        { status: 503 }
+        { error: 'Authentication required' },
+        { status: 401 }
       )
     }
 
-    // For development, get assessments for test user
-    const testUser = await client.user.findUnique({
-      where: { email: 'test@example.com' }
-    })
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
 
-    if (!testUser) {
-      return NextResponse.json([])
+    try {
+      const assessments = await dataService.getAssessments()
+
+      // Format dates for JSON serialization
+      const formattedAssessments = assessments.map(assessment => ({
+        id: assessment.id,
+        cycleName: assessment.cycleName,
+        startDate: assessment.startDate.toISOString().split('T')[0],
+        endDate: assessment.endDate.toISOString().split('T')[0],
+        generatedDraft: assessment.generatedDraft,
+        createdAt: assessment.createdAt.toISOString(),
+        updatedAt: assessment.updatedAt.toISOString(),
+        isGenerating: false
+      }))
+
+      return NextResponse.json(formattedAssessments)
+    } finally {
+      await dataService.disconnect()
     }
-
-    const assessments = await client.performanceAssessment.findMany({
-      where: { userId: testUser.id },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        cycleName: true,
-        startDate: true,
-        endDate: true,
-        generatedDraft: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    })
-
-    // Format dates for JSON serialization
-    const formattedAssessments = assessments.map(assessment => ({
-      ...assessment,
-      startDate: assessment.startDate.toISOString().split('T')[0],
-      endDate: assessment.endDate.toISOString().split('T')[0],
-      createdAt: assessment.createdAt.toISOString(),
-      updatedAt: assessment.updatedAt.toISOString(),
-      isGenerating: false
-    }))
-
-    return NextResponse.json(formattedAssessments)
   } catch (error) {
     console.error('Error fetching assessments:', error)
     return NextResponse.json(
       { error: 'Failed to fetch assessments' },
       { status: 500 }
     )
-  } finally {
-    const client = getPrismaClient()
-    if (client) {
-      await client.$disconnect()
-    }
   }
 }

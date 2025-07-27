@@ -17,7 +17,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useSession } from 'next-auth/react'
-import { useDevAuth } from '../components/DevAuthProvider'
 import { LandingPage } from '../components/LandingPage'
 import { AuthenticatedApp } from './AuthenticatedApp'
 import { LoadingSpinner } from '../components/LoadingSpinner'
@@ -25,14 +24,19 @@ import { LoadingSpinner } from '../components/LoadingSpinner'
 /**
  * Main application root component that handles authentication routing
  * 
+ * Uses NextAuth sessions consistently in both development and production.
+ * Development uses mock credentials provider, production uses Google OAuth.
+ * 
  * @returns JSX element for the appropriate page based on auth state
  */
 export default function Home() {
   const { data: session, status } = useSession()
-  const { user, loading } = useDevAuth()
+
+  console.log('🏠 Root page - Session status:', status, 'Session:', session)
 
   // Show loading spinner while checking auth state
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
+    console.log('⏳ Root page - Loading session...')
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <LoadingSpinner size="lg" />

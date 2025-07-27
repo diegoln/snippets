@@ -11,14 +11,7 @@ const nextConfig = {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
   // Skip database operations during build time
-  skipTrailingSlashRedirect: true,
-  // Allow build to succeed with ESLint warnings
-  eslint: {
-    ignoreDuringBuilds: true, // Skip ESLint during production builds
-  },
-  typescript: {
-    ignoreBuildErrors: false, // Keep TypeScript checking
-  }
+  skipTrailingSlashRedirect: true
 }
 
 module.exports = nextConfig

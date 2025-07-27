@@ -1,36 +1,35 @@
 'use client'
 
+import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { LoadingSpinner } from '../../components/LoadingSpinner'
 import { AuthenticatedApp } from '../AuthenticatedApp'
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // In development, check localStorage for the user session
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        const sessionData = localStorage.getItem('dev-session')
-        if (sessionData) {
-          setCurrentUser(JSON.parse(sessionData))
-        } else {
-          router.push('/mock-signin')
-        }
-      } catch (error) {
-        router.push('/mock-signin')
-      }
-      setLoading(false)
-    } else {
-      // Production auth logic would go here
-      setLoading(false)
+    // If not authenticated, redirect to mock-signin
+    if (status === 'loading') {
+      console.log('⏳ Dashboard - Waiting for session to load...')
+      return // Wait for session to load
     }
-  }, [router])
+    
+    if (!session) {
+      console.log('🔄 Dashboard - No session found, redirecting to mock-signin')
+      // Add a small delay to handle potential race conditions
+      setTimeout(() => {
+        router.push('/mock-signin')
+      }, 100)
+    } else {
+      console.log('✅ Dashboard - Session found:', session.user?.name)
+    }
+  }, [session, status, router])
 
-  if (loading) {
+  // Show loading while checking session
+  if (status === 'loading') {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -38,9 +37,11 @@ export default function DashboardPage() {
     )
   }
 
-  if (!currentUser && process.env.NODE_ENV === 'development') {
-    return null // Will redirect to mock-signin
+  // If no session, return null (redirect will happen in useEffect)
+  if (!session) {
+    return null
   }
 
+  // User is authenticated, show the main app
   return <AuthenticatedApp />
 }

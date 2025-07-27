@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
-import { useDevAuth } from '../components/DevAuthProvider'
 import { Settings } from '../components/Settings'
 import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Logo } from '../components/Logo'
+import { SafeImage } from '../components/SafeImage'
+import { SettingsIcon, LogoutIcon } from '../components/icons'
 import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
+import { getCurrentWeekNumber } from '../lib/week-utils'
 
 interface WeeklySnippet {
   id: string
@@ -58,11 +60,8 @@ interface SnippetEditorProps {
 }
 
 export const AuthenticatedApp = (): JSX.Element => {
-  const isDev = process.env.NODE_ENV === 'development'
   const { data: session } = useSession()
-  const devAuth = useDevAuth() // Always call hooks
-  
-  const currentUser = isDev ? devAuth.user : session?.user
+  const currentUser = session?.user
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
@@ -171,10 +170,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [selectedSnippet, snippets])
 
   const getCurrentWeek = useCallback((): number => {
-    const now = new Date()
-    const startOfYear = new Date(now.getFullYear(), 0, 1)
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
-    return Math.ceil((days + startOfYear.getDay() + 1) / 7)
+    return getCurrentWeekNumber()
   }, [])
 
   const formatDateRange = useCallback((startDate: string, endDate: string): string => {
@@ -318,76 +314,123 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [getCurrentWeek, snippets])
 
   const handleSignOut = () => {
-    if (isDev) {
-      devAuth.signOut()
-    } else {
-      signOut({ callbackUrl: '/' })
-    }
+    signOut({ callbackUrl: '/' })
   }
 
   return (
     <div className="min-h-screen bg-neutral-100">
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-6 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Logo variant="horizontal" width={160} priority />
-            <div className="hidden sm:block">
-              <p className="text-sm text-secondary font-medium tracking-wide">See beyond the busy.</p>
+        <header className="mb-6">
+          {/* Mobile Layout */}
+          <div className="block md:hidden">
+            <div className="flex justify-between items-center mb-3">
+              <Logo variant="horizontal" width={120} priority />
+              <div className="flex items-center space-x-2">
+                {currentUser && (
+                  <SafeImage
+                    src={currentUser.image}
+                    alt={currentUser.name ? `${currentUser.name}'s profile picture` : 'User profile picture'}
+                    className="w-8 h-8 rounded-full"
+                  />
+                )}
+                <button
+                  onClick={handleOpenSettings}
+                  className="btn-primary p-2 rounded-full shadow-elevation-1 min-w-[2.5rem] min-h-[2.5rem] flex items-center justify-center"
+                  aria-label="Open settings"
+                  aria-describedby="mobile-settings-desc"
+                >
+                  <SettingsIcon />
+                  <span id="mobile-settings-desc" className="sr-only">Open application settings and preferences</span>
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="text-secondary hover:text-primary-600 transition-advance p-2 min-w-[2.5rem] min-h-[2.5rem] flex items-center justify-center rounded-md"
+                  aria-label="Sign out of your account"
+                  aria-describedby="mobile-signout-desc"
+                >
+                  <LogoutIcon />
+                  <span id="mobile-signout-desc" className="sr-only">Sign out of your account and return to login</span>
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center space-x-4">
             {currentUser && (
-              <div className="flex items-center space-x-3">
-                <img
-                  src={currentUser.image || ''}
-                  alt={currentUser.name || ''}
-                  className="w-8 h-8 rounded-full"
-                />
-                <span className="text-sm text-secondary">
-                  {currentUser.name}
-                </span>
+              <div className="text-center">
+                <p className="text-sm text-secondary font-medium">Welcome back, {currentUser.name}</p>
+                <p className="text-xs text-secondary opacity-75">See beyond the busy.</p>
               </div>
             )}
-            <button
-              onClick={handleOpenSettings}
-              className="btn-primary px-4 py-2 rounded-pill flex items-center space-x-2 shadow-elevation-1"
-              aria-label="Open performance cycle settings"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Settings</span>
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="text-secondary hover:text-primary-600 transition-advance px-3 py-2"
-            >
-              Sign Out
-            </button>
+          </div>
+
+          {/* Desktop Layout */}
+          <div className="hidden md:flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <Logo variant="horizontal" width={160} priority />
+              <div className="hidden lg:block">
+                <p className="text-sm text-secondary font-medium tracking-wide">See beyond the busy.</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              {currentUser && (
+                <div className="flex items-center space-x-3">
+                  <SafeImage
+                    src={currentUser.image}
+                    alt={currentUser.name ? `${currentUser.name}'s profile picture` : 'User profile picture'}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <span className="text-sm text-secondary hidden lg:block">
+                    {currentUser.name}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={handleOpenSettings}
+                className="btn-primary px-4 py-2 rounded-pill flex items-center space-x-2 shadow-elevation-1"
+                aria-label="Open performance cycle settings"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden xl:inline">Settings</span>
+              </button>
+              <button
+                onClick={handleSignOut}
+                className="text-secondary hover:text-primary-600 transition-advance px-3 py-2"
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </header>
 
         <nav className="mb-8">
           <div className="border-b border-neutral-600/20">
-            <div className="-mb-px flex space-x-8">
+            <div className="-mb-px flex gap-4 md:gap-8 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('snippets')}
-                className={`py-3 px-1 border-b-2 font-medium text-sm transition-advance ${
+                className={`py-3 px-2 md:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-advance min-w-fit focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 ${
                   activeTab === 'snippets'
                     ? 'border-accent-500 text-primary-600'
                     : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
                 }`}
+                role="tab"
+                aria-selected={activeTab === 'snippets'}
+                aria-controls="snippets-panel"
+                id="snippets-tab"
               >
                 Weekly Snippets
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
-                className={`py-3 px-1 border-b-2 font-medium text-sm transition-advance ${
+                className={`py-3 px-2 md:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-advance min-w-fit focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 ${
                   activeTab === 'performance'
                     ? 'border-accent-500 text-primary-600'
                     : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
                 }`}
+                role="tab"
+                aria-selected={activeTab === 'performance'}
+                aria-controls="performance-panel"
+                id="performance-tab"
               >
                 Performance Drafts
               </button>
@@ -395,12 +438,17 @@ export const AuthenticatedApp = (): JSX.Element => {
           </div>
         </nav>
         
+        <div 
+          role="tabpanel" 
+          aria-labelledby={activeTab === 'snippets' ? 'snippets-tab' : 'performance-tab'}
+          id={activeTab === 'snippets' ? 'snippets-panel' : 'performance-panel'}
+        >
         {activeTab === 'snippets' ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           
           <aside className="lg:col-span-1">
-            <div className="card bg-white p-6">
-              <h2 className="text-heading-2 text-primary mb-6">Your Snippets</h2>
+            <div className="card bg-white p-4 md:p-6">
+              <h2 className="text-heading-2 text-primary mb-4 md:mb-6">Your Snippets</h2>
               
               <nav className="space-y-2">
                 {paginatedSnippets.map((snippet) => (
@@ -451,12 +499,34 @@ export const AuthenticatedApp = (): JSX.Element => {
                   </div>
                 )}
                 
+                {/* Calendar Integration Prompt */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start space-x-3">
+                    <svg className="flex-shrink-0 w-5 h-5 text-blue-500 mt-0.5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+                    </svg>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">Get more from your snippets</h4>
+                      <p className="text-sm text-blue-700 mb-3">
+                        Connect your Google Calendar to automatically include meeting context in your weekly snippets.
+                      </p>
+                      <button
+                        onClick={() => setShowSettings(true)}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                      >
+                        Connect calendar in Settings →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
                 <button 
                   onClick={handleAddCurrentWeek}
                   className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
                   aria-label="Add current week snippet"
+                  title={`Add snippet for week ${getCurrentWeek()}`}
                 >
-                  + Add Current Week
+                  + Add Current Week (Week {getCurrentWeek()})
                 </button>
               </nav>
             </div>
@@ -464,14 +534,14 @@ export const AuthenticatedApp = (): JSX.Element => {
 
           <main className="lg:col-span-2">
             {selectedSnippet ? (
-              <article className="bg-white rounded-lg shadow-md p-6">
-                <header className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">
+              <article className="bg-white rounded-lg shadow-md p-4 md:p-6">
+                <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+                  <h2 className="text-lg sm:text-xl font-semibold">
                     Week {selectedSnippet.weekNumber} - {formatDateRange(selectedSnippet.startDate, selectedSnippet.endDate)}
                   </h2>
                   <button
                     onClick={handleToggleEdit}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 self-start sm:self-auto"
                     aria-label={isEditing ? 'Cancel editing' : 'Edit snippet'}
                   >
                     {isEditing ? 'Cancel' : 'Edit'}
@@ -492,7 +562,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                 )}
               </article>
             ) : (
-              <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+              <div className="bg-white rounded-lg shadow-md p-4 md:p-6 text-center text-gray-500">
                 <p>Select a snippet to view or edit</p>
               </div>
             )}
@@ -514,6 +584,7 @@ export const AuthenticatedApp = (): JSX.Element => {
             />
           </ErrorBoundary>
         )}
+        </div>
 
         {showSettings && (
           <Settings
