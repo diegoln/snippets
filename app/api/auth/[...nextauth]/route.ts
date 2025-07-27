@@ -3,8 +3,130 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { PrismaClient } from '@prisma/client'
+import type { User, Account, Profile, Session } from 'next-auth'
+import type { JWT } from 'next-auth/jwt'
 
-const prisma = new PrismaClient()
+// Singleton pattern for PrismaClient to prevent multiple connections in serverless
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// Conditional logging utility
+const isDev = process.env.NODE_ENV === 'development'
+const isDebugEnabled = process.env.NEXTAUTH_DEBUG === 'true'
+
+const authLog = (message: string, data?: any) => {
+  if (isDev || isDebugEnabled) {
+    console.log(`[NextAuth] ${message}`, data || '')
+  }
+}
+
+const authError = (message: string, error?: any) => {
+  console.error(`[NextAuth] ${message}`, error || '')
+}
+
+// Callback utility functions
+const handleSignIn = async ({ 
+  user, 
+  account, 
+  profile 
+}: { 
+  user: User | any; 
+  account: Account | null; 
+  profile?: Profile 
+}) => {
+  try {
+    authLog('signIn callback triggered:', {
+      user: user?.email,
+      provider: account?.provider,
+      accountId: account?.providerAccountId,
+    });
+    
+    // In production, always allow Google OAuth sign-in
+    if (process.env.NODE_ENV === 'production') {
+      return true
+    }
+    
+    // Development logic (existing)
+    return true
+  } catch (error) {
+    authError('signIn callback error:', error);
+    return false
+  }
+}
+
+const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }) => {
+  authLog('redirect callback:', { url, baseUrl });
+  
+  // Custom redirect logic for onboarding flow
+  if (process.env.NODE_ENV === 'production') {
+    // If user is being redirected to a specific URL and it's within our domain, allow it
+    if (url.startsWith(baseUrl) && url !== baseUrl) {
+      return url
+    }
+    
+    // Default redirect for new OAuth sign-ins in production
+    // TODO: Check if user has completed onboarding to differentiate new vs returning users
+    return `${baseUrl}/onboarding`
+  }
+  
+  // Development uses our custom flow
+  return url.startsWith(baseUrl) ? url : baseUrl
+}
+
+const handleSession = async ({ 
+  session, 
+  token, 
+  user 
+}: { 
+  session: Session; 
+  token: JWT; 
+  user?: User 
+}) => {
+  authLog('session callback:', {
+    hasSession: !!session,
+    hasToken: !!token,
+    hasUser: !!user,
+    tokenSub: token?.sub,
+  });
+  
+  if (session?.user) {
+    if (user && 'id' in user) {
+      (session.user as any).id = user.id
+    } else if (token?.sub) {
+      (session.user as any).id = token.sub
+    }
+  }
+  return session
+}
+
+const handleJWT = async ({ 
+  token, 
+  user, 
+  account, 
+  profile 
+}: { 
+  token: JWT; 
+  user?: User; 
+  account?: Account; 
+  profile?: Profile 
+}) => {
+  authLog('jwt callback:', {
+    hasToken: !!token,
+    hasUser: !!user,
+    hasAccount: !!account,
+    provider: account?.provider,
+  });
+  
+  if (user && 'id' in user) {
+    token.sub = user.id
+  }
+  return token
+}
 
 // Mock users for development
 const mockUsers = [
@@ -12,19 +134,19 @@ const mockUsers = [
     id: '1',
     name: 'John Developer',
     email: 'john@example.com',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
+    image: '/avatars/avatar-1.png'
   },
   {
     id: '2', 
     name: 'Sarah Engineer',
     email: 'sarah@example.com',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b9f2d30c?w=100&h=100&fit=crop&crop=face'
+    image: '/avatars/avatar-2.png'
   },
   {
     id: '3',
     name: 'Alex Designer',
     email: 'alex@example.com', 
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
+    image: '/avatars/avatar-3.png'
   }
 ]
 
@@ -67,91 +189,31 @@ const providers = process.env.NODE_ENV === 'development'
 const handler = NextAuth({
   adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
   providers,
-  debug: process.env.NODE_ENV === 'production', // Only debug in production for now
+  debug: isDebugEnabled, // Only enable when explicitly requested
   callbacks: {
-    async signIn({ user, account, profile }) {
-      try {
-        console.log('[NextAuth] signIn callback triggered:', {
-          user: user?.email,
-          provider: account?.provider,
-          accountId: account?.providerAccountId,
-        });
-        
-        // In production, always allow Google OAuth sign-in
-        if (process.env.NODE_ENV === 'production') {
-          return true
-        }
-        
-        // Development logic (existing)
-        return true
-      } catch (error) {
-        console.error('[NextAuth] signIn callback error:', error);
-        return false
-      }
-    },
-    async redirect({ url, baseUrl }) {
-      console.log('[NextAuth] redirect callback:', { url, baseUrl });
-      
-      // Custom redirect logic for onboarding flow
-      if (process.env.NODE_ENV === 'production') {
-        // In production, new users should go to onboarding
-        // Returning users should go to dashboard
-        // For now, always redirect to onboarding - we'll add user check later
-        return `${baseUrl}/onboarding`
-      }
-      
-      // Development uses our custom flow
-      return url.startsWith(baseUrl) ? url : baseUrl
-    },
-    session: async ({ session, token, user }) => {
-      console.log('[NextAuth] session callback:', {
-        hasSession: !!session,
-        hasToken: !!token,
-        hasUser: !!user,
-        tokenSub: token?.sub,
-      });
-      
-      if (session?.user) {
-        if (user && 'id' in user) {
-          (session.user as any).id = user.id
-        } else if (token?.sub) {
-          (session.user as any).id = token.sub
-        }
-      }
-      return session
-    },
-    jwt: async ({ token, user, account, profile }) => {
-      console.log('[NextAuth] jwt callback:', {
-        hasToken: !!token,
-        hasUser: !!user,
-        hasAccount: !!account,
-        provider: account?.provider,
-      });
-      
-      if (user && 'id' in user) {
-        token.sub = user.id
-      }
-      return token
-    },
+    signIn: handleSignIn,
+    redirect: handleRedirect,
+    session: handleSession,
+    jwt: handleJWT,
   },
   session: {
     strategy: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
   },
   events: {
     async signIn(message) {
-      console.log('[NextAuth] Event - signIn:', message);
+      authLog('Event - signIn:', message);
     },
     async signOut(message) {
-      console.log('[NextAuth] Event - signOut:', message);
+      authLog('Event - signOut:', message);
     },
     async createUser(message) {
-      console.log('[NextAuth] Event - createUser:', message);
+      authLog('Event - createUser:', message);
     },
     async linkAccount(message) {
-      console.log('[NextAuth] Event - linkAccount:', message);
+      authLog('Event - linkAccount:', message);
     },
     async session(message) {
-      console.log('[NextAuth] Event - session:', message);
+      authLog('Event - session:', message);
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
