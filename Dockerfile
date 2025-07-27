@@ -34,6 +34,7 @@ RUN apt-get update && apt-get install -y \
 # Copy package files and install all dependencies (including dev)
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
+COPY scripts ./scripts/
 RUN npm ci --frozen-lockfile
 
 # Copy source code
