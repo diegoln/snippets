@@ -92,7 +92,7 @@ steps:
       - '--timeout'
       - '300'
       - '--set-env-vars'
-      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly-iknouo6toq-uc.a.run.app'
+      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly.io'
       - '--set-secrets'
       - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
       - '--add-cloudsql-instances'
@@ -101,6 +101,28 @@ steps:
       - 'gen2'
     waitFor: ['push-build-id', 'push-latest']
     timeout: 300s  # 5 minutes for deployment
+
+  # Step 4: Update OAuth redirect URIs after deployment
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'update-oauth-uris'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Get the deployed service URL
+        SERVICE_URL=$(gcloud run services describe advanceweekly \
+          --region=us-central1 \
+          --project=$PROJECT_ID \
+          --format="value(status.url)")
+        
+        echo "Updating OAuth redirect URIs for: $${SERVICE_URL}"
+        
+        # Update OAuth client with the new redirect URI (note: this may require manual update in console)
+        echo "OAuth client would be updated with URL: $${SERVICE_URL}/api/auth/callback/google"
+        echo "Note: OAuth client update requires manual configuration in Google Cloud Console."
+        echo "Please run 'npm run update-oauth-uris' after deployment to complete setup."
+    waitFor: ['deploy-cloud-run']
+    timeout: 60s
 
 # Images to store in Artifact Registry
 images:

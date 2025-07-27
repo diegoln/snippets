@@ -67,17 +67,31 @@ const providers = process.env.NODE_ENV === 'development'
 const handler = NextAuth({
   adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
   providers,
+  debug: process.env.NODE_ENV === 'production', // Only debug in production for now
   callbacks: {
     async signIn({ user, account, profile }) {
-      // In production, always allow Google OAuth sign-in
-      if (process.env.NODE_ENV === 'production') {
+      try {
+        console.log('[NextAuth] signIn callback triggered:', {
+          user: user?.email,
+          provider: account?.provider,
+          accountId: account?.providerAccountId,
+        });
+        
+        // In production, always allow Google OAuth sign-in
+        if (process.env.NODE_ENV === 'production') {
+          return true
+        }
+        
+        // Development logic (existing)
         return true
+      } catch (error) {
+        console.error('[NextAuth] signIn callback error:', error);
+        return false
       }
-      
-      // Development logic (existing)
-      return true
     },
     async redirect({ url, baseUrl }) {
+      console.log('[NextAuth] redirect callback:', { url, baseUrl });
+      
       // Custom redirect logic for onboarding flow
       if (process.env.NODE_ENV === 'production') {
         // In production, new users should go to onboarding
@@ -90,6 +104,13 @@ const handler = NextAuth({
       return url.startsWith(baseUrl) ? url : baseUrl
     },
     session: async ({ session, token, user }) => {
+      console.log('[NextAuth] session callback:', {
+        hasSession: !!session,
+        hasToken: !!token,
+        hasUser: !!user,
+        tokenSub: token?.sub,
+      });
+      
       if (session?.user) {
         if (user && 'id' in user) {
           (session.user as any).id = user.id
@@ -99,7 +120,14 @@ const handler = NextAuth({
       }
       return session
     },
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user, account, profile }) => {
+      console.log('[NextAuth] jwt callback:', {
+        hasToken: !!token,
+        hasUser: !!user,
+        hasAccount: !!account,
+        provider: account?.provider,
+      });
+      
       if (user && 'id' in user) {
         token.sub = user.id
       }
@@ -109,9 +137,28 @@ const handler = NextAuth({
   session: {
     strategy: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
   },
+  events: {
+    async signIn(message) {
+      console.log('[NextAuth] Event - signIn:', message);
+    },
+    async signOut(message) {
+      console.log('[NextAuth] Event - signOut:', message);
+    },
+    async createUser(message) {
+      console.log('[NextAuth] Event - createUser:', message);
+    },
+    async linkAccount(message) {
+      console.log('[NextAuth] Event - linkAccount:', message);
+    },
+    async session(message) {
+      console.log('[NextAuth] Event - session:', message);
+    },
+  },
   secret: process.env.NEXTAUTH_SECRET,
-  pages: {
-    signIn: '/auth/signin',
+  pages: process.env.NODE_ENV === 'development' ? {
+    signIn: '/mock-signin',
+    newUser: '/onboarding',
+  } : {
     newUser: '/onboarding',
   },
 })
