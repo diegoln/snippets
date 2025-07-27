@@ -14,6 +14,14 @@
 const http = require('http');
 const querystring = require('querystring');
 
+// Week number calculation utility
+function getCurrentWeekNumber(date = new Date()) {
+  const year = date.getFullYear()
+  const startOfYear = new Date(year, 0, 1)
+  const daysSinceStartOfYear = Math.floor((date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000))
+  return Math.ceil((daysSinceStartOfYear + startOfYear.getDay() + 1) / 7)
+}
+
 // ANSI colors
 const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
@@ -61,7 +69,7 @@ async function testSnippetCreation() {
         port: 3000,
         path: '/',
         method: 'GET',
-        timeout: 5000
+        timeout: 3000
       });
       
       if (healthCheck.statusCode === 200) {
@@ -137,8 +145,10 @@ async function testSnippetCreation() {
     // Step 3: Create a weekly snippet - THE CRITICAL TEST
     console.log('3️⃣ Creating a new weekly snippet...');
     
+    // Use current week number to avoid future week validation error
+    const currentWeek = getCurrentWeekNumber();
     const snippetData = JSON.stringify({
-      weekNumber: Math.floor(Math.random() * 52) + 1,
+      weekNumber: currentWeek,
       content: `Integration test snippet created at ${new Date().toISOString()}\n\nThis test prevents the "Failed to create new snippet" error.`
     });
     
