@@ -30,14 +30,31 @@ export const Integrations = (): JSX.Element => {
   // Fetch user's current integrations
   useEffect(() => {
     const fetchIntegrations = async () => {
+      // Set a timeout to prevent infinite loading
+      const timeoutId = setTimeout(() => {
+        console.error('Integration fetch timeout')
+        setIsLoading(false)
+      }, 10000) // 10 second timeout
+
       try {
-        const response = await fetch('/api/integrations')
-        if (response.ok) {
-          const data = await response.json()
-          setIntegrations(data.integrations || [])
+        const response = await fetch('/api/integrations', {
+          credentials: 'include' // Include cookies for auth
+        })
+        
+        clearTimeout(timeoutId)
+        
+        if (!response.ok) {
+          console.error('Failed to fetch integrations:', response.status, response.statusText)
+          // Still set loading to false even if request fails
+          setIsLoading(false)
+          return
         }
+        
+        const data = await response.json()
+        setIntegrations(data.integrations || [])
       } catch (error) {
         console.error('Failed to fetch integrations:', error)
+        clearTimeout(timeoutId)
       } finally {
         setIsLoading(false)
       }
