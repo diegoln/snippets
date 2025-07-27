@@ -26,24 +26,96 @@ export const Integrations = (): JSX.Element => {
   const [integrations, setIntegrations] = useState<Integration[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isConnecting, setIsConnecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Constants
+  const FETCH_TIMEOUT_MS = 10000 // 10 seconds
+  const RETRY_DELAY_MS = 2000 // 2 seconds
 
   // Fetch user's current integrations
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null
+    let abortController: AbortController | null = null
+    let mounted = true
+
     const fetchIntegrations = async () => {
-      try {
-        const response = await fetch('/api/integrations')
-        if (response.ok) {
-          const data = await response.json()
-          setIntegrations(data.integrations || [])
+      // Reset error state
+      setError(null)
+      
+      // Create abort controller for this request
+      abortController = new AbortController()
+      
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        if (mounted) {
+          console.error('Integration fetch timeout')
+          setError('Request timed out. Please try again.')
+          setIsLoading(false)
+          abortController?.abort()
         }
-      } catch (error) {
+      }, FETCH_TIMEOUT_MS)
+
+      try {
+        const response = await fetch('/api/integrations', {
+          credentials: 'include', // Include cookies for auth
+          signal: abortController.signal
+        })
+        
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+        
+        if (!mounted) return
+        
+        if (!response.ok) {
+          const errorMsg = response.status === 401 
+            ? 'Authentication required. Please sign in again.'
+            : `Failed to load integrations (${response.status})`
+          
+          console.error('Failed to fetch integrations:', response.status, response.statusText)
+          setError(errorMsg)
+          setIsLoading(false)
+          return
+        }
+        
+        const data = await response.json()
+        if (mounted) {
+          setIntegrations(data.integrations || [])
+          setError(null)
+        }
+      } catch (error: any) {
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+        
+        if (!mounted) return
+        
+        // Don't show error for aborted requests
+        if (error.name === 'AbortError') {
+          return
+        }
+        
         console.error('Failed to fetch integrations:', error)
+        setError('Failed to load integrations. Please check your connection.')
       } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     fetchIntegrations()
+
+    // Cleanup function
+    return () => {
+      mounted = false
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
+      if (abortController) {
+        abortController.abort()
+      }
+    }
   }, [])
 
   const handleConnectCalendar = async () => {
@@ -80,14 +152,46 @@ export const Integrations = (): JSX.Element => {
     }
   }
 
+  const handleRetry = () => {
+    setIsLoading(true)
+    setError(null)
+    // Trigger re-fetch by updating a dependency
+    window.location.reload() // Simple solution for now
+  }
+
   const calendarIntegration = integrations.find(i => i.type === 'google_calendar')
 
+  // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin w-6 h-6 border-2 border-primary-600 border-t-transparent rounded-full"></div>
           <span className="ml-3 text-secondary">Loading integrations...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <svg className="mx-auto h-12 w-12 text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="text-lg font-medium text-red-900 mb-2">Unable to Load Integrations</h3>
+          <p className="text-sm text-red-700 mb-4">{error}</p>
+          <button
+            onClick={handleRetry}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+          >
+            <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Try Again
+          </button>
         </div>
       </div>
     )
