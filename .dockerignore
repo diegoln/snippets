@@ -69,12 +69,16 @@ docker-compose.yml
 terraform/
 aws-lambda/
 
-# Scripts not needed in container  
-scripts/
-!scripts/generate-schema.js
+# Scripts not needed in container (except schema generation)
 deploy*.sh
 quick-deploy.sh
 get-docker.sh
+scripts/init-*.sh
+scripts/oauth-*.sh
+scripts/setup-*.sh
+scripts/update-*.sh
+scripts/verify-*.sh
+scripts/deep-*.sh
 
 # Alternative Dockerfiles
 Dockerfile.simple
