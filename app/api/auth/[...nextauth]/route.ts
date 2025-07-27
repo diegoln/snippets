@@ -30,15 +30,8 @@ const authError = (message: string, error?: any) => {
 }
 
 // Callback utility functions
-const handleSignIn = async ({ 
-  user, 
-  account, 
-  profile 
-}: { 
-  user: User | any; 
-  account: Account | null; 
-  profile?: Profile 
-}) => {
+const handleSignIn = async (params: any) => {
+  const { user, account, profile } = params;
   try {
     authLog('signIn callback triggered:', {
       user: user?.email,
@@ -78,15 +71,8 @@ const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }
   return url.startsWith(baseUrl) ? url : baseUrl
 }
 
-const handleSession = async ({ 
-  session, 
-  token, 
-  user 
-}: { 
-  session: Session; 
-  token: JWT; 
-  user?: User 
-}) => {
+const handleSession = async (params: any) => {
+  const { session, token, user } = params;
   authLog('session callback:', {
     hasSession: !!session,
     hasToken: !!token,
@@ -104,17 +90,8 @@ const handleSession = async ({
   return session
 }
 
-const handleJWT = async ({ 
-  token, 
-  user, 
-  account, 
-  profile 
-}: { 
-  token: JWT; 
-  user?: User; 
-  account?: Account; 
-  profile?: Profile 
-}) => {
+const handleJWT = async (params: any) => {
+  const { token, user, account, profile } = params;
   authLog('jwt callback:', {
     hasToken: !!token,
     hasUser: !!user,
