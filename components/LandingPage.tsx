@@ -31,14 +31,19 @@ export function LandingPage() {
    * In production, this triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
-    if (process.env.NODE_ENV === 'development') {
+    // More reliable environment detection for client-side
+    const isDevelopment = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.hostname.includes('localhost')
+    
+    if (isDevelopment) {
       // In development, redirect to mock signin page for testing
       // This allows developers to test the full flow without Google OAuth setup
       window.location.href = '/mock-signin'
     } else {
       // In production, use real Google OAuth with NextAuth
-      // NextAuth callbacks will handle redirecting to onboarding
-      signIn('google')
+      // NextAuth callbacks will handle redirecting to onboarding or dashboard
+      signIn('google', { callbackUrl: '/dashboard' })
     }
   }
 

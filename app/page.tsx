@@ -44,9 +44,22 @@ export default function Home() {
     )
   }
 
-  // IMPORTANT: For the root page, we ALWAYS show the landing page
-  // The user must explicitly navigate to /dashboard or other authenticated routes
-  // This prevents the auto-redirect issue where having a session shows the app immediately
+  // If user has a session, redirect them to the dashboard
+  // Otherwise show the landing page for authentication
+  if (session) {
+    console.log('✅ Root page - User has session, redirecting to dashboard')
+    // Use window.location to ensure proper redirect
+    if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard'
+    }
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  console.log('🔐 Root page - No session, showing landing page')
   return <LandingPage />
 }
 
