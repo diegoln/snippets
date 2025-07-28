@@ -32,8 +32,6 @@ export interface UserProfile {
   jobTitle: string | null
   seniorityLevel: string | null
   performanceFeedback: string | null
-  createdAt: Date
-  updatedAt: Date
 }
 
 /**
@@ -76,9 +74,7 @@ export class UserScopedDataService {
           name: true,
           jobTitle: true,
           seniorityLevel: true,
-          performanceFeedback: true,
-          createdAt: true,
-          updatedAt: true
+          performanceFeedback: true
         }
       })
 
