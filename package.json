@@ -20,7 +20,7 @@
     "test:jest:watch": "jest --watch",
     "test:jest:coverage": "jest --coverage",
     "update-oauth-uris": "./scripts/update-oauth-uris.sh",
-    "open-oauth-setup": "./scripts/open-oauth-setup.sh", 
+    "open-oauth-setup": "./scripts/open-oauth-setup.sh",
     "setup-domain": "./scripts/setup-custom-domain.sh",
     "setup-oauth-domain": "./scripts/update-oauth-custom-domain.sh",
     "setup-oauth-2025": "./scripts/update-oauth-2025.sh",
