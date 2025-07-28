@@ -42,11 +42,13 @@ fi
 export PORT=${PORT:-8080}
 log "📡 Server will start on port: $PORT"
 
-# Verify Prisma client is generated
-if [[ ! -d "node_modules/@prisma/client" ]]; then
-    log "📦 Generating Prisma client..."
-    npx prisma generate
-fi
+# Generate schema for production environment
+log "🔧 Generating Prisma schema for production..."
+npm run generate-schema
+
+# Regenerate Prisma client with correct schema
+log "📦 Generating Prisma client..."
+npx prisma generate
 
 # Run database migrations in production
 log "📊 Running database migrations..."

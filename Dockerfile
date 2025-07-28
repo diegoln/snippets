@@ -37,15 +37,15 @@ COPY prisma ./prisma/
 COPY scripts ./scripts/
 RUN npm ci --frozen-lockfile
 
+# Set build environment variables FIRST
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Copy source code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Set build environment variables
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Generate schema for production environment and Prisma client
+RUN npm run generate-schema && npx prisma generate
 
 # Build the application
 # Note: Pages are configured with dynamic = 'force-dynamic' to avoid build-time DB issues
