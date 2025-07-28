@@ -92,16 +92,18 @@ export class GoogleCalendarService {
       }
       
       // Handle Google API errors
-      if (error.code === 401) {
-        throw new CalendarIntegrationError('Calendar access expired. Please reconnect.', 'TOKEN_EXPIRED', true)
-      }
-      
-      if (error.code === 403) {
-        throw new CalendarIntegrationError('Insufficient calendar permissions', 'PERMISSION_DENIED', false)
+      if (error && typeof error === 'object' && 'code' in error) {
+        if ((error as any).code === 401) {
+          throw new CalendarIntegrationError('Calendar access expired. Please reconnect.', 'TOKEN_EXPIRED', true)
+        }
+        
+        if ((error as any).code === 403) {
+          throw new CalendarIntegrationError('Insufficient calendar permissions', 'PERMISSION_DENIED', false)
+        }
       }
 
       throw new CalendarIntegrationError(
-        `Failed to fetch calendar data: ${error.message}`,
+        `Failed to fetch calendar data: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'API_ERROR',
         true
       )
