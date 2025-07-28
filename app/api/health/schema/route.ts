@@ -102,7 +102,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
       
       if (failedChecks.length > 0) {
         result.schema.compatible = false
-        result.schema.issues = failedChecks.map(check => `${check.table}: ${check.error}`)
+        result.schema.issues = failedChecks.map(check => {
+          const failedCheck = check as { table: string; status: string; error: string }
+          return `${failedCheck.table}: ${failedCheck.error}`
+        })
         result.status = 'unhealthy'
       } else {
         result.schema.generated = true
