@@ -23,10 +23,25 @@ export function getCurrentWeekNumber(date: Date = new Date()): number {
  * Check if a given week number is in the future relative to current date
  * 
  * @param weekNumber - Week number to check
+ * @param year - Year to check (optional, defaults to current year)
  * @param currentDate - Current date reference (defaults to now)
  * @returns true if week is in the future, false otherwise
  */
-export function isWeekInFuture(weekNumber: number, currentDate: Date = new Date()): boolean {
+export function isWeekInFuture(weekNumber: number, year?: number, currentDate: Date = new Date()): boolean {
+  const currentYear = currentDate.getFullYear()
+  const targetYear = year || currentYear
+  
+  // If checking a past year, it's not in the future
+  if (targetYear < currentYear) {
+    return false
+  }
+  
+  // If checking a future year, it's in the future
+  if (targetYear > currentYear) {
+    return true
+  }
+  
+  // Same year - compare week numbers
   const currentWeek = getCurrentWeekNumber(currentDate)
   return weekNumber > currentWeek
 }

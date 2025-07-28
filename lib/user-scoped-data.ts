@@ -13,6 +13,7 @@ import { PrismaClient } from '@prisma/client'
 
 export interface SnippetInput {
   weekNumber: number
+  year: number
   startDate: Date
   endDate: Date
   content: string
@@ -121,6 +122,7 @@ export class UserScopedDataService {
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
           content: true,
@@ -173,6 +175,7 @@ export class UserScopedDataService {
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
           content: true,
@@ -201,7 +204,7 @@ export class UserScopedDataService {
         throw new Error('weekNumber must be a valid week number (1-53)')
       }
       
-      if (isWeekInFuture(data.weekNumber)) {
+      if (isWeekInFuture(data.weekNumber, data.year)) {
         throw new Error('Cannot create snippets for future weeks')
       }
 
@@ -213,6 +216,7 @@ export class UserScopedDataService {
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
           content: true,
@@ -253,6 +257,7 @@ export class UserScopedDataService {
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
           content: true,

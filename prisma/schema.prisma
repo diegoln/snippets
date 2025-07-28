@@ -73,6 +73,7 @@ model WeeklySnippet {
   id          String   @id @default(cuid())
   userId      String
   weekNumber  Int
+  year        Int      // Add year field
   startDate   DateTime // Monday
   endDate     DateTime // Friday
   content     String
@@ -87,7 +88,7 @@ model WeeklySnippet {
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  @@unique([userId, weekNumber])
+  @@unique([userId, year, weekNumber])
   @@map("weekly_snippets")
 }
 

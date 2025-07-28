@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       const serializedSnippets = snippets.map(snippet => ({
         id: snippet.id,
         weekNumber: snippet.weekNumber,
+        year: snippet.year,
         startDate: snippet.startDate.toISOString().split('T')[0],
         endDate: snippet.endDate.toISOString().split('T')[0],
         content: snippet.content,
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(startDate.getTime() + 4 * 24 * 60 * 60 * 1000) // +4 days for Friday
 
     // Prevent creation of future snippets
-    if (isWeekInFuture(weekNumber)) {
+    if (isWeekInFuture(weekNumber, currentYear)) {
       return NextResponse.json(
         { error: 'Cannot create snippets for future weeks' },
         { status: 400 }
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
     try {
       const newSnippet = await dataService.createSnippet({
         weekNumber,
+        year: currentYear,
         startDate,
         endDate,
         content
@@ -116,6 +118,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         id: newSnippet.id,
         weekNumber: newSnippet.weekNumber,
+        year: newSnippet.year,
         startDate: newSnippet.startDate.toISOString().split('T')[0],
         endDate: newSnippet.endDate.toISOString().split('T')[0],
         content: newSnippet.content,
@@ -173,6 +176,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({
         id: updatedSnippet.id,
         weekNumber: updatedSnippet.weekNumber,
+        year: updatedSnippet.year,
         startDate: updatedSnippet.startDate.toISOString().split('T')[0],
         endDate: updatedSnippet.endDate.toISOString().split('T')[0],
         content: updatedSnippet.content,
