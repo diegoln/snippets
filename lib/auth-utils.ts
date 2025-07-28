@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { authOptions } from '../app/api/auth/[...nextauth]/route'
 
 /**
  * Authentication utilities for user context and session management
