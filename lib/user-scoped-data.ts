@@ -99,9 +99,7 @@ export class UserScopedDataService {
           name: true,
           jobTitle: true,
           seniorityLevel: true,
-          performanceFeedback: true,
-          createdAt: true,
-          updatedAt: true
+          performanceFeedback: true
         }
       })
 
