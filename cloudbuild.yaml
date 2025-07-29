@@ -34,11 +34,15 @@ options:
   machineType: 'E2_HIGHCPU_8'  # Faster build with more CPU
 
 steps:
-  # Step 1: Build the Docker image
+  # Step 1: Build the Docker image with optimized Dockerfile
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-image'
     args: 
       - 'build'
+      - '-f'
+      - 'Dockerfile.optimized'
+      - '--target'
+      - 'production'
       - '-t'
       - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
       - '-t'
