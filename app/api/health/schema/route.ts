@@ -82,19 +82,19 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
       // Check User table
       checks.push(
         client.user.findFirst({ take: 1 }).then(() => ({ table: 'User', status: 'ok' }))
-          .catch(error => ({ table: 'User', status: 'failed', error: error.message }))
+          .catch((error: any) => ({ table: 'User', status: 'failed', error: error.message }))
       )
       
       // Check WeeklySnippet table
       checks.push(
         client.weeklySnippet.findFirst({ take: 1 }).then(() => ({ table: 'WeeklySnippet', status: 'ok' }))
-          .catch(error => ({ table: 'WeeklySnippet', status: 'failed', error: error.message }))
+          .catch((error: any) => ({ table: 'WeeklySnippet', status: 'failed', error: error.message }))
       )
       
       // Check Integration table
       checks.push(
         client.integration.findFirst({ take: 1 }).then(() => ({ table: 'Integration', status: 'ok' }))
-          .catch(error => ({ table: 'Integration', status: 'failed', error: error.message }))
+          .catch((error: any) => ({ table: 'Integration', status: 'failed', error: error.message }))
       )
 
       const checkResults = await Promise.all(checks)
