@@ -3,11 +3,23 @@
  * 
  * Simplified, focused implementation for extracting meeting context
  * from Google Calendar for weekly snippets and career tracking.
+ * 
+ * Uses dynamic imports to avoid loading heavy googleapis dependency
+ * unless calendar integration is actually used.
  */
 
-import { google } from 'googleapis'
 import { Account } from '@prisma/client'
 import { format, parseISO } from 'date-fns'
+
+// Dynamic import helper for googleapis
+let googleCache: any = null
+async function loadGoogleApis() {
+  if (!googleCache) {
+    const { google } = await import('googleapis')
+    googleCache = google
+  }
+  return googleCache
+}
 
 export interface CalendarEvent {
   id: string
@@ -54,12 +66,22 @@ export class CalendarIntegrationError extends Error {
 export class GoogleCalendarService {
   private oauth2Client: any
 
-  constructor() {
-    this.oauth2Client = new google.auth.OAuth2(
+  private constructor() {
+    // Private constructor - use static create method
+  }
+
+  /**
+   * Create a new GoogleCalendarService instance with dynamic googleapis loading
+   */
+  static async create() {
+    const google = await loadGoogleApis()
+    const service = new GoogleCalendarService()
+    service.oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
       process.env.NEXTAUTH_URL + '/api/auth/callback/google'
     )
+    return service
   }
 
   /**
@@ -114,6 +136,7 @@ export class GoogleCalendarService {
    * Fetch calendar events from Google API
    */
   private async fetchCalendarEvents(request: WeeklyDataRequest): Promise<CalendarEvent[]> {
+    const google = await loadGoogleApis()
     const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client })
     
     const response = await calendar.events.list({
@@ -254,6 +277,7 @@ export class GoogleCalendarService {
   async testConnection(account: Account): Promise<boolean> {
     try {
       this.setCredentials(account)
+      const google = await loadGoogleApis()
       const calendar = google.calendar({ version: 'v3', auth: this.oauth2Client })
       await calendar.calendarList.list({ maxResults: 1 })
       return true

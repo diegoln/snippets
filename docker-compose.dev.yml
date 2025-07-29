@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  # Fast development container with optimized caching
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.optimized
+      target: development
+      cache_from:
+        - advanceweekly:dev-cache
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:./dev.db
+      - NEXTAUTH_SECRET=development-secret
+      - NEXTAUTH_URL=http://localhost:3000
+    volumes:
+      # Mount source code for hot reloading
+      - .:/app
+      - /app/node_modules  # Exclude node_modules from volume mount
+      - /app/.next         # Exclude .next from volume mount
+    stdin_open: true
+    tty: true
+
+  # Production-like testing container
+  app-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.optimized
+      target: production
+      cache_from:
+        - advanceweekly:prod-cache
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://testuser:testpass@db:5432/testdb
+      - NEXTAUTH_SECRET=production-test-secret
+      - NEXTAUTH_URL=http://localhost:8080
+    depends_on:
+      - db
+
+  # Test database for production-like testing
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpass
+      - POSTGRES_DB=testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

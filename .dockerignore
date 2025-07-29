@@ -83,6 +83,11 @@ scripts/deep-*.sh
 # Alternative Dockerfiles
 Dockerfile.simple
 Dockerfile.prod
+Dockerfile.optimized
+
+# Performance optimization artifacts
+.next/cache/
+.next/schema-cache.json
 
 # Cloud Build files (not needed in container)
 cloudbuild.yaml

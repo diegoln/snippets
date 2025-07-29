@@ -8,12 +8,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 
-let prisma: PrismaClient | null = null
+let prisma: any = null
 
-function getPrismaClient(): PrismaClient {
+async function getPrismaClient() {
   if (!prisma) {
+    const { PrismaClient } = await import('@prisma/client')
     prisma = new PrismaClient()
   }
   return prisma
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
   }
 
   try {
-    const client = getPrismaClient()
+    const client = await getPrismaClient()
     
     // Test database connection
     try {
