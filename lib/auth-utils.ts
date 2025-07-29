@@ -1,5 +1,15 @@
 import { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { PrismaClient } from '@prisma/client'
+
+// Initialize Prisma client
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+const prisma = globalForPrisma.prisma ?? new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 /**
  * Authentication utilities for user context and session management
@@ -26,30 +36,71 @@ export interface AuthenticatedUser {
  */
 export async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
   try {
-    // Use NextAuth JWT token approach for App Router API routes
-    const token = await getToken({ 
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET || 'development'
-    })
+    let userId: string | null = null
+    
+    if (process.env.NODE_ENV === 'development') {
+      // Development: use JWT tokens
+      const token = await getToken({ 
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET || 'development'
+      })
+      userId = token?.sub || null
+    } else {
+      // Production: use database sessions
+      // Extract session token from cookies
+      const cookieHeader = request.headers.get('cookie')
+      const sessionToken = extractSessionToken(cookieHeader)
+      
+      if (sessionToken) {
+        try {
+          // Look up session in database
+          const session = await prisma.session.findUnique({
+            where: { sessionToken },
+            include: { user: true }
+          })
+          
+          if (session && session.expires > new Date()) {
+            userId = session.userId
+          }
+        } catch (dbError) {
+          console.log('🔍 Database session lookup failed:', dbError)
+        }
+      }
+      
+      // Fallback to JWT if database session fails
+      if (!userId) {
+        const token = await getToken({ 
+          req: request,
+          secret: process.env.NEXTAUTH_SECRET || 'development'
+        })
+        userId = token?.sub || null
+      }
+    }
     
     // Debug logging for production troubleshooting
     if (process.env.NODE_ENV === 'production') {
       console.log(`🔍 Auth Debug - URL: ${request.url}`)
       console.log(`🔍 Auth Debug - Method: ${request.method}`)
-      console.log(`🔍 Auth Debug - Has token: ${!!token}`)
-      console.log(`🔍 Auth Debug - Token sub: ${token?.sub || 'none'}`)
-      console.log(`🔍 Auth Debug - Cookies: ${request.headers.get('cookie')?.slice(0, 100)}...`)
+      console.log(`🔍 Auth Debug - User ID: ${userId || 'none'}`)
+      console.log(`🔍 Auth Debug - Session token found: ${!!extractSessionToken(request.headers.get('cookie'))}`)
     }
     
-    if (!token?.sub) {
-      return null
-    }
-    
-    return token.sub
+    return userId
   } catch (error) {
-    console.error('Error extracting user from token:', error)
+    console.error('Error extracting user from session:', error)
     return null
   }
+}
+
+/**
+ * Extract session token from cookie header
+ */
+function extractSessionToken(cookieHeader: string | null): string | null {
+  if (!cookieHeader) return null
+  
+  // Look for next-auth.session-token or __Secure-next-auth.session-token
+  const sessionMatch = cookieHeader.match(/(?:^|;\s*)(?:__Secure-|__Host-)?next-auth\.session-token=([^;]+)/)
+  return sessionMatch ? decodeURIComponent(sessionMatch[1]) : null
 }
 
 /**
