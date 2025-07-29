@@ -54,10 +54,23 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 
 ## Before Pushing Code
 
+**IMPORTANT: Git hooks are now enforced to prevent broken code from being committed or pushed.**
+
+### Automatic Checks (via Git Hooks)
+- **Pre-commit**: Runs TypeScript compilation, linting, and tests
+- **Pre-push**: Additional build verification for main branch
+
+### Manual Deployment
 ```bash
-npm run dev                  # Verify it starts
+npm run deploy              # Full deployment with all checks
+```
+
+### Manual Checks (if needed)
+```bash
+npm run typecheck           # TypeScript compilation check
+npm run lint                # ESLint check
 node run-basic-tests.js     # Run tests
-npm run lint                # Check linting
+npm run build               # Production build
 ```
 
 ## Common Mistakes to Avoid

@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+
+# Pre-commit hook to ensure code quality before any commit
+echo "🔍 Running pre-commit checks..."
+
+# 1. Run TypeScript compilation check
+echo "📦 Checking TypeScript compilation..."
+npm run typecheck
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript compilation failed. Please fix errors before committing."
+  exit 1
+fi
+
+# 2. Run linting
+echo "🧹 Running ESLint..."
+npm run lint
+if [ $? -ne 0 ]; then
+  echo "❌ Linting failed. Please fix errors before committing."
+  exit 1
+fi
+
+# 3. Run basic tests
+echo "🧪 Running tests..."
+node run-basic-tests.js
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Please fix errors before committing."
+  exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
