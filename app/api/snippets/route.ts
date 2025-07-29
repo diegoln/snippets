@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       const snippets = await dataService.getSnippets()
 
       // Convert dates to ISO strings for JSON serialization
-      const serializedSnippets = snippets.map(snippet => ({
+      const serializedSnippets = snippets.map((snippet: any) => ({
         id: snippet.id,
         weekNumber: snippet.weekNumber,
         year: snippet.year,

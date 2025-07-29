@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     try {
       // Check if integration already exists
       const existingIntegrations = await dataService.getIntegrations()
-      const existingIntegration = existingIntegrations.find(i => i.type === type)
+      const existingIntegration = existingIntegrations.find((i: any) => i.type === type)
       
       if (existingIntegration) {
         return NextResponse.json(
