@@ -32,6 +32,15 @@ export async function getUserIdFromRequest(request: NextRequest): Promise<string
       secret: process.env.NEXTAUTH_SECRET || 'development'
     })
     
+    // Debug logging for production troubleshooting
+    if (process.env.NODE_ENV === 'production') {
+      console.log(`🔍 Auth Debug - URL: ${request.url}`)
+      console.log(`🔍 Auth Debug - Method: ${request.method}`)
+      console.log(`🔍 Auth Debug - Has token: ${!!token}`)
+      console.log(`🔍 Auth Debug - Token sub: ${token?.sub || 'none'}`)
+      console.log(`🔍 Auth Debug - Cookies: ${request.headers.get('cookie')?.slice(0, 100)}...`)
+    }
+    
     if (!token?.sub) {
       return null
     }
