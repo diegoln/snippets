@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       const integrations = await dataService.getIntegrations()
 
       return NextResponse.json({
-        integrations: integrations.map(integration => ({
+        integrations: integrations.map((integration: any) => ({
           id: integration.id,
           type: integration.type,
           isActive: integration.isActive,
