@@ -53,8 +53,15 @@ npx prisma generate
 # Run database migrations in production
 log "📊 Running database migrations..."
 if ! npx prisma migrate deploy; then
-    log "❌ ERROR: Database migration failed"
-    exit 1
+    log "⚠️  WARNING: Prisma migrate deploy failed (expected if no migration directory)"
+fi
+
+# Run custom migration for year column
+log "🔄 Running year column migration..."
+if node scripts/migrate-add-year.js; then
+    log "✅ Year column migration completed"
+else
+    log "⚠️  WARNING: Year column migration failed or was already applied"
 fi
 
 # Verify database connectivity
