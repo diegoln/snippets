@@ -57,8 +57,14 @@ const jestConfig = {
   },
   
   // Transform configuration for TypeScript and JavaScript
+  // Babel is used ONLY for Jest tests, Next.js uses SWC for faster compilation
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest']
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        ['@babel/preset-typescript']
+      ]
+    }]
   },
   
   // Transform ignore patterns
