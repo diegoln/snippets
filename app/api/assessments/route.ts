@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       const allSnippets = await dataService.getSnippetsInDateRange(start, end)
 
       // Filter for meaningful content (simple filtering logic)
-      const meaningfulSnippets = allSnippets.filter(snippet => {
+      const meaningfulSnippets = allSnippets.filter((snippet: any) => {
         const content = snippet.content.trim()
         return content && content.length >= 20 && !content.toLowerCase().includes('placeholder')
       })
