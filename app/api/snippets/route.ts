@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { weekNumber, content } = body
+    const { weekNumber, content, year } = body
 
     // Validate required fields
     if (!weekNumber || !content) {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate start and end dates for the week
-    const currentYear = new Date().getFullYear()
+    const currentYear = year || new Date().getFullYear()
     const startOfYear = new Date(currentYear, 0, 1)
     const daysToAdd = (weekNumber - 1) * 7
     const startDate = new Date(startOfYear.getTime() + daysToAdd * 24 * 60 * 60 * 1000)

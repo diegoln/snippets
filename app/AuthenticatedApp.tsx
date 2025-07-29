@@ -290,6 +290,7 @@ export const AuthenticatedApp = (): JSX.Element => {
         },
         body: JSON.stringify({
           weekNumber: currentWeek,
+          year: new Date().getFullYear(),
           content: '## Done\n\n- \n\n## Next\n\n- \n\n## Notes\n\n'
         })
       })
