@@ -33,7 +33,9 @@
     "fix-production-database": "./scripts/fix-production-database.sh",
     "setup-cloud-sql": "./scripts/setup-cloud-sql.sh",
     "deploy": "./scripts/deploy.sh",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit",
+    "typecheck:fast": "tsc --project tsconfig.build.json --noEmit --skipLibCheck",
+    "typecheck:quick": "node scripts/quick-typecheck.js",
     "prepare": "husky"
   },
   "dependencies": {

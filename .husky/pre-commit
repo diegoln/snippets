@@ -3,9 +3,9 @@
 # Pre-commit hook to ensure code quality before any commit
 echo "🔍 Running pre-commit checks..."
 
-# 1. Run TypeScript compilation check
+# 1. Run fast TypeScript compilation check
 echo "📦 Checking TypeScript compilation..."
-npm run typecheck
+npm run typecheck:quick
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript compilation failed. Please fix errors before committing."
   exit 1

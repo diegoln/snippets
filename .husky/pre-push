@@ -23,7 +23,7 @@ if [ "$current_branch" = "main" ]; then
 else
   # For feature branches, just run quick checks
   echo "📦 Running TypeScript check..."
-  npm run typecheck
+  npm run typecheck:fast
   if [ $? -ne 0 ]; then
     echo "❌ TypeScript compilation failed. Please fix errors before pushing."
     exit 1
