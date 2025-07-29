@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "generate-schema": "node scripts/generate-schema.js",
-    "dev": "npm run generate-schema && next dev",
-    "build": "npm run generate-schema && next build",
+    "generate-schema:smart": "node scripts/smart-schema-generate.js",
+    "generate-schema:force": "node scripts/smart-schema-generate.js --force",
+    "dev": "npm run generate-schema:smart && next dev",
+    "dev:fresh": "npm run generate-schema:force && next dev",
+    "build": "npm run generate-schema:force && next build",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "prisma generate",
