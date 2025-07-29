@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           startDate,
           endDate
         },
-        weeklySnippets: meaningfulSnippets.map(snippet => ({
+        weeklySnippets: meaningfulSnippets.map((snippet: any) => ({
           weekNumber: snippet.weekNumber,
           startDate: snippet.startDate.toISOString().split('T')[0],
           endDate: snippet.endDate.toISOString().split('T')[0],
