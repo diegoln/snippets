@@ -1,8 +1,8 @@
 # AdvanceWeekly Design System
 
 ## Brand Identity
-**Product Name:** AdvanceWeekly  
-**Tagline:** See beyond the busy.  
+**Product Name:** AdvanceWeekly
+**Tagline:** See beyond the busy.
 **Mission:** Transform weekly work into meaningful insights with AI-powered performance assessments.
 
 ## Design Tokens
@@ -27,13 +27,13 @@
 ```
 
 ### Typography
-**Primary Font:** Inter (Google Fonts)  
+**Primary Font:** Inter (Google Fonts)
 **Monospace Font:** Roboto Mono (Google Fonts)
 
 ```css
 /* Typography Scale */
 H1: 32px / 40px, weight 700
-H2: 24px / 32px, weight 600  
+H2: 24px / 32px, weight 600
 H3: 20px / 28px, weight 600
 Body: 16px / 24px, weight 400
 Mono: 14px / 24px, weight 500

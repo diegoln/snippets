@@ -36,7 +36,7 @@ app/page.tsx                          # Enhanced with tab navigation and assessm
 4. **Generation State**: Visual spinner with "Generating..." indicator
 5. **Completion**: "View Draft" button becomes available after 3-5 seconds
 
-### Assessment Management  
+### Assessment Management
 - **Smart Sorting**: Most recent assessments appear first
 - **Modal Viewer**: Full-screen draft preview with copy-to-clipboard
 - **Clean Actions**: View Draft / Delete options per assessment
@@ -81,7 +81,7 @@ model PerformanceAssessment {
   generatedDraft String
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, cycleName])
 }
@@ -91,7 +91,7 @@ model PerformanceAssessment {
 
 ### State Management Strategy
 - **Immediate List Updates**: Assessments appear instantly with generating state
-- **Background Processing**: LLM generation happens asynchronously  
+- **Background Processing**: LLM generation happens asynchronously
 - **Optimistic UI**: Form closes immediately, trusting the async operation
 - **Error Recovery**: Failed generations are removed from the list
 
@@ -219,7 +219,7 @@ OLLAMA_API_URL="http://localhost:11434"  # for local LLM
 
 ### Production LLM Integration
 - Replace mock LLMProxy with actual service
-- Configure rate limiting and timeout handling  
+- Configure rate limiting and timeout handling
 - Add proper error logging and monitoring
 
 ## 📋 Code Review Checklist

@@ -2,6 +2,14 @@
 
 A comprehensive tool to help users create Friday Reflections and Career Check-Ins with intelligent context extraction and career development guidance.
 
+## Documentation
+
+- [Development Setup](./docs/DEVELOPMENT.md) - Get started with local development
+- [Architecture Overview](./docs/ARCHITECTURE.md) - System design and technical details
+- [Testing Guide](./docs/TESTING.md) - Running and writing tests
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Deploy to production
+- [Design System](./docs/DESIGN_SYSTEM.md) - UI/UX guidelines and components
+
 ## Features
 
 ### Automated Context Extraction
