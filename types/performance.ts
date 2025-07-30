@@ -1,13 +1,13 @@
 /**
- * Performance Assessment Type Definitions
+ * Career Check-In Type Definitions
  * 
- * Type definitions for the Performance Assessment feature
- * that allows users to create self-assessment drafts based on
+ * Type definitions for the Career Check-In feature
+ * that allows users to create career check-in documents based on
  * their weekly snippets and career context.
  */
 
 /**
- * Performance self assessment draft interface
+ * Career check-in document interface
  */
 export interface PerformanceAssessment {
   id: string
@@ -22,28 +22,31 @@ export interface PerformanceAssessment {
 }
 
 /**
- * Props for the PerformanceAssessment component
+ * Props for the CareerCheckIn component
  */
-export interface PerformanceAssessmentProps {
-  assessments: PerformanceAssessment[]
+export interface CareerCheckInProps {
+  assessments: CareerCheckIn[]
   onGenerateDraft: (request: AssessmentFormData) => Promise<void>
   onDeleteAssessment: (assessmentId: string) => Promise<void>
 }
 
 /**
- * Form data for creating a new performance assessment
+ * Form data for creating a new career check-in
  */
-export interface AssessmentFormData {
+export interface CheckInFormData {
   cycleName: string
   startDate: string
   endDate: string
-  assessmentDirections?: string
+  checkInFocusAreas?: string
 }
 
+// Legacy alias for backward compatibility
+export type AssessmentFormData = CheckInFormData
+
 /**
- * Context data sent to LLMProxy for draft generation
+ * Context data sent to LLMProxy for check-in generation
  */
-export interface AssessmentContext {
+export interface CheckInContext {
   userProfile: {
     jobTitle: string
     seniorityLevel: string
@@ -56,7 +59,7 @@ export interface AssessmentContext {
     content: string
   }>
   previousFeedback?: string
-  assessmentDirections?: string
+  checkInFocusAreas?: string
   cyclePeriod: {
     startDate: string
     endDate: string
@@ -66,25 +69,31 @@ export interface AssessmentContext {
 }
 
 /**
- * LLMProxy request for performance assessment draft generation
+ * LLMProxy request for career check-in generation
  */
 export interface LLMGenerationRequest {
   prompt: string
-  context: AssessmentContext
+  context: CheckInContext
   maxTokens: number
   temperature: number
 }
 
+// Legacy alias for backward compatibility
+export type AssessmentContext = CheckInContext
+
 /**
  * Form validation errors
  */
-export type PerformanceAssessmentErrors = {
+export type CareerCheckInErrors = {
   cycleName?: string
   startDate?: string
   endDate?: string
-  assessmentDirections?: string
+  checkInFocusAreas?: string
   general?: string
 }
+
+// Legacy alias for backward compatibility
+export type PerformanceAssessmentErrors = CareerCheckInErrors
 
 /**
  * Assessment generation status states
@@ -104,19 +113,31 @@ export type FormState =
   | { type: 'submitting' }
 
 /**
- * Combined UI state for the performance assessment component
+ * Combined UI state for the career check-in component
  */
-export interface PerformanceAssessmentState {
+export interface CareerCheckInState {
   formState: FormState
   generationState: GenerationState
-  formData: AssessmentFormData
-  errors: PerformanceAssessmentErrors
-  selectedAssessment: PerformanceAssessment | null
+  formData: CheckInFormData
+  errors: CareerCheckInErrors
+  selectedCheckIn: CareerCheckIn | null
+}
+
+// Legacy alias for backward compatibility
+export type PerformanceAssessmentState = CareerCheckInState & {
+  selectedAssessment: CareerCheckIn | null
 }
 
 /**
- * Actions for assessment state management
+ * Actions for check-in state management
  */
+export type CheckInAction = 
+  | { type: 'ADD_CHECKIN'; payload: CareerCheckIn }
+  | { type: 'UPDATE_CHECKIN'; id: string; updates: Partial<CareerCheckIn> }
+  | { type: 'REMOVE_CHECKIN'; id: string }
+  | { type: 'SET_CHECKINS'; payload: CareerCheckIn[] }
+
+// Legacy aliases for backward compatibility
 export type AssessmentAction = 
   | { type: 'ADD_ASSESSMENT'; payload: PerformanceAssessment }
   | { type: 'UPDATE_ASSESSMENT'; id: string; updates: Partial<PerformanceAssessment> }
@@ -132,18 +153,23 @@ export type UIStateAction =
   | { type: 'START_GENERATION' }
   | { type: 'GENERATION_SUCCESS' }
   | { type: 'GENERATION_ERROR'; message: string }
-  | { type: 'SET_FORM_DATA'; data: Partial<AssessmentFormData> }
-  | { type: 'SET_ERRORS'; errors: PerformanceAssessmentErrors }
+  | { type: 'SET_FORM_DATA'; data: Partial<CheckInFormData> }
+  | { type: 'SET_ERRORS'; errors: CareerCheckInErrors }
   | { type: 'CLEAR_ERRORS' }
+  | { type: 'SELECT_CHECKIN'; checkIn: CareerCheckIn | null }
+  // Legacy action for backward compatibility
   | { type: 'SELECT_ASSESSMENT'; assessment: PerformanceAssessment | null }
 
 /**
  * Configuration constants
  */
-export const ASSESSMENT_CONSTANTS = {
+export const CHECKIN_CONSTANTS = {
   GENERATION_DELAY_MIN: 3000,
   GENERATION_DELAY_MAX: 5000,
   DRAFT_PREVIEW_LENGTH: 200,
   MAX_CYCLE_NAME_LENGTH: 100,
-  MAX_DIRECTIONS_LENGTH: 1000
+  MAX_FOCUS_AREAS_LENGTH: 1000
 } as const
+
+// Legacy alias for backward compatibility
+export const ASSESSMENT_CONSTANTS = CHECKIN_CONSTANTS

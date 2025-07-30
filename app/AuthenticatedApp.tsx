@@ -10,7 +10,7 @@ import { Logo } from '../components/Logo'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
 import { PerformanceSettings } from '../types/settings'
-import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
+import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS, CheckInFormData, CheckInContext } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
@@ -315,7 +315,13 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [getCurrentWeek, snippets])
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
+    // Use window.location.origin to get the current domain in production
+    // This ensures we redirect to the custom domain (.io) instead of the GCP URL
+    const callbackUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin
+      : '/';
+    
+    signOut({ callbackUrl })
   }
 
   return (

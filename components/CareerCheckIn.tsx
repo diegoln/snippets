@@ -11,21 +11,25 @@ import React, { useReducer, useCallback } from 'react'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { LoadingSpinner } from './LoadingSpinner'
 import {
-  PerformanceAssessment,
-  PerformanceAssessmentProps,
-  AssessmentFormData,
-  PerformanceAssessmentErrors,
-  PerformanceAssessmentState,
+  CareerCheckIn,
+  CareerCheckInProps,
+  CheckInFormData,
+  CareerCheckInErrors,
+  CareerCheckInState,
   UIStateAction,
   FormState,
   GenerationState,
+  CHECKIN_CONSTANTS,
+  // Legacy aliases for backward compatibility
+  PerformanceAssessment,
+  AssessmentFormData,
   ASSESSMENT_CONSTANTS
 } from '../types/performance'
 
 /**
  * State reducer for managing UI state with proper state machine
  */
-function uiStateReducer(state: PerformanceAssessmentState, action: UIStateAction): PerformanceAssessmentState {
+function uiStateReducer(state: CareerCheckInState, action: UIStateAction): CareerCheckInState {
   switch (action.type) {
     case 'OPEN_FORM':
       return {
@@ -40,7 +44,7 @@ function uiStateReducer(state: PerformanceAssessmentState, action: UIStateAction
         ...state,
         formState: { type: 'closed' },
         generationState: { type: 'idle' },
-        formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+        formData: { cycleName: '', startDate: '', endDate: '', checkInFocusAreas: '' },
         errors: {}
       }
     
@@ -57,7 +61,7 @@ function uiStateReducer(state: PerformanceAssessmentState, action: UIStateAction
         ...state,
         formState: { type: 'closed' },
         generationState: { type: 'success' },
-        formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+        formData: { cycleName: '', startDate: '', endDate: '', checkInFocusAreas: '' },
         errors: {}
       }
     
@@ -101,15 +105,15 @@ function uiStateReducer(state: PerformanceAssessmentState, action: UIStateAction
 /**
  * Initial state for the UI state machine
  */
-const initialUIState: PerformanceAssessmentState = {
+const initialUIState: CareerCheckInState = {
   formState: { type: 'closed' },
   generationState: { type: 'idle' },
-  formData: { cycleName: '', startDate: '', endDate: '', assessmentDirections: '' },
+  formData: { cycleName: '', startDate: '', endDate: '', checkInFocusAreas: '' },
   errors: {},
-  selectedAssessment: null
+  selectedCheckIn: null
 }
 
-export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
+export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
   assessments,
   onGenerateDraft,
   onDeleteAssessment
@@ -119,13 +123,13 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
   /**
    * Validate form data
    */
-  const validateForm = useCallback((data: AssessmentFormData): boolean => {
-    const newErrors: PerformanceAssessmentErrors = {}
+  const validateForm = useCallback((data: CheckInFormData): boolean => {
+    const newErrors: CareerCheckInErrors = {}
 
     if (!data.cycleName.trim()) {
       newErrors.cycleName = 'Check-in period name is required'
-    } else if (data.cycleName.length > ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH) {
-      newErrors.cycleName = `Period name must be less than ${ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH} characters`
+    } else if (data.cycleName.length > CHECKIN_CONSTANTS.MAX_CYCLE_NAME_LENGTH) {
+      newErrors.cycleName = `Period name must be less than ${CHECKIN_CONSTANTS.MAX_CYCLE_NAME_LENGTH} characters`
     }
 
     if (!data.startDate) {
@@ -140,8 +144,8 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
       newErrors.endDate = 'End date must be after start date'
     }
 
-    if (data.assessmentDirections && data.assessmentDirections.length > ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH) {
-      newErrors.assessmentDirections = `Directions must be less than ${ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH} characters`
+    if (data.checkInFocusAreas && data.checkInFocusAreas.length > CHECKIN_CONSTANTS.MAX_FOCUS_AREAS_LENGTH) {
+      newErrors.checkInFocusAreas = `Focus areas must be less than ${CHECKIN_CONSTANTS.MAX_FOCUS_AREAS_LENGTH} characters`
     }
 
     dispatch({ type: 'SET_ERRORS', errors: newErrors })
@@ -305,21 +309,21 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
                 <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to include in your career check-in">ⓘ</span>
               </label>
               <textarea
-                id="assessmentDirections"
-                value={state.formData.assessmentDirections || ''}
-                onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { assessmentDirections: e.target.value } })}
+                id="checkInFocusAreas"
+                value={state.formData.checkInFocusAreas || ''}
+                onChange={(e) => dispatch({ type: 'SET_FORM_DATA', data: { checkInFocusAreas: e.target.value } })}
                 disabled={isFormDisabled}
-                aria-describedby={state.errors.assessmentDirections ? 'assessmentDirections-error' : 'assessmentDirections-hint'}
-                aria-invalid={!!state.errors.assessmentDirections}
+                aria-describedby={state.errors.checkInFocusAreas ? 'checkInFocusAreas-error' : 'checkInFocusAreas-hint'}
+                aria-invalid={!!state.errors.checkInFocusAreas}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
                 rows={3}
                 placeholder="e.g., Focus on key accomplishments, professional growth areas, team contributions, learning goals..."
               />
-              <span id="assessmentDirections-hint" className="sr-only">Provide specific guidelines or focus areas to include in your career check-in</span>
-              {state.errors.assessmentDirections && (
-                <p id="assessmentDirections-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.assessmentDirections}</p>
+              <span id="checkInFocusAreas-hint" className="sr-only">Provide specific guidelines or focus areas to include in your career check-in</span>
+              {state.errors.checkInFocusAreas && (
+                <p id="checkInFocusAreas-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.checkInFocusAreas}</p>
               )}
             </div>
 
@@ -434,7 +438,7 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
                     <h4 className="font-medium text-gray-900 mb-2">Draft Preview</h4>
                     <div className="bg-gray-50 p-3 rounded-md text-sm max-h-32 overflow-y-auto">
                       <MarkdownRenderer 
-                        content={assessment.generatedDraft.substring(0, ASSESSMENT_CONSTANTS.DRAFT_PREVIEW_LENGTH) + '...'}
+                        content={assessment.generatedDraft.substring(0, CHECKIN_CONSTANTS.DRAFT_PREVIEW_LENGTH) + '...'}
                         className="text-sm"
                       />
                     </div>
@@ -476,7 +480,7 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
       </div>
 
       {/* Draft Viewer Modal */}
-      {state.selectedAssessment && state.selectedAssessment.generatedDraft && !state.selectedAssessment.isGenerating && (
+      {state.selectedCheckIn && state.selectedCheckIn.generatedDraft && !state.selectedCheckIn.isGenerating && (
         <div 
           className="fixed inset-0 bg-neutral-600/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           role="dialog"
@@ -487,10 +491,10 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h3 id="modal-title" className="text-xl font-semibold text-gray-900">
-                  {state.selectedAssessment.cycleName} - Generated Draft
+                  {state.selectedCheckIn.cycleName} - Generated Draft
                 </h3>
                 <button
-                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
+                  onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: null })}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                   aria-label="Close draft viewer"
                 >
@@ -500,18 +504,18 @@ export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
             </div>
             <div className="p-6">
               <MarkdownRenderer 
-                content={state.selectedAssessment.generatedDraft}
+                content={state.selectedCheckIn.generatedDraft}
                 className="max-w-none"
               />
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => navigator.clipboard.writeText(state.selectedAssessment?.generatedDraft || '')}
+                  onClick={() => navigator.clipboard.writeText(state.selectedCheckIn?.generatedDraft || '')}
                   className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors"
                 >
                   Copy to Clipboard
                 </button>
                 <button
-                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
+                  onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: null })}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Close
