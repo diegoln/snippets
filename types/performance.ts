@@ -9,7 +9,7 @@
 /**
  * Career check-in document interface
  */
-export interface PerformanceAssessment {
+export interface CareerCheckIn {
   id: string
   userId: string
   cycleName: string
@@ -19,16 +19,23 @@ export interface PerformanceAssessment {
   isGenerating?: boolean // True while draft is being generated
   createdAt: string
   updatedAt: string
+  checkInFocusAreas?: string
 }
+
+// Legacy alias for backward compatibility
+export type PerformanceAssessment = CareerCheckIn
 
 /**
  * Props for the CareerCheckIn component
  */
 export interface CareerCheckInProps {
   assessments: CareerCheckIn[]
-  onGenerateDraft: (request: AssessmentFormData) => Promise<void>
+  onGenerateDraft: (request: CheckInFormData) => Promise<void>
   onDeleteAssessment: (assessmentId: string) => Promise<void>
 }
+
+// Legacy alias for backward compatibility  
+export type PerformanceAssessmentProps = CareerCheckInProps
 
 /**
  * Form data for creating a new career check-in
@@ -124,8 +131,12 @@ export interface CareerCheckInState {
 }
 
 // Legacy alias for backward compatibility
-export type PerformanceAssessmentState = CareerCheckInState & {
-  selectedAssessment: CareerCheckIn | null
+export type PerformanceAssessmentState = {
+  formState: FormState
+  generationState: GenerationState
+  formData: AssessmentFormData
+  errors: PerformanceAssessmentErrors
+  selectedAssessment: PerformanceAssessment | null
 }
 
 /**

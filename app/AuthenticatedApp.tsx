@@ -214,13 +214,13 @@ export const AuthenticatedApp = (): JSX.Element => {
     console.log('Saving settings:', settings)
   }, [])
 
-  const handleGenerateDraft = useCallback(async (request: AssessmentFormData): Promise<void> => {
+  const handleGenerateDraft = useCallback(async (request: CheckInFormData): Promise<void> => {
     const sanitizedRequest = {
       cycleName: sanitizeInput(request.cycleName),
       startDate: request.startDate,
       endDate: request.endDate,
-      assessmentDirections: request.assessmentDirections ? 
-        sanitizeInput(request.assessmentDirections) : undefined
+      checkInFocusAreas: request.checkInFocusAreas ? 
+        sanitizeInput(request.checkInFocusAreas) : undefined
     }
 
     try {

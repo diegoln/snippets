@@ -7,7 +7,7 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CareerCheckInComponent } from '../CareerCheckIn'
-import { PerformanceAssessment } from '../../types/performance'
+import { CareerCheckIn } from '../../types/performance'
 
 // Mock dependencies
 jest.mock('../MarkdownRenderer', () => ({
@@ -26,7 +26,7 @@ jest.mock('../LoadingSpinner', () => ({
   )
 }))
 
-const mockAssessments: PerformanceAssessment[] = [
+const mockAssessments: CareerCheckIn[] = [
   {
     id: '1',
     cycleName: 'Q4 2024',
@@ -35,6 +35,7 @@ const mockAssessments: PerformanceAssessment[] = [
     checkInFocusAreas: 'Focus on leadership',
     generatedDraft: 'Sample check-in content...',
     createdAt: '2024-12-15',
+    updatedAt: '2024-12-15',
     isGenerating: false
   },
   {
@@ -45,6 +46,7 @@ const mockAssessments: PerformanceAssessment[] = [
     checkInFocusAreas: '',
     generatedDraft: 'Another check-in...',
     createdAt: '2024-12-20',
+    updatedAt: '2024-12-20',
     isGenerating: true
   }
 ]
