@@ -31,7 +31,12 @@
     "deep-oauth-debug": "./scripts/deep-oauth-debug.sh",
     "test-oauth-different-account": "./scripts/test-oauth-different-account.sh",
     "fix-production-database": "./scripts/fix-production-database.sh",
-    "setup-cloud-sql": "./scripts/setup-cloud-sql.sh"
+    "setup-cloud-sql": "./scripts/setup-cloud-sql.sh",
+    "deploy": "./scripts/deploy.sh",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit",
+    "typecheck:fast": "tsc --project tsconfig.build.json --noEmit --skipLibCheck",
+    "typecheck:quick": "node scripts/quick-typecheck.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
@@ -64,6 +69,7 @@
     "babel-jest": "^30.0.5",
     "eslint": "^8",
     "eslint-config-next": "14.2.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "prisma": "^5.0.0",

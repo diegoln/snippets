@@ -62,4 +62,3 @@ export default function Home() {
   console.log('🔐 Root page - No session, showing landing page')
   return <LandingPage />
 }
-

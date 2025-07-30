@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       const integrations = await dataService.getIntegrations()
 
       return NextResponse.json({
-        integrations: integrations.map(integration => ({
+        integrations: integrations.map((integration: any) => ({
           id: integration.id,
           type: integration.type,
           isActive: integration.isActive,
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     try {
       // Check if integration already exists
       const existingIntegrations = await dataService.getIntegrations()
-      const existingIntegration = existingIntegrations.find(i => i.type === type)
+      const existingIntegration = existingIntegrations.find((i: any) => i.type === type)
       
       if (existingIntegration) {
         return NextResponse.json(

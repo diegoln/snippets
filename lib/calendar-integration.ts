@@ -153,8 +153,8 @@ export class GoogleCalendarService {
     }
 
     return response.data.items
-      .filter(event => event.start?.dateTime) // Only timed events
-      .map(event => this.transformGoogleEvent(event))
+      .filter((event: any) => event.start?.dateTime) // Only timed events
+      .map((event: any) => this.transformGoogleEvent(event))
   }
 
   /**

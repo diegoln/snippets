@@ -188,7 +188,7 @@ export async function GET(request: NextRequest) {
       const assessments = await dataService.getAssessments()
 
       // Format dates for JSON serialization
-      const formattedAssessments = assessments.map(assessment => ({
+      const formattedAssessments = assessments.map((assessment: any) => ({
         id: assessment.id,
         cycleName: assessment.cycleName,
         startDate: assessment.startDate.toISOString().split('T')[0],

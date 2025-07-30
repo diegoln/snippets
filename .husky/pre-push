@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-push hook to ensure code quality before pushing
+echo "🚀 Running pre-push checks..."
+
+# Get the current branch name
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+# Check if pushing to main branch
+if [ "$current_branch" = "main" ]; then
+  echo "⚠️  Pushing directly to main branch..."
+  
+  # Run build to ensure everything compiles
+  echo "🏗️  Running production build..."
+  npm run build
+  if [ $? -ne 0 ]; then
+    echo "❌ Build failed. Please fix errors before pushing to main."
+    exit 1
+  fi
+  
+  echo "✅ Build successful. Push to main allowed."
+else
+  # For feature branches, just run quick checks
+  echo "📦 Running TypeScript check..."
+  npm run typecheck:fast
+  if [ $? -ne 0 ]; then
+    echo "❌ TypeScript compilation failed. Please fix errors before pushing."
+    exit 1
+  fi
+fi
+
+echo "✅ All pre-push checks passed!"

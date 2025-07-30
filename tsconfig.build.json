@@ -1,0 +1,24 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "skipLibCheck": true
+  },
+  "include": [
+    "app/**/*",
+    "components/**/*", 
+    "lib/**/*",
+    "next-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "__tests__/**/*",
+    "aws-lambda/**/*",
+    "scripts/**/*",
+    ".next/**/*",
+    "out/**/*"
+  ]
+}
