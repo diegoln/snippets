@@ -315,7 +315,13 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [getCurrentWeek, snippets])
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
+    // Use window.location.origin to get the current domain in production
+    // This ensures we redirect to the custom domain (.io) instead of the GCP URL
+    const callbackUrl = process.env.NODE_ENV === 'production' 
+      ? window.location.origin
+      : '/';
+    
+    signOut({ callbackUrl })
   }
 
   return (
