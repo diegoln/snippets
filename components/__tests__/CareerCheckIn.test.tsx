@@ -1,12 +1,12 @@
 /**
- * Unit tests for PerformanceAssessment component styling
+ * Unit tests for CareerCheckIn component styling
  * Tests design system integration and AdvanceWeekly brand compliance
  */
 
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { PerformanceAssessmentComponent } from '../PerformanceAssessment'
+import { CareerCheckInComponent } from '../CareerCheckIn'
 import { PerformanceAssessment } from '../../types/performance'
 
 // Mock dependencies
@@ -55,21 +55,21 @@ const defaultProps = {
   onDeleteAssessment: jest.fn()
 }
 
-describe('PerformanceAssessment Design System Integration', () => {
+describe('CareerCheckIn Design System Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
   describe('AdvanceWeekly Brand Styling', () => {
     it('should use primary brand color for headings', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const heading = screen.getByText('Performance Self-Assessment Drafts')
       expect(heading).toHaveClass('text-heading-2', 'text-primary')
     })
 
     it('should use accent button styling for primary actions', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveClass(
@@ -84,7 +84,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should use card styling for form container', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -95,7 +95,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should use brand typography scale', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -106,7 +106,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should use secondary text styling for descriptions', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const description = screen.getByText(/generate ai-powered performance assessment drafts/i)
       expect(description).toHaveClass('text-secondary')
@@ -115,7 +115,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Button Design System Compliance', () => {
     it('should use btn-primary class for form submission', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -131,7 +131,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should use neutral styling for cancel button', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -143,7 +143,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should apply proper disabled state styling', async () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form and fill required fields
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -168,14 +168,14 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Motion and Transitions', () => {
     it('should use brand transition timing', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveClass('transition-advance')
     })
 
     it('should apply hover states with proper transitions', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -188,7 +188,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Spacing and Layout', () => {
     it('should use consistent spacing scale', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -202,7 +202,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should use proper button spacing', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveClass('px-4', 'py-2')
@@ -211,14 +211,14 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Border Radius Consistency', () => {
     it('should use pill radius for buttons', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveClass('rounded-pill')
     })
 
     it('should use card radius for containers', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -231,7 +231,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Color Palette Usage', () => {
     it('should use neutral colors for disabled states', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -242,7 +242,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should maintain proper hover states with brand colors', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -255,7 +255,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Shadow Usage', () => {
     it('should use elevation shadow for important elements', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveClass('shadow-elevation-1')
@@ -264,7 +264,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Loading States Integration', () => {
     it('should integrate LoadingSpinner with proper styling', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form and fill required fields
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -289,7 +289,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Form Layout Responsiveness', () => {
     it('should use responsive grid for date inputs', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
@@ -302,7 +302,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
   describe('Accessibility with Design System', () => {
     it('should maintain accessibility while using brand styles', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const heading = screen.getByRole('heading', { name: /performance self-assessment drafts/i })
       expect(heading).toHaveClass('text-heading-2', 'text-primary')
@@ -310,7 +310,7 @@ describe('PerformanceAssessment Design System Integration', () => {
     })
 
     it('should provide proper focus states with brand colors', () => {
-      render(<PerformanceAssessmentComponent {...defaultProps} />)
+      render(<CareerCheckInComponent {...defaultProps} />)
       
       const generateButton = screen.getByRole('button', { name: /generate assessment/i })
       expect(generateButton).toHaveAttribute('aria-label')
@@ -320,7 +320,7 @@ describe('PerformanceAssessment Design System Integration', () => {
 
 describe('Component State Management', () => {
   it('should properly handle form state transitions', () => {
-    render(<PerformanceAssessmentComponent {...defaultProps} />)
+    render(<CareerCheckInComponent {...defaultProps} />)
     
     // Initially closed
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
@@ -334,7 +334,7 @@ describe('Component State Management', () => {
   })
 
   it('should validate form data correctly', async () => {
-    render(<PerformanceAssessmentComponent {...defaultProps} />)
+    render(<CareerCheckInComponent {...defaultProps} />)
     
     // Open form and try to submit without filling required fields
     const generateButton = screen.getByRole('button', { name: /generate assessment/i })

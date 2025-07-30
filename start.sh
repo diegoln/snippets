@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Production startup script for AdvanceWeekly
 set -e
@@ -13,6 +13,6 @@ NODE_ENV=production npm run generate-schema
 echo "⚙️  Generating Prisma client..."
 npx prisma generate
 
-# Start the Next.js application
-echo "▶️  Starting Next.js server..."
-exec npm start
+# Start the custom Next.js server
+echo "▶️  Starting custom Next.js server..."
+exec node custom-server.js

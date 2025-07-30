@@ -109,7 +109,7 @@ const initialUIState: PerformanceAssessmentState = {
   selectedAssessment: null
 }
 
-export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps> = ({
+export const CareerCheckInComponent: React.FC<PerformanceAssessmentProps> = ({
   assessments,
   onGenerateDraft,
   onDeleteAssessment
@@ -123,9 +123,9 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
     const newErrors: PerformanceAssessmentErrors = {}
 
     if (!data.cycleName.trim()) {
-      newErrors.cycleName = 'Performance cycle name is required'
+      newErrors.cycleName = 'Check-in period name is required'
     } else if (data.cycleName.length > ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH) {
-      newErrors.cycleName = `Cycle name must be less than ${ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH} characters`
+      newErrors.cycleName = `Period name must be less than ${ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH} characters`
     }
 
     if (!data.startDate) {
@@ -166,7 +166,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
     } catch (error) {
       dispatch({ 
         type: 'GENERATION_ERROR', 
-        message: error instanceof Error ? error.message : 'Failed to generate performance assessment draft. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to generate career check-in. Please try again.'
       })
     }
   }, [state.formData, validateForm, onGenerateDraft, dispatch])
@@ -196,18 +196,18 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-heading-2 text-primary">Performance Self-Assessment Drafts</h2>
+          <h2 className="text-heading-2 text-primary">Career Check-Ins</h2>
           <p className="text-secondary mt-1">
-            Generate AI-powered performance assessment drafts based on your Friday reflections
+            Generate AI-powered career check-ins based on your Friday reflections
           </p>
         </div>
         {!isFormOpen && (
           <button
             onClick={() => dispatch({ type: 'OPEN_FORM' })}
             className="btn-accent px-4 py-2 rounded-pill font-medium transition-advance shadow-elevation-1"
-            aria-label="Open form to generate new performance assessment"
+            aria-label="Open form to generate new career check-in"
           >
-            + Generate Assessment
+            + Generate Check-In
           </button>
         )}
       </div>
@@ -220,14 +220,14 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
           aria-labelledby="form-heading"
           aria-describedby="form-description"
         >
-          <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Generate Performance Assessment Draft</h3>
-          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered performance assessment draft based on your Friday reflections</p>
+          <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Generate Career Check-In</h3>
+          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered career check-in based on your Friday reflections</p>
           
           <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
             <div>
               <label htmlFor="cycleName" className="block text-sm font-medium text-gray-700 mb-1">
-                Performance Cycle Name
-                <span className="text-gray-500 text-xs ml-1" title="A descriptive name for your performance review period">ⓘ</span>
+                Check-In Period Name
+                <span className="text-gray-500 text-xs ml-1" title="A descriptive name for your career check-in period">ⓘ</span>
               </label>
               <input
                 type="text"
@@ -241,9 +241,9 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
-                placeholder="e.g., H1 2025, Q4 2024, Annual Review 2025"
+                placeholder="e.g., H1 2025, Q4 2024, Mid-Year Check-In 2025, Q3 Progress Review"
               />
-              <span id="cycleName-hint" className="sr-only">A descriptive name for your performance review period</span>
+              <span id="cycleName-hint" className="sr-only">A descriptive name for your career check-in period</span>
               {state.errors.cycleName && (
                 <p id="cycleName-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.cycleName}</p>
               )}
@@ -252,8 +252,8 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cycle Start Date
-                  <span className="text-gray-500 text-xs ml-1" title="The beginning date of your performance review cycle">ⓘ</span>
+                  Period Start Date
+                  <span className="text-gray-500 text-xs ml-1" title="The beginning date of your check-in period">ⓘ</span>
                 </label>
                 <input
                   type="date"
@@ -268,7 +268,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                     isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
                   }`}
                 />
-                <span id="startDate-hint" className="sr-only">The beginning date of your performance review cycle</span>
+                <span id="startDate-hint" className="sr-only">The beginning date of your check-in period</span>
                 {state.errors.startDate && (
                   <p id="startDate-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.startDate}</p>
                 )}
@@ -276,8 +276,8 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
 
               <div>
                 <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Cycle End Date
-                  <span className="text-gray-500 text-xs ml-1" title="The ending date of your performance review cycle">ⓘ</span>
+                  Period End Date
+                  <span className="text-gray-500 text-xs ml-1" title="The ending date of your check-in period">ⓘ</span>
                 </label>
                 <input
                   type="date"
@@ -292,7 +292,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                     isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
                   }`}
                 />
-                <span id="endDate-hint" className="sr-only">The ending date of your performance review cycle</span>
+                <span id="endDate-hint" className="sr-only">The ending date of your check-in period</span>
                 {state.errors.endDate && (
                   <p id="endDate-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.endDate}</p>
                 )}
@@ -301,8 +301,8 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
 
             <div>
               <label htmlFor="assessmentDirections" className="block text-sm font-medium text-gray-700 mb-1">
-                Assessment Directions (Optional)
-                <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to influence the AI-generated draft">ⓘ</span>
+                Check-In Focus Areas (Optional)
+                <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to include in your career check-in">ⓘ</span>
               </label>
               <textarea
                 id="assessmentDirections"
@@ -315,9 +315,9 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                   isFormDisabled ? 'bg-gray-50 cursor-not-allowed' : ''
                 }`}
                 rows={3}
-                placeholder="e.g., Focus on leadership achievements, include technical contributions, emphasize cross-team collaboration..."
+                placeholder="e.g., Focus on key accomplishments, professional growth areas, team contributions, learning goals..."
               />
-              <span id="assessmentDirections-hint" className="sr-only">Provide specific guidelines or focus areas to influence the AI-generated draft</span>
+              <span id="assessmentDirections-hint" className="sr-only">Provide specific guidelines or focus areas to include in your career check-in</span>
               {state.errors.assessmentDirections && (
                 <p id="assessmentDirections-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.assessmentDirections}</p>
               )}
@@ -361,7 +361,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
               </button>
               {isGenerating && (
                 <span id="generation-status" className="sr-only" aria-live="polite">
-                  AI is generating your performance assessment draft. This may take up to 80 seconds.
+                  AI is generating your career check-in document. This may take up to 80 seconds.
                 </span>
               )}
             </div>
@@ -395,15 +395,15 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
         {assessments.length === 0 && !isFormOpen ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <div className="text-gray-400 text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Performance Assessment Drafts Yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Career Check-Ins Yet</h3>
             <p className="text-gray-600 mb-4">
-              Generate your first AI-powered performance assessment draft based on your Friday reflections.
+              Generate your first AI-powered career check-in based on your Friday reflections.
             </p>
             <button
               onClick={() => dispatch({ type: 'OPEN_FORM' })}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              Generate Your First Assessment
+              Generate Your First Check-In
             </button>
           </div>
         ) : (
@@ -426,7 +426,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     <div>
                       <h4 className="font-medium text-gray-900">Generating Draft...</h4>
-                      <p className="text-sm text-gray-600">AI is analyzing your reflections and creating your assessment</p>
+                      <p className="text-sm text-gray-600">AI is analyzing your reflections and creating your career check-in</p>
                     </div>
                   </div>
                 ) : (
@@ -525,4 +525,4 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
   )
 }
 
-export default PerformanceAssessmentComponent
+export default CareerCheckInComponent

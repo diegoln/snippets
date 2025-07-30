@@ -3,23 +3,23 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
- * Process performance assessment prompt template with context data
+ * Process career check-in prompt template with context data
  */
 export class PromptProcessor {
   private static templateCache: Map<string, string> = new Map()
 
   /**
-   * Load and process the performance assessment prompt template
+   * Load and process the career check-in prompt template
    */
   static async processPerformanceAssessmentPrompt(context: AssessmentContext): Promise<string> {
     // Load template from file (with caching)
-    let template = this.templateCache.get('performance-assessment')
+    let template = this.templateCache.get('career-check-in')
     
     if (!template) {
       try {
-        const templatePath = join(process.cwd(), 'lib/prompts/performance-assessment.md')
+        const templatePath = join(process.cwd(), 'lib/prompts/career-check-in.md')
         template = readFileSync(templatePath, 'utf-8')
-        this.templateCache.set('performance-assessment', template)
+        this.templateCache.set('career-check-in', template)
       } catch (error) {
         console.error('Failed to load prompt template:', error)
         throw new Error('Prompt template not found')

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { Settings } from '../components/Settings'
-import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
+import { CareerCheckInComponent } from '../components/CareerCheckIn'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Logo } from '../components/Logo'
@@ -578,7 +578,7 @@ export const AuthenticatedApp = (): JSX.Element => {
               </div>
             }
           >
-            <PerformanceAssessmentComponent
+            <CareerCheckInComponent
               assessments={sortedAssessments}
               onGenerateDraft={handleGenerateDraft}
               onDeleteAssessment={handleDeleteAssessment}
