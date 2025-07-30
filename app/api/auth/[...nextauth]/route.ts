@@ -55,16 +55,25 @@ const handleSignIn = async (params: any) => {
 const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }) => {
   authLog('redirect callback:', { url, baseUrl });
   
+  // Use NEXTAUTH_URL as the authoritative base URL in production
+  const correctBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+  
+  // Handle signout redirects - always redirect to the home page
+  if (url === `${correctBaseUrl}/api/auth/signout` || url.includes('signout')) {
+    authLog('Signout redirect detected, redirecting to home page');
+    return correctBaseUrl;
+  }
+  
   // Custom redirect logic for onboarding flow
   if (process.env.NODE_ENV === 'production') {
     // If user is being redirected to a specific URL and it's within our domain, allow it
-    if (url.startsWith(baseUrl) && url !== baseUrl) {
+    if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
       return url
     }
     
     // Default redirect for new OAuth sign-ins in production
     // TODO: Check if user has completed onboarding to differentiate new vs returning users
-    return `${baseUrl}/onboarding`
+    return `${correctBaseUrl}/onboarding`
   }
   
   // Development uses our custom flow
@@ -226,6 +235,7 @@ const handler = NextAuth({
     newUser: '/onboarding',
   } : {
     newUser: '/onboarding',
+    signOut: '/', // Explicitly set signout page to home
   },
 })
 
