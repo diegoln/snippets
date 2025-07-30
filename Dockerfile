@@ -1,76 +1,86 @@
-# Production Dockerfile for AdvanceWeekly
-# Multi-stage build for optimal image size and security
+# Optimized Production Dockerfile for AdvanceWeekly
+# Multi-stage build with improved layer caching and development support
 
-# Stage 1: Dependencies
-FROM node:18-slim AS deps
+# ===== BASE STAGE =====
+FROM node:18-alpine AS base
 WORKDIR /app
 
-# Install system dependencies required for Prisma and native modules
-RUN apt-get update && apt-get install -y \
+# Install system dependencies once (small Alpine packages)
+RUN apk add --no-cache \
+    libc6-compat \
     openssl \
-    ca-certificates \
     curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && rm -rf /var/cache/apk/*
 
-# Copy package files
+# ===== DEPENDENCIES STAGE =====
+FROM base AS deps
+
+# Copy package files ONLY (for optimal Docker layer caching)
+COPY package.json package-lock.json* ./
+
+# Install ALL dependencies (dev + prod) for building
+RUN npm ci --frozen-lockfile --include=dev && npm cache clean --force
+
+# ===== PRISMA STAGE =====
+FROM base AS prisma
+
+# Copy only what's needed for Prisma generation
+COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
+COPY scripts/generate-schema.js ./scripts/
 
-# Install dependencies
-RUN npm ci --only=production --frozen-lockfile && npm cache clean --force
+# Generate Prisma client (this layer caches well)
+ENV NODE_ENV=production
+RUN npm run generate-schema && npx prisma generate
 
-# Stage 2: Builder
-FROM node:18-slim AS builder
-WORKDIR /app
+# ===== BUILDER STAGE =====
+FROM base AS builder
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# Copy dependencies and generated Prisma client  
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=prisma /app/prisma ./prisma
 
-# Copy package files and install all dependencies (including dev)
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
-COPY scripts ./scripts/
-RUN npm ci --frozen-lockfile
-
-# Set build environment variables FIRST
+# Set build environment variables BEFORE copying source
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy source code
+# Copy source code (this layer changes most frequently)
 COPY . .
 
-# Generate schema for production environment and Prisma client
-RUN npm run generate-schema && npx prisma generate
-
 # Build the application
-# Note: Pages are configured with dynamic = 'force-dynamic' to avoid build-time DB issues
 RUN npm run build
 
-# Stage 3: Runtime
-FROM node:18-slim AS runner
-WORKDIR /app
+# Remove development dependencies to reduce final image size
+RUN npm prune --production
 
-# Install runtime system dependencies
-RUN apt-get update && apt-get install -y \
-    openssl \
-    ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+# ===== DEVELOPMENT STAGE =====
+FROM base as development
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copy source and development files
+COPY . .
+
+# Development environment
+ENV NODE_ENV=development
+EXPOSE 3000
+
+# Development command
+CMD ["npm", "run", "dev"]
+
+# ===== PRODUCTION RUNTIME STAGE =====
+FROM base AS production
 
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Copy production dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Copy production node_modules (pruned)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
-# Copy built application
+# Copy built application and necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
