@@ -68,7 +68,7 @@ The development setup automatically creates:
 - **Format**: Each snippet follows Done/Next structure
 - **Content**: Realistic software engineering activities covering:
   - Technical implementations and optimizations
-  - Leadership and mentoring activities  
+  - Leadership and mentoring activities
   - Cross-team collaboration
   - System architecture and design
   - Code quality and testing initiatives
@@ -117,7 +117,7 @@ The system uses PostgreSQL with Prisma ORM:
 
 ### Schema Overview
 - **Users**: Profile information, job titles, seniority levels
-- **WeeklySnippets**: Done/Next format snippets with date ranges  
+- **WeeklySnippets**: Done/Next format snippets with date ranges
 - **PerformanceAssessments**: AI-generated assessment drafts
 - **Integrations**: Third-party service connections
 
@@ -186,7 +186,7 @@ docker compose ps postgres
 # View PostgreSQL logs
 docker compose logs postgres
 
-# Reset database 
+# Reset database
 docker compose down postgres
 docker compose up -d postgres
 npm run setup:dev

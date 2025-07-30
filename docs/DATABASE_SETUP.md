@@ -17,7 +17,7 @@ This project uses an environment-aware database configuration that automatically
 npm run dev          # Generates SQLite schema
 npm run build        # Generates SQLite schema
 
-# Production (NODE_ENV = 'production')  
+# Production (NODE_ENV = 'production')
 NODE_ENV=production npm run build  # Generates PostgreSQL schema
 ```
 
@@ -44,7 +44,7 @@ metadata String @default("{}")
 ### Production (PostgreSQL)
 ```prisma
 datasource db {
-  provider = "postgresql" 
+  provider = "postgresql"
   url      = env("DATABASE_URL")  # postgres://...
 }
 
@@ -79,7 +79,7 @@ npm run dev                    # Auto-generates SQLite schema + starts dev serve
 DATABASE_URL="file:./dev.db" npx prisma db push    # Apply to SQLite
 node prisma/seed.js           # Seed with mock users
 
-# Production workflow  
+# Production workflow
 NODE_ENV=production npm run generate-schema  # Generate PostgreSQL schema
 npx prisma migrate deploy                    # Apply migrations to PostgreSQL
 ```
@@ -88,14 +88,14 @@ npx prisma migrate deploy                    # Apply migrations to PostgreSQL
 
 ✅ **No Manual Changes**: Schema automatically adapts to environment
 ✅ **Type Safety**: Proper Json vs String types per database
-✅ **CI/CD Ready**: Works seamlessly in build pipelines  
+✅ **CI/CD Ready**: Works seamlessly in build pipelines
 ✅ **Developer Friendly**: Just run `npm run dev` and everything works
 ✅ **Production Safe**: PostgreSQL features available in production
 
 ## Files
 
 - `prisma/schema.template.prisma` - Master template (edit this)
-- `prisma/schema.prisma` - Generated file (don't edit, auto-generated)  
+- `prisma/schema.prisma` - Generated file (don't edit, auto-generated)
 - `scripts/generate-schema.js` - Generation logic
 - `.gitignore` - Excludes generated schema from version control
 
@@ -103,7 +103,7 @@ npx prisma migrate deploy                    # Apply migrations to PostgreSQL
 
 When making schema changes:
 
-1. Edit `prisma/schema.template.prisma` 
+1. Edit `prisma/schema.template.prisma`
 2. Test locally: `npm run generate-schema && npx prisma db push`
 3. Create migration: `npx prisma migrate dev --name your-change`
 4. Deploy: The production build will auto-generate PostgreSQL schema
