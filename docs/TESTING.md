@@ -212,7 +212,7 @@ describe('Feature Name', () => {
 ```yaml
 - name: Run Tests
   run: npm run test:ci
-  
+
 - name: Upload Coverage
   uses: codecov/codecov-action@v3
 ```

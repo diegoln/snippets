@@ -34,7 +34,7 @@ const handleGenerateNewDraft = async (e: React.FormEvent) => {
     await onGenerateDraft(formData)
     // Success handling
   } catch (error) {
-    // Error handling  
+    // Error handling
   } finally {
     setIsDraftGenerating(false) // End loading
   }

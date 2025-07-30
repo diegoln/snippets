@@ -94,7 +94,7 @@ WeeklySnippet {
   id, userId, weekNumber, startDate, endDate
   content                    -- User-written content
   extractedTasks            -- JSON from integrations
-  extractedMeetings         -- JSON from integrations  
+  extractedMeetings         -- JSON from integrations
   aiSuggestions            -- AI-generated recommendations
 }
 
