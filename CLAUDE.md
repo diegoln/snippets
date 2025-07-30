@@ -4,7 +4,7 @@
 
 **AdvanceWeekly**: Next.js app for tracking weekly accomplishments with AI-powered performance assessments.
 
-**Core Flow**: Users write weekly snippets → System collects data from integrations (Calendar/Todoist/GitHub) → LLM generates insights → Performance assessments created from accumulated data.
+**Core Flow**: Users write Friday Reflections → System collects data from integrations (Calendar/Todoist/GitHub) → LLM generates insights → Career Check-Ins created from accumulated data.
 
 **Tech Stack**: Next.js 14, TypeScript, Tailwind CSS, PostgreSQL/Prisma, NextAuth, Google Cloud Platform
 

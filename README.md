@@ -1,6 +1,6 @@
-# Weekly Snippets Reminder
+# AdvanceWeekly
 
-A comprehensive tool to help users create and track weekly work summaries with intelligent context extraction and career development guidance.
+A comprehensive tool to help users create Friday Reflections and Career Check-Ins with intelligent context extraction and career development guidance.
 
 ## Features
 

@@ -162,10 +162,10 @@ export const AuthenticatedApp = (): JSX.Element => {
         setSelectedSnippet({ ...selectedSnippet, content })
         setIsEditing(false)
       } else {
-        console.error('Failed to save snippet:', response.statusText)
+        console.error('Failed to save reflection:', response.statusText)
       }
     } catch (error) {
-      console.error('Error saving snippet:', error)
+      console.error('Error saving reflection:', error)
     }
   }, [selectedSnippet, snippets])
 
@@ -305,11 +305,11 @@ export const AuthenticatedApp = (): JSX.Element => {
         
         setCurrentPage(0)
       } else {
-        console.error('Failed to create snippet:', response.statusText)
-        alert('Failed to create new snippet. Please try again.')
+        console.error('Failed to create reflection:', response.statusText)
+        alert('Failed to create new reflection. Please try again.')
       }
     } catch (error) {
-      console.error('Error creating snippet:', error)
+      console.error('Error creating reflection:', error)
       alert('Failed to create new snippet. Please try again.')
     }
   }, [getCurrentWeek, snippets])
@@ -419,7 +419,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                 aria-controls="snippets-panel"
                 id="snippets-tab"
               >
-                Weekly Snippets
+                Friday Reflections
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
@@ -433,7 +433,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                 aria-controls="performance-panel"
                 id="performance-tab"
               >
-                Performance Drafts
+                Career Check-In
               </button>
             </div>
           </div>
@@ -449,7 +449,7 @@ export const AuthenticatedApp = (): JSX.Element => {
           
           <aside className="lg:col-span-1">
             <div className="card bg-white p-4 md:p-6">
-              <h2 className="text-heading-2 text-primary mb-4 md:mb-6">Your Snippets</h2>
+              <h2 className="text-heading-2 text-primary mb-4 md:mb-6">Your Reflections</h2>
               
               <nav className="space-y-2">
                 {paginatedSnippets.map((snippet) => (
@@ -507,9 +507,9 @@ export const AuthenticatedApp = (): JSX.Element => {
                       <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
                     </svg>
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium text-blue-900 mb-1">Get more from your snippets</h4>
+                      <h4 className="text-sm font-medium text-blue-900 mb-1">Get more from your reflections</h4>
                       <p className="text-sm text-blue-700 mb-3">
-                        Connect your Google Calendar to automatically include meeting context in your weekly snippets.
+                        Connect your Google Calendar to automatically include meeting context in your Friday reflections.
                       </p>
                       <button
                         onClick={() => setShowSettings(true)}
@@ -524,8 +524,8 @@ export const AuthenticatedApp = (): JSX.Element => {
                 <button 
                   onClick={handleAddCurrentWeek}
                   className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                  aria-label="Add current week snippet"
-                  title={`Add snippet for week ${getCurrentWeek()}`}
+                  aria-label="Add current week reflection"
+                  title={`Add reflection for week ${getCurrentWeek()}`}
                 >
                   + Add Current Week (Week {getCurrentWeek()})
                 </button>
@@ -543,7 +543,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                   <button
                     onClick={handleToggleEdit}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 self-start sm:self-auto"
-                    aria-label={isEditing ? 'Cancel editing' : 'Edit snippet'}
+                    aria-label={isEditing ? 'Cancel editing' : 'Edit reflection'}
                   >
                     {isEditing ? 'Cancel' : 'Edit'}
                   </button>
@@ -564,7 +564,7 @@ export const AuthenticatedApp = (): JSX.Element => {
               </article>
             ) : (
               <div className="bg-white rounded-lg shadow-md p-4 md:p-6 text-center text-gray-500">
-                <p>Select a snippet to view or edit</p>
+                <p>Select a reflection to view or edit</p>
               </div>
             )}
           </main>
@@ -648,7 +648,7 @@ function SnippetEditor({
           onChange={handleContentChange}
           className="w-full h-64 p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm"
           placeholder="Describe what you accomplished this week and your plans for next week..."
-          aria-label="Snippet content editor"
+          aria-label="Reflection content editor"
         />
       ) : (
         <div className="w-full h-64 p-3 border border-gray-300 rounded-md bg-gray-50 overflow-y-auto">
@@ -668,7 +668,7 @@ function SnippetEditor({
           <button
             onClick={handleSave}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-            aria-label="Save snippet changes"
+            aria-label="Save reflection changes"
           >
             Save
           </button>

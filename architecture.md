@@ -2,7 +2,7 @@
 
 ## Overview
 
-AdvanceWeekly is a Next.js application that helps professionals track their weekly accomplishments and generate AI-powered performance assessments. The system combines manual snippet creation with automated data collection from third-party tools, processing everything through LLM analysis to provide meaningful career insights.
+AdvanceWeekly is a Next.js application that helps professionals track their Friday Reflections and generate AI-powered Career Check-Ins. The system combines manual reflection creation with automated data collection from third-party tools, processing everything through LLM analysis to provide meaningful career insights.
 
 ## Development Server Architecture
 
@@ -28,7 +28,7 @@ The **development server** is the cornerstone of AdvanceWeekly's development wor
 ![System Architecture](https://raw.githubusercontent.com/diegoln/snippets/main/docs/architecture-diagram.svg)
 
 The diagram illustrates the layered architecture with clear separation between:
-- **User Interface Layer**: Landing page, snippets, performance assessments, and integration management
+- **User Interface Layer**: Landing page, Friday Reflections, Career Check-Ins, and integration management
 - **Authentication Layer**: Environment-aware auth with NextAuth supporting both mock and Google OAuth
 - **API Layer**: RESTful endpoints for all system operations including scheduled processing
 - **Data Storage**: Dual database support (SQLite dev, PostgreSQL prod)
@@ -56,15 +56,15 @@ The system implements a weekly batch processing pipeline that:
 The central React component that orchestrates the entire user experience:
 
 **Key Features:**
-- **Tab-based Navigation**: Weekly Snippets vs Performance Assessments
-- **Snippet Management**: CRUD operations with Markdown support
-- **Assessment Generation**: AI-powered performance draft creation
+- **Tab-based Navigation**: Friday Reflections vs Career Check-Ins
+- **Reflection Management**: CRUD operations with Markdown support
+- **Career Check-In Generation**: AI-powered career assessment creation
 - **Settings Integration**: User profile and integration management
-- **Pagination**: Efficient handling of large snippet collections
+- **Pagination**: Efficient handling of large reflection collections
 
 **State Management:**
 - useReducer for complex assessment operations
-- useState for UI state and snippet data
+- useState for UI state and reflection data
 - Custom hooks for authentication and data fetching
 
 ### Authentication System
@@ -138,7 +138,7 @@ PerformanceAssessment {
 
 **Usage Patterns:**
 ```typescript
-// Performance assessment generation
+// Career Check-In generation
 const assessmentDraft = await llmProxy.generateAssessment({
   snippets: userSnippets,
   feedback: userFeedback,
@@ -235,12 +235,12 @@ class GitHubIntegration extends BaseIntegration {
 
 ### User Interaction Flow
 1. **Authentication**: User signs in via Google OAuth (prod) or mock selection (dev)
-2. **Dashboard Access**: Route to weekly snippets or performance assessments
-3. **Snippet Management**: Create/edit weekly summaries with Markdown support
+2. **Dashboard Access**: Route to Friday Reflections or Career Check-Ins
+3. **Reflection Management**: Create/edit Friday Reflections with Markdown support
 4. **Integration Setup**: Connect third-party accounts via OAuth flows
 5. **Automated Collection**: Background jobs gather integration data weekly
 6. **AI Processing**: LLM analyzes collected data and generates insights
-7. **Recommendation Display**: AI suggestions appear in snippet interface
+7. **Recommendation Display**: AI suggestions appear in reflection interface
 
 ### Weekly Processing Flow
 1. **Trigger**: Cloud Scheduler initiates weekly data collection (Mondays 9 AM)
@@ -249,7 +249,7 @@ class GitHubIntegration extends BaseIntegration {
 4. **Data Storage**: Raw responses stored in integration_data table
 5. **Data Processing**: Clean, transform, and aggregate collected data
 6. **LLM Analysis**: Send aggregated data to OpenAI for insight generation
-7. **Result Storage**: Update weekly_snippets with AI recommendations
+7. **Result Storage**: Update Friday Reflections with AI recommendations
 8. **Error Handling**: Retry failed operations, log issues for investigation
 
 ## Security & Privacy

@@ -2,7 +2,7 @@
  * Performance Assessment Component
  * 
  * Allows users to generate AI-powered performance self-assessment drafts
- * based on their weekly snippets and career context through LLMProxy integration.
+ * based on their Friday reflections and career context through LLMProxy integration.
  */
 
 'use client'
@@ -198,7 +198,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
         <div>
           <h2 className="text-heading-2 text-primary">Performance Self-Assessment Drafts</h2>
           <p className="text-secondary mt-1">
-            Generate AI-powered performance assessment drafts based on your weekly snippets
+            Generate AI-powered performance assessment drafts based on your Friday reflections
           </p>
         </div>
         {!isFormOpen && (
@@ -221,7 +221,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
           aria-describedby="form-description"
         >
           <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Generate Performance Assessment Draft</h3>
-          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered performance assessment draft based on your weekly snippets</p>
+          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered performance assessment draft based on your Friday reflections</p>
           
           <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
             <div>
@@ -397,7 +397,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
             <div className="text-gray-400 text-4xl mb-4">📊</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Performance Assessment Drafts Yet</h3>
             <p className="text-gray-600 mb-4">
-              Generate your first AI-powered performance assessment draft based on your weekly snippets.
+              Generate your first AI-powered performance assessment draft based on your Friday reflections.
             </p>
             <button
               onClick={() => dispatch({ type: 'OPEN_FORM' })}
@@ -426,7 +426,7 @@ export const PerformanceAssessmentComponent: React.FC<PerformanceAssessmentProps
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     <div>
                       <h4 className="font-medium text-gray-900">Generating Draft...</h4>
-                      <p className="text-sm text-gray-600">AI is analyzing your snippets and creating your assessment</p>
+                      <p className="text-sm text-gray-600">AI is analyzing your reflections and creating your assessment</p>
                     </div>
                   </div>
                 ) : (
