@@ -145,7 +145,7 @@ export class LLMProxyClient {
    * Build performance assessment prompt from context
    */
   private buildPerformanceAssessmentPrompt(context: AssessmentContext): string {
-    const { userProfile, weeklySnippets, cyclePeriod, previousFeedback, assessmentDirections } = context
+    const { userProfile, weeklySnippets, cyclePeriod, previousFeedback, checkInFocusAreas } = context
 
     return `You are an expert performance review assistant. Create a comprehensive self-assessment for a ${userProfile.seniorityLevel} ${userProfile.jobTitle}.
 
@@ -153,7 +153,7 @@ CONTEXT:
 - Performance Cycle: ${cyclePeriod.cycleName} (${cyclePeriod.startDate} to ${cyclePeriod.endDate})
 - Role: ${userProfile.seniorityLevel} ${userProfile.jobTitle}
 - Previous Feedback: ${previousFeedback || 'None provided'}
-${assessmentDirections ? `- Special Directions: ${assessmentDirections}` : ''}
+${checkInFocusAreas ? `- Special Directions: ${checkInFocusAreas}` : ''}
 
 WEEKLY ACCOMPLISHMENTS:
 ${weeklySnippets.map(snippet => `Week ${snippet.weekNumber}: ${snippet.content}`).join('\n')}
@@ -165,7 +165,7 @@ REQUIREMENTS:
 4. Include sections: Executive Summary, Key Accomplishments, Technical Impact, Growth Areas, Level Alignment
 5. Avoid granular details - focus on strategic contributions
 6. Make it suitable for manager and performance committee review
-${assessmentDirections ? `7. Follow the provided special directions: ${assessmentDirections}` : ''}
+${checkInFocusAreas ? `7. Follow the provided special directions: ${checkInFocusAreas}` : ''}
 
 Generate the self-assessment in markdown format:`
   }
