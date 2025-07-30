@@ -32,8 +32,8 @@ const mockAssessments: PerformanceAssessment[] = [
     cycleName: 'Q4 2024',
     startDate: '2024-10-01',
     endDate: '2024-12-31',
-    assessmentDirections: 'Focus on leadership',
-    generatedDraft: 'Sample assessment content...',
+    checkInFocusAreas: 'Focus on leadership',
+    generatedDraft: 'Sample check-in content...',
     createdAt: '2024-12-15',
     isGenerating: false
   },
@@ -42,8 +42,8 @@ const mockAssessments: PerformanceAssessment[] = [
     cycleName: 'H1 2025',
     startDate: '2025-01-01',
     endDate: '2025-06-30',
-    assessmentDirections: '',
-    generatedDraft: 'Another assessment...',
+    checkInFocusAreas: '',
+    generatedDraft: 'Another check-in...',
     createdAt: '2024-12-20',
     isGenerating: true
   }
@@ -64,14 +64,14 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should use primary brand color for headings', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const heading = screen.getByText('Performance Self-Assessment Drafts')
+      const heading = screen.getByText('Career Check-Ins')
       expect(heading).toHaveClass('text-heading-2', 'text-primary')
     })
 
     it('should use accent button styling for primary actions', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveClass(
         'btn-accent',
         'px-4',
@@ -87,7 +87,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const formContainer = screen.getByRole('region')
@@ -98,17 +98,17 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
-      const formHeading = screen.getByText('Generate Performance Assessment Draft')
+      const formHeading = screen.getByText('Generate Career Check-In')
       expect(formHeading).toHaveClass('text-heading-2', 'text-primary')
     })
 
     it('should use secondary text styling for descriptions', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const description = screen.getByText(/generate ai-powered performance assessment drafts/i)
+      const description = screen.getByText(/generate ai-powered career check-ins/i)
       expect(description).toHaveClass('text-secondary')
     })
   })
@@ -118,7 +118,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const submitButton = screen.getByRole('button', { name: /generate draft/i })
@@ -134,7 +134,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
@@ -146,10 +146,10 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form and fill required fields
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
-      const cycleInput = screen.getByLabelText(/performance cycle name/i)
+      const cycleInput = screen.getByLabelText(/check-in period name/i)
       const startDateInput = screen.getByLabelText(/cycle start date/i)
       const endDateInput = screen.getByLabelText(/cycle end date/i)
       
@@ -170,7 +170,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should use brand transition timing', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveClass('transition-advance')
     })
 
@@ -178,7 +178,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
@@ -191,7 +191,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const formContainer = screen.getByRole('region')
@@ -204,7 +204,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should use proper button spacing', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveClass('px-4', 'py-2')
     })
   })
@@ -213,7 +213,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should use pill radius for buttons', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveClass('rounded-pill')
     })
 
@@ -221,7 +221,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const formContainer = screen.getByRole('region')
@@ -234,7 +234,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
@@ -245,7 +245,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const cancelButton = screen.getByRole('button', { name: /cancel/i })
@@ -257,7 +257,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should use elevation shadow for important elements', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveClass('shadow-elevation-1')
     })
   })
@@ -267,10 +267,10 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form and fill required fields
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
-      const cycleInput = screen.getByLabelText(/performance cycle name/i)
+      const cycleInput = screen.getByLabelText(/check-in period name/i)
       const startDateInput = screen.getByLabelText(/cycle start date/i)
       const endDateInput = screen.getByLabelText(/cycle end date/i)
       
@@ -292,7 +292,7 @@ describe('CareerCheckIn Design System Integration', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
       // Open the form
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       fireEvent.click(generateButton)
       
       const dateContainer = screen.getByLabelText(/cycle start date/i).closest('.grid')
@@ -304,7 +304,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should maintain accessibility while using brand styles', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const heading = screen.getByRole('heading', { name: /performance self-assessment drafts/i })
+      const heading = screen.getByRole('heading', { name: /career check-ins/i })
       expect(heading).toHaveClass('text-heading-2', 'text-primary')
       expect(heading).toBeInTheDocument()
     })
@@ -312,7 +312,7 @@ describe('CareerCheckIn Design System Integration', () => {
     it('should provide proper focus states with brand colors', () => {
       render(<CareerCheckInComponent {...defaultProps} />)
       
-      const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+      const generateButton = screen.getByRole('button', { name: /generate check-in/i })
       expect(generateButton).toHaveAttribute('aria-label')
     })
   })
@@ -326,25 +326,25 @@ describe('Component State Management', () => {
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
     
     // Open form
-    const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+    const generateButton = screen.getByRole('button', { name: /generate check-in/i })
     fireEvent.click(generateButton)
     
     expect(screen.getByRole('form')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /generate assessment/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /generate check-in/i })).not.toBeInTheDocument()
   })
 
   it('should validate form data correctly', async () => {
     render(<CareerCheckInComponent {...defaultProps} />)
     
     // Open form and try to submit without filling required fields
-    const generateButton = screen.getByRole('button', { name: /generate assessment/i })
+    const generateButton = screen.getByRole('button', { name: /generate check-in/i })
     fireEvent.click(generateButton)
     
     const submitButton = screen.getByRole('button', { name: /generate draft/i })
     fireEvent.click(submitButton)
     
     await waitFor(() => {
-      expect(screen.getByText(/performance cycle name is required/i)).toBeInTheDocument()
+      expect(screen.getByText(/check-in period name is required/i)).toBeInTheDocument()
       expect(screen.getByText(/start date is required/i)).toBeInTheDocument()
       expect(screen.getByText(/end date is required/i)).toBeInTheDocument()
     })

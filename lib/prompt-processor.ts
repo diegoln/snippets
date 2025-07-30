@@ -1,4 +1,4 @@
-import { AssessmentContext } from '../types/performance'
+import { CheckInContext, AssessmentContext } from '../types/performance'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
@@ -11,7 +11,7 @@ export class PromptProcessor {
   /**
    * Load and process the career check-in prompt template
    */
-  static async processPerformanceAssessmentPrompt(context: AssessmentContext): Promise<string> {
+  static async processCareerCheckInPrompt(context: CheckInContext): Promise<string> {
     // Load template from file (with caching)
     let template = this.templateCache.get('career-check-in')
     
@@ -31,10 +31,17 @@ export class PromptProcessor {
   }
 
   /**
+   * Legacy method for backward compatibility
+   */
+  static async processPerformanceAssessmentPrompt(context: AssessmentContext): Promise<string> {
+    return this.processCareerCheckInPrompt(context)
+  }
+
+  /**
    * Simple template processor for Handlebars-style syntax
    * Supports: {{variable}}, {{#if condition}}, {{#each array}}
    */
-  private static processTemplate(template: string, context: AssessmentContext): string {
+  private static processTemplate(template: string, context: CheckInContext): string {
     let processed = template
 
     // Replace simple variables {{variable.property}}
