@@ -18,9 +18,9 @@ if ! git diff-index --quiet HEAD --; then
   exit 1
 fi
 
-# 3. Run TypeScript compilation
+# 3. Run TypeScript compilation (fast mode for deployment)
 echo "📦 Running TypeScript compilation check..."
-npm run typecheck
+npm run typecheck:fast
 if [ $? -ne 0 ]; then
   echo "❌ TypeScript compilation failed. Fix errors before deploying."
   exit 1
