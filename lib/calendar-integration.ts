@@ -8,7 +8,19 @@
  * unless calendar integration is actually used.
  */
 
-import { Account } from '@prisma/client'
+// Account model type for calendar integration
+interface Account {
+  id: string
+  userId: string
+  type: string
+  provider: string
+  providerAccountId: string
+  refresh_token?: string | null
+  access_token?: string | null
+  expires_at?: number | null
+  token_type?: string | null
+  scope?: string | null
+}
 import { format, parseISO } from 'date-fns'
 
 // Dynamic import helper for googleapis
