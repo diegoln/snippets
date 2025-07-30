@@ -3,14 +3,14 @@
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { Settings } from '../components/Settings'
-import { PerformanceAssessmentComponent } from '../components/PerformanceAssessment'
+import { CareerCheckInComponent } from '../components/CareerCheckIn'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Logo } from '../components/Logo'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
 import { PerformanceSettings } from '../types/settings'
-import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
+import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS, CheckInFormData, CheckInContext } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
@@ -584,7 +584,7 @@ export const AuthenticatedApp = (): JSX.Element => {
               </div>
             }
           >
-            <PerformanceAssessmentComponent
+            <CareerCheckInComponent
               assessments={sortedAssessments}
               onGenerateDraft={handleGenerateDraft}
               onDeleteAssessment={handleDeleteAssessment}

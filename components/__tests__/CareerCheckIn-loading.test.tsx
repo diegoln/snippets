@@ -1,13 +1,13 @@
 /**
- * Unit tests for PerformanceAssessment loading states and feedback
+ * Unit tests for CareerCheckIn loading states and feedback
  */
 
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { PerformanceAssessmentComponent } from '../PerformanceAssessment'
+import { CareerCheckInComponent } from '../CareerCheckIn'
 
-describe('PerformanceAssessment Loading States', () => {
+describe('CareerCheckIn Loading States', () => {
   const mockAssessments = []
   const mockOnGenerateDraft = jest.fn()
   const mockOnDeleteAssessment = jest.fn()
@@ -18,26 +18,26 @@ describe('PerformanceAssessment Loading States', () => {
 
   it('should show Generate New Draft button initially', () => {
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
       />
     )
 
-    expect(screen.getByText('+ Generate Assessment')).toBeInTheDocument()
+    expect(screen.getByText('+ Generate Check-In')).toBeInTheDocument()
   })
 
-  it('should show generation form when Generate Assessment is clicked', async () => {
+  it('should show generation form when Generate Check-In is clicked', async () => {
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
       />
     )
 
-    const generateButton = screen.getByText('+ Generate Assessment')
+    const generateButton = screen.getByText('+ Generate Check-In')
     fireEvent.click(generateButton)
 
     await waitFor(() => {
@@ -51,7 +51,7 @@ describe('PerformanceAssessment Loading States', () => {
     mockOnGenerateDraft.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -59,7 +59,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open the generation form
-    const generateNewButton = screen.getByText('+ Generate Assessment')
+    const generateNewButton = screen.getByText('+ Generate Check-In')
     fireEvent.click(generateNewButton)
 
     await waitFor(() => {
@@ -87,7 +87,7 @@ describe('PerformanceAssessment Loading States', () => {
     mockOnGenerateDraft.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -95,7 +95,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open the generation form
-    fireEvent.click(screen.getByText('+ Generate Assessment'))
+    fireEvent.click(screen.getByText('+ Generate Check-In'))
 
     await waitFor(() => {
       // Fill out the form
@@ -129,7 +129,7 @@ describe('PerformanceAssessment Loading States', () => {
     mockOnGenerateDraft.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -137,7 +137,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open form and fill it
-    fireEvent.click(screen.getByText('+ Generate Assessment'))
+    fireEvent.click(screen.getByText('+ Generate Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -167,7 +167,7 @@ describe('PerformanceAssessment Loading States', () => {
     }))
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -175,7 +175,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open and submit form
-    fireEvent.click(screen.getByText('+ Generate Assessment'))
+    fireEvent.click(screen.getByText('+ Generate Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -203,7 +203,7 @@ describe('PerformanceAssessment Loading States', () => {
     mockOnGenerateDraft.mockRejectedValue(new Error('Generation failed'))
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -211,7 +211,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open and submit form
-    fireEvent.click(screen.getByText('+ Generate Assessment'))
+    fireEvent.click(screen.getByText('+ Generate Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -236,7 +236,7 @@ describe('PerformanceAssessment Loading States', () => {
     })
 
     render(
-      <PerformanceAssessmentComponent
+      <CareerCheckInComponent
         assessments={mockAssessments}
         onGenerateDraft={mockOnGenerateDraft}
         onDeleteAssessment={mockOnDeleteAssessment}
@@ -244,7 +244,7 @@ describe('PerformanceAssessment Loading States', () => {
     )
 
     // Open and fill form
-    fireEvent.click(screen.getByText('+ Generate Assessment'))
+    fireEvent.click(screen.getByText('+ Generate Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {

@@ -1,25 +1,25 @@
-import { AssessmentContext } from '../types/performance'
+import { CheckInContext, AssessmentContext } from '../types/performance'
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
 /**
- * Process performance assessment prompt template with context data
+ * Process career check-in prompt template with context data
  */
 export class PromptProcessor {
   private static templateCache: Map<string, string> = new Map()
 
   /**
-   * Load and process the performance assessment prompt template
+   * Load and process the career check-in prompt template
    */
-  static async processPerformanceAssessmentPrompt(context: AssessmentContext): Promise<string> {
+  static async processCareerCheckInPrompt(context: CheckInContext): Promise<string> {
     // Load template from file (with caching)
-    let template = this.templateCache.get('performance-assessment')
+    let template = this.templateCache.get('career-check-in')
     
     if (!template) {
       try {
-        const templatePath = join(process.cwd(), 'lib/prompts/performance-assessment.md')
+        const templatePath = join(process.cwd(), 'lib/prompts/career-check-in.md')
         template = readFileSync(templatePath, 'utf-8')
-        this.templateCache.set('performance-assessment', template)
+        this.templateCache.set('career-check-in', template)
       } catch (error) {
         console.error('Failed to load prompt template:', error)
         throw new Error('Prompt template not found')
@@ -31,10 +31,17 @@ export class PromptProcessor {
   }
 
   /**
+   * Legacy method for backward compatibility
+   */
+  static async processPerformanceAssessmentPrompt(context: AssessmentContext): Promise<string> {
+    return this.processCareerCheckInPrompt(context)
+  }
+
+  /**
    * Simple template processor for Handlebars-style syntax
    * Supports: {{variable}}, {{#if condition}}, {{#each array}}
    */
-  private static processTemplate(template: string, context: AssessmentContext): string {
+  private static processTemplate(template: string, context: CheckInContext): string {
     let processed = template
 
     // Replace simple variables {{variable.property}}

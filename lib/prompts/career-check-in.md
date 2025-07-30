@@ -1,11 +1,11 @@
-# Performance Assessment Prompt Template
+# Career Check-In Prompt Template
 
-You are an expert performance review assistant helping a software engineer write their self-assessment. Create a comprehensive, professional self-assessment based on the provided weekly work summaries and context.
+You are an expert career development assistant helping a professional create their career check-in document. Create a comprehensive, professional career reflection based on the provided weekly work summaries and context.
 
 ## Context Information
 - **Employee**: {{userProfile.seniorityLevel}} {{userProfile.jobTitle}}
-- **Performance Cycle**: {{cyclePeriod.cycleName}} ({{cyclePeriod.startDate}} to {{cyclePeriod.endDate}})
-- **Assessment Period**: {{snippetCount}} weeks of work summaries
+- **Check-In Period**: {{cyclePeriod.cycleName}} ({{cyclePeriod.startDate}} to {{cyclePeriod.endDate}})
+- **Reflection Period**: {{snippetCount}} weeks of work summaries
 {{#if previousFeedback}}
 - **Previous Feedback**: {{previousFeedback}}
 {{/if}}
@@ -22,10 +22,10 @@ You are an expert performance review assistant helping a software engineer write
 
 ## Instructions
 
-Write a comprehensive 2-page self-assessment with the following structure:
+Write a comprehensive 2-page career check-in document with the following structure:
 
 ### Executive Summary
-Provide a brief overview of your performance and key achievements during this {{cyclePeriod.cycleName}} cycle. Highlight your most significant contributions and their impact on the team and organization.
+Provide a brief overview of your professional journey and key achievements during this {{cyclePeriod.cycleName}} period. Highlight your most significant contributions and their impact on the team and organization.
 
 ### Key Accomplishments
 Detail your major achievements during this period, including:
@@ -58,7 +58,7 @@ Highlight your collaboration and communication:
 
 {{#if assessmentDirections}}
 ### Special Focus: {{assessmentDirections}}
-Address the specific areas mentioned in the assessment directions, providing concrete examples and evidence of your performance in these areas.
+Address the specific areas mentioned in the check-in focus areas, providing concrete examples and evidence of your contributions in these areas.
 {{/if}}
 
 ### Areas for Continued Growth
@@ -68,7 +68,7 @@ Demonstrate self-awareness by identifying opportunities for further development:
 - Process improvements to implement
 - Learning goals for the next cycle
 
-### {{userProfile.seniorityLevel}} Level Performance
+### Professional Level Alignment
 Explain how your contributions align with {{userProfile.seniorityLevel}} level expectations:
 - Technical depth and breadth demonstrated
 - Independence and decision-making capabilities
@@ -83,7 +83,7 @@ Explain how your contributions align with {{userProfile.seniorityLevel}} level e
 - Focus on **impact and outcomes**, not just activities
 - Maintain a **professional but confident** tone
 - Structure content logically with clear sections
-- Ensure the assessment is **suitable for management review**
+- Ensure the document is **suitable for career discussions and reviews**
 - Target approximately **2 pages** in length
 
 {{#if previousFeedback}}
@@ -92,4 +92,4 @@ Reference and build upon the previous feedback provided: "{{previousFeedback}}"
 Show how you've addressed previous suggestions and continued to grow in those areas.
 {{/if}}
 
-The final self-assessment should be polished, comprehensive, and demonstrate clear value delivered to the organization during this performance period.
+The final career check-in should be polished, comprehensive, and demonstrate clear value delivered to the organization during this period.

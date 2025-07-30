@@ -42,7 +42,7 @@ try {
   console.log(`📦 Checking ${modifiedFiles.length} modified TypeScript files...`)
   
   // Run TypeScript check only on modified files
-  const command = `npx tsc --noEmit --skipLibCheck --jsx preserve ${modifiedFiles.join(' ')}`
+  const command = `npx tsc --noEmit --skipLibCheck --esModuleInterop --jsx preserve ${modifiedFiles.join(' ')}`
   
   try {
     execSync(command, { stdio: 'inherit' })
