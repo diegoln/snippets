@@ -170,7 +170,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
     } catch (error) {
       dispatch({ 
         type: 'GENERATION_ERROR', 
-        message: error instanceof Error ? error.message : 'Failed to generate career check-in. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to generate career check-in draft. Please try again.'
       })
     }
   }, [state.formData, validateForm, onGenerateDraft, dispatch])
@@ -200,18 +200,18 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-heading-2 text-primary">Career Check-Ins</h2>
+          <h2 className="text-heading-2 text-primary">Career Check-In Drafts</h2>
           <p className="text-secondary mt-1">
-            Generate AI-powered career check-ins based on your Friday reflections
+            Generate AI-powered career check-in drafts based on your Friday reflections
           </p>
         </div>
         {!isFormOpen && (
           <button
             onClick={() => dispatch({ type: 'OPEN_FORM' })}
             className="btn-accent px-4 py-2 rounded-pill font-medium transition-advance shadow-elevation-1"
-            aria-label="Open form to generate new career check-in"
+            aria-label="Open form to generate new career check-in draft"
           >
-            + Generate Check-In
+            + Draft Career Check-In
           </button>
         )}
       </div>
@@ -224,14 +224,14 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
           aria-labelledby="form-heading"
           aria-describedby="form-description"
         >
-          <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Generate Career Check-In</h3>
-          <p id="form-description" className="sr-only">Fill out this form to generate an AI-powered career check-in based on your Friday reflections</p>
+          <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Create Career Check-In Draft</h3>
+          <p id="form-description" className="sr-only">Fill out this form to create an AI-powered career check-in draft based on your Friday reflections</p>
           
           <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
             <div>
               <label htmlFor="cycleName" className="block text-sm font-medium text-gray-700 mb-1">
                 Check-In Period Name
-                <span className="text-gray-500 text-xs ml-1" title="A descriptive name for your career check-in period">ⓘ</span>
+                <span className="text-gray-500 text-xs ml-1" title="A descriptive name for your career check-in draft period">ⓘ</span>
               </label>
               <input
                 type="text"
@@ -247,7 +247,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                 }`}
                 placeholder="e.g., H1 2025, Q4 2024, Mid-Year Check-In 2025, Q3 Progress Review"
               />
-              <span id="cycleName-hint" className="sr-only">A descriptive name for your career check-in period</span>
+              <span id="cycleName-hint" className="sr-only">A descriptive name for your career check-in draft period</span>
               {state.errors.cycleName && (
                 <p id="cycleName-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.cycleName}</p>
               )}
@@ -306,7 +306,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
             <div>
               <label htmlFor="checkInFocusAreas" className="block text-sm font-medium text-gray-700 mb-1">
                 Check-In Focus Areas (Optional)
-                <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to include in your career check-in">ⓘ</span>
+                <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to include in your career check-in draft">ⓘ</span>
               </label>
               <textarea
                 id="checkInFocusAreas"
@@ -321,7 +321,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                 rows={3}
                 placeholder="e.g., Focus on key accomplishments, professional growth areas, team contributions, learning goals..."
               />
-              <span id="checkInFocusAreas-hint" className="sr-only">Provide specific guidelines or focus areas to include in your career check-in</span>
+              <span id="checkInFocusAreas-hint" className="sr-only">Provide specific guidelines or focus areas to include in your career check-in draft</span>
               {state.errors.checkInFocusAreas && (
                 <p id="checkInFocusAreas-error" className="text-red-600 text-sm mt-1" role="alert">{state.errors.checkInFocusAreas}</p>
               )}
@@ -360,12 +360,12 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                     <span>Generating...</span>
                   </>
                 ) : (
-                  <span>Generate Draft</span>
+                  <span>Create Draft</span>
                 )}
               </button>
               {isGenerating && (
                 <span id="generation-status" className="sr-only" aria-live="polite">
-                  AI is generating your career check-in document. This may take up to 80 seconds.
+                  AI is generating your career check-in draft. This may take up to 80 seconds.
                 </span>
               )}
             </div>
@@ -399,15 +399,15 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
         {assessments.length === 0 && !isFormOpen ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg">
             <div className="text-gray-400 text-4xl mb-4">📊</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Career Check-Ins Yet</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Career Check-In Drafts Yet</h3>
             <p className="text-gray-600 mb-4">
-              Generate your first AI-powered career check-in based on your Friday reflections.
+              Generate your first AI-powered career check-in draft based on your Friday reflections.
             </p>
             <button
               onClick={() => dispatch({ type: 'OPEN_FORM' })}
               className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              Generate Your First Check-In
+              Generate Your First Draft
             </button>
           </div>
         ) : (
@@ -430,7 +430,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     <div>
                       <h4 className="font-medium text-gray-900">Generating Draft...</h4>
-                      <p className="text-sm text-gray-600">AI is analyzing your reflections and creating your career check-in</p>
+                      <p className="text-sm text-gray-600">AI is analyzing your reflections and creating your career check-in draft</p>
                     </div>
                   </div>
                 ) : (
@@ -491,7 +491,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h3 id="modal-title" className="text-xl font-semibold text-gray-900">
-                  {state.selectedCheckIn.cycleName} - Generated Draft
+                  {state.selectedCheckIn.cycleName} - Career Check-In Draft
                 </h3>
                 <button
                   onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: null })}
