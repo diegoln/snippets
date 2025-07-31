@@ -176,10 +176,12 @@ Generate the self-assessment in markdown format:`
   private getMockAssessmentResponse(context: AssessmentContext): LLMProxyResponse {
     const { userProfile, weeklySnippets, cyclePeriod } = context
 
-    const content = `# ${cyclePeriod.cycleName} - Self Assessment
+    const content = `# ${cyclePeriod.cycleName} - Career Check-In Draft
 
 ## Executive Summary
-During the ${cyclePeriod.cycleName} performance cycle, I successfully executed on key engineering initiatives while contributing to team growth and organizational objectives. As a ${userProfile.seniorityLevel} ${userProfile.jobTitle}, I focused on delivering high-impact technical solutions and mentoring team members.
+During the ${cyclePeriod.cycleName} period, I successfully executed on key engineering initiatives while contributing to team growth and organizational objectives. As a ${userProfile.seniorityLevel} ${userProfile.jobTitle}, I focused on delivering high-impact technical solutions and mentoring team members.
+
+*This draft serves as preparation material for career conversations and performance discussions.*
 
 ## Key Accomplishments
 Based on my weekly activities during this cycle:

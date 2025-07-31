@@ -439,7 +439,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                 aria-controls="performance-panel"
                 id="performance-tab"
               >
-                Career Check-In
+                Career Check-In Drafts
               </button>
             </div>
           </div>

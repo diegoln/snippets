@@ -25,10 +25,10 @@ describe('CareerCheckIn Loading States', () => {
       />
     )
 
-    expect(screen.getByText('+ Generate Check-In')).toBeInTheDocument()
+    expect(screen.getByText('+ Draft Career Check-In')).toBeInTheDocument()
   })
 
-  it('should show generation form when Generate Check-In is clicked', async () => {
+  it('should show generation form when Draft Career Check-In is clicked', async () => {
     render(
       <CareerCheckInComponent
         assessments={mockAssessments}
@@ -37,16 +37,16 @@ describe('CareerCheckIn Loading States', () => {
       />
     )
 
-    const generateButton = screen.getByText('+ Generate Check-In')
+    const generateButton = screen.getByText('+ Draft Career Check-In')
     fireEvent.click(generateButton)
 
     await waitFor(() => {
-      expect(screen.getByText('Generate Draft')).toBeInTheDocument()
+      expect(screen.getByText('Create Draft')).toBeInTheDocument()
       expect(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025')).toBeInTheDocument()
     })
   })
 
-  it('should show loading state when Generate Draft is clicked', async () => {
+  it('should show loading state when Create Draft is clicked', async () => {
     // Mock the onGenerateDraft to be a slow promise
     mockOnGenerateDraft.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
@@ -59,7 +59,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open the generation form
-    const generateNewButton = screen.getByText('+ Generate Check-In')
+    const generateNewButton = screen.getByText('+ Draft Career Check-In')
     fireEvent.click(generateNewButton)
 
     await waitFor(() => {
@@ -73,7 +73,7 @@ describe('CareerCheckIn Loading States', () => {
     })
 
     // Submit the form
-    const generateButton = screen.getByText('Generate Draft')
+    const generateButton = screen.getByText('Create Draft')
     fireEvent.click(generateButton)
 
     // Should show loading state immediately
@@ -95,7 +95,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open the generation form
-    fireEvent.click(screen.getByText('+ Generate Check-In'))
+    fireEvent.click(screen.getByText('+ Draft Career Check-In'))
 
     await waitFor(() => {
       // Fill out the form
@@ -109,7 +109,7 @@ describe('CareerCheckIn Loading States', () => {
     })
 
     // Submit the form
-    const generateButton = screen.getByText('Generate Draft')
+    const generateButton = screen.getByText('Create Draft')
     fireEvent.click(generateButton)
 
     // Check that form elements are disabled
@@ -125,7 +125,7 @@ describe('CareerCheckIn Loading States', () => {
     })
   })
 
-  it('should show spinner in Generate Draft button during loading', async () => {
+  it('should show spinner in Create Draft button during loading', async () => {
     mockOnGenerateDraft.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
 
     render(
@@ -137,7 +137,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open form and fill it
-    fireEvent.click(screen.getByText('+ Generate Check-In'))
+    fireEvent.click(screen.getByText('+ Draft Career Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -146,7 +146,7 @@ describe('CareerCheckIn Loading States', () => {
     })
 
     // Submit form
-    const generateButton = screen.getByText('Generate Draft')
+    const generateButton = screen.getByText('Create Draft')
     fireEvent.click(generateButton)
 
     // Check for loading spinner and text
@@ -175,7 +175,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open and submit form
-    fireEvent.click(screen.getByText('+ Generate Check-In'))
+    fireEvent.click(screen.getByText('+ Draft Career Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -183,7 +183,7 @@ describe('CareerCheckIn Loading States', () => {
       })
     })
 
-    fireEvent.click(screen.getByText('Generate Draft'))
+    fireEvent.click(screen.getByText('Create Draft'))
 
     // Loading state should be visible
     await waitFor(() => {
@@ -211,7 +211,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open and submit form
-    fireEvent.click(screen.getByText('+ Generate Check-In'))
+    fireEvent.click(screen.getByText('+ Draft Career Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -219,7 +219,7 @@ describe('CareerCheckIn Loading States', () => {
       })
     })
 
-    fireEvent.click(screen.getByText('Generate Draft'))
+    fireEvent.click(screen.getByText('Create Draft'))
 
     // Should show error after generation fails
     await waitFor(() => {
@@ -244,7 +244,7 @@ describe('CareerCheckIn Loading States', () => {
     )
 
     // Open and fill form
-    fireEvent.click(screen.getByText('+ Generate Check-In'))
+    fireEvent.click(screen.getByText('+ Draft Career Check-In'))
 
     await waitFor(() => {
       fireEvent.change(screen.getByPlaceholderText('e.g., H1 2025, Q4 2024, Annual Review 2025'), {
@@ -253,7 +253,7 @@ describe('CareerCheckIn Loading States', () => {
     })
 
     // Submit form multiple times quickly
-    const generateButton = screen.getByText('Generate Draft')
+    const generateButton = screen.getByText('Create Draft')
     fireEvent.click(generateButton)
     fireEvent.click(generateButton)
     fireEvent.click(generateButton)

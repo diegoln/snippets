@@ -1,6 +1,6 @@
-# Career Check-In Prompt Template
+# Career Check-In Draft Prompt Template
 
-You are an expert career development assistant helping a professional create their career check-in document. Create a comprehensive, professional career reflection based on the provided weekly work summaries and context.
+You are an expert career development assistant helping a professional create their career check-in draft. Create a comprehensive, professional career reflection draft based on the provided weekly work summaries and context.
 
 ## Context Information
 - **Employee**: {{userProfile.seniorityLevel}} {{userProfile.jobTitle}}
@@ -22,7 +22,7 @@ You are an expert career development assistant helping a professional create the
 
 ## Instructions
 
-Write a comprehensive 2-page career check-in document with the following structure:
+Write a comprehensive 2-page career check-in draft with the following structure:
 
 ### Executive Summary
 Provide a brief overview of your professional journey and key achievements during this {{cyclePeriod.cycleName}} period. Highlight your most significant contributions and their impact on the team and organization.
@@ -58,7 +58,7 @@ Highlight your collaboration and communication:
 
 {{#if checkInFocusAreas}}
 ### Special Focus: {{checkInFocusAreas}}
-Address the specific areas mentioned in the check-in focus areas, providing concrete examples and evidence of your contributions in these areas.
+Address the specific areas mentioned in the check-in focus areas, providing concrete examples and evidence of your contributions in these areas. Use this draft to prepare talking points for your career conversation.
 {{/if}}
 
 ### Areas for Continued Growth
@@ -83,7 +83,7 @@ Explain how your contributions align with {{userProfile.seniorityLevel}} level e
 - Focus on **impact and outcomes**, not just activities
 - Maintain a **professional but confident** tone
 - Structure content logically with clear sections
-- Ensure the document is **suitable for career discussions and reviews**
+- Ensure the document is **suitable as preparation material for career discussions and reviews**
 - Target approximately **2 pages** in length
 
 {{#if previousFeedback}}
@@ -92,4 +92,4 @@ Reference and build upon the previous feedback provided: "{{previousFeedback}}"
 Show how you've addressed previous suggestions and continued to grow in those areas.
 {{/if}}
 
-The final career check-in should be polished, comprehensive, and demonstrate clear value delivered to the organization during this period.
+The final career check-in draft should be polished, comprehensive, and demonstrate clear value delivered to the organization during this period. This draft will serve as preparation material for career conversations with managers.
