@@ -330,10 +330,10 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {isConnecting === integration.id ? (
+{isConnecting === integration.id ? (
                   <LoadingSpinner size="sm" />
                 ) : connectedIntegrations.has(integration.id) ? (
-                  '✓ Connected'
+                  '✓ Connected'  
                 ) : (
                   'Connect'
                 )}

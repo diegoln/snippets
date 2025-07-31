@@ -58,5 +58,13 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 }
 ```
 
+## Development Best Practices
+- For any mock behavior that would connect to a database or remote service in production:
+  * Abstract the interface between production and dev environments
+  * Always fetch data from the back-end 
+  * Maintain consistent data retrieval behavior across different environments
+  * Avoid using static mock content from the front-end
+  * Minimize potential environment-specific bugs by keeping data fetching consistent
+
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
