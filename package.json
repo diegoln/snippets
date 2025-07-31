@@ -36,10 +36,15 @@
     "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "typecheck:fast": "tsc --project tsconfig.build.json --noEmit --skipLibCheck",
     "typecheck:quick": "node scripts/quick-typecheck.js",
+    "check": "node scripts/smart-check.js",
+    "check:dev": "npm run typecheck:quick && npm run lint",
+    "check:pr": "npm run typecheck:quick && npm run lint && node run-basic-tests.js",
+    "check:full": "npm run typecheck && npm run lint && node run-basic-tests.js && npm run build",
     "check:consistency": "node scripts/check-property-consistency.js",
     "check:contracts": "node scripts/validate-api-contracts.js", 
     "check:templates": "node scripts/check-template-variables.js",
     "check:all": "npm run check:consistency && npm run check:contracts && npm run check:templates",
+    "show-checks": "node scripts/show-checks.js",
     "prepare": "husky"
   },
   "dependencies": {

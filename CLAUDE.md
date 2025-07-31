@@ -65,13 +65,37 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 npm run deploy              # Full deployment with all checks
 ```
 
-### Manual Checks (if needed)
+### Manual Checks (by context)
+
+#### Quick Development Validation ⚡
 ```bash
-npm run typecheck           # TypeScript compilation check
+npm run typecheck:quick     # ⚡ Fast: Only modified files (~2-5 seconds)
 npm run lint                # ESLint check
 node run-basic-tests.js     # Run tests
-npm run build               # Production build
 ```
+
+#### Comprehensive Pre-Deployment Checks 🔍
+```bash
+npm run typecheck           # 🐌 Full project check (~2+ minutes)
+npm run build               # Production build
+npm run lint                # ESLint check
+```
+
+#### Smart Check Commands (Recommended)
+```bash
+npm run check:dev           # ⚡ Quick: typecheck:quick + lint (~5-10s)
+npm run check:pr            # 🔍 PR: typecheck:quick + lint + tests (~10-20s)  
+npm run check:full          # 🐌 Full: typecheck + lint + tests + build (~2+ min)
+npm run check [context]     # 🤖 Context-aware: dev|pr|full|ci
+npm run show-checks         # 📋 Show all available validation scripts
+```
+
+#### Available TypeScript Check Options
+| Script | Speed | Use Case | Duration |
+|--------|-------|----------|----------|
+| `typecheck:quick` | ⚡ Fastest | Development, PR review | ~2-5s |
+| `typecheck:fast` | 🚀 Fast | Pre-commit validation | ~10-30s |
+| `typecheck` | 🐌 Comprehensive | CI, pre-deployment | ~2+ min |
 
 ## Common Mistakes to Avoid
 
