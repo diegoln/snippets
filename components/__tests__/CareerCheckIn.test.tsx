@@ -123,7 +123,7 @@ describe('CareerCheckIn Design System Integration', () => {
       const generateButton = screen.getByRole('button', { name: /draft career check-in/i })
       fireEvent.click(generateButton)
       
-      const submitButton = screen.getByRole('button', { name: /generate draft/i })
+      const submitButton = screen.getByRole('button', { name: /create draft/i })
       expect(submitButton).toHaveClass(
         'btn-primary',
         'px-4',
@@ -159,7 +159,7 @@ describe('CareerCheckIn Design System Integration', () => {
       fireEvent.change(startDateInput, { target: { value: '2024-01-01' } })
       fireEvent.change(endDateInput, { target: { value: '2024-12-31' } })
       
-      const submitButton = screen.getByRole('button', { name: /generate draft/i })
+      const submitButton = screen.getByRole('button', { name: /create draft/i })
       fireEvent.click(submitButton)
       
       await waitFor(() => {
@@ -280,7 +280,7 @@ describe('CareerCheckIn Design System Integration', () => {
       fireEvent.change(startDateInput, { target: { value: '2024-01-01' } })
       fireEvent.change(endDateInput, { target: { value: '2024-12-31' } })
       
-      const submitButton = screen.getByRole('button', { name: /generate draft/i })
+      const submitButton = screen.getByRole('button', { name: /create draft/i })
       fireEvent.click(submitButton)
       
       const spinner = screen.getByTestId('loading-spinner')
@@ -342,7 +342,7 @@ describe('Component State Management', () => {
     const generateButton = screen.getByRole('button', { name: /draft career check-in/i })
     fireEvent.click(generateButton)
     
-    const submitButton = screen.getByRole('button', { name: /generate draft/i })
+    const submitButton = screen.getByRole('button', { name: /create draft/i })
     fireEvent.click(submitButton)
     
     await waitFor(() => {

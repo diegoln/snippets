@@ -460,7 +460,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                     </button>
                   ) : (
                     <button
-                      onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: assessment })}
+                      onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: assessment })}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                       View Draft
@@ -494,7 +494,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                   {state.selectedCheckIn.cycleName} - Career Check-In Draft
                 </h3>
                 <button
-                  onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: null })}
+                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
                   className="text-gray-400 hover:text-gray-600 text-2xl"
                   aria-label="Close draft viewer"
                 >
@@ -515,7 +515,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
                   Copy to Clipboard
                 </button>
                 <button
-                  onClick={() => dispatch({ type: 'SELECT_CHECKIN', checkIn: null })}
+                  onClick={() => dispatch({ type: 'SELECT_ASSESSMENT', assessment: null })}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                   Close
