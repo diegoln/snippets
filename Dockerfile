@@ -2,15 +2,14 @@
 # Multi-stage build with improved layer caching and development support
 
 # ===== BASE STAGE =====
-FROM node:18-alpine AS base
+FROM node:18-slim AS base
 WORKDIR /app
 
-# Install system dependencies once (small Alpine packages)
-RUN apk add --no-cache \
-    libc6-compat \
+# Install system dependencies once (Debian packages)
+RUN apt-get update && apt-get install -y \
     openssl \
     curl \
-    && rm -rf /var/cache/apk/*
+    && rm -rf /var/lib/apt/lists/*
 
 # ===== DEPENDENCIES STAGE =====
 FROM base AS deps
