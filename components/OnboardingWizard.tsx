@@ -75,7 +75,8 @@ export function OnboardingWizard() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [integrationBullets, setIntegrationBullets] = useState<string[]>([])
-  const [isConnecting, setIsConnecting] = useState(false)
+  const [isConnecting, setIsConnecting] = useState<string | null>(null)
+  const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
   
   const [formData, setFormData] = useState<WizardFormData>({
     role: '',
@@ -112,7 +113,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
 
   // Mock integration connection for demo
   const connectIntegration = useCallback(async (integrationType: string) => {
-    setIsConnecting(true)
+    setIsConnecting(integrationType)
     setError(null)
     
     try {
@@ -143,10 +144,11 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       
       setIntegrationBullets(mockBullets[integrationType] || [])
       setFormData(prev => ({ ...prev, selectedIntegration: integrationType }))
+      setConnectedIntegrations(prev => new Set([...prev, integrationType]))
     } catch (err) {
       setError('Failed to connect integration. Please try again.')
     } finally {
-      setIsConnecting(false)
+      setIsConnecting(null)
     }
   }, [])
 
@@ -157,14 +159,14 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       return
     }
     
-    if (currentStep === 1 && !formData.selectedIntegration) {
+    if (currentStep === 1 && connectedIntegrations.size === 0) {
       setError('Please connect at least one integration')
       return
     }
     
     setError(null)
     setCurrentStep(prev => Math.min(prev + 1, 2))
-  }, [currentStep, formData])
+  }, [currentStep, formData, connectedIntegrations])
 
   const handleBack = useCallback(() => {
     setError(null)
@@ -298,7 +300,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
             <div
               key={integration.id}
               className={`p-6 rounded-lg border-2 transition-all ${
-                formData.selectedIntegration === integration.id
+                connectedIntegrations.has(integration.id)
                   ? 'border-accent-500 bg-accent-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
@@ -314,16 +316,16 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
               </p>
               <button
                 onClick={() => connectIntegration(integration.id)}
-                disabled={isConnecting || formData.selectedIntegration === integration.id}
+                disabled={isConnecting !== null || connectedIntegrations.has(integration.id)}
                 className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                  formData.selectedIntegration === integration.id
+                  connectedIntegrations.has(integration.id)
                     ? 'bg-green-600 text-white'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {isConnecting && formData.selectedIntegration !== integration.id ? (
+                {isConnecting === integration.id ? (
                   <LoadingSpinner size="sm" />
-                ) : formData.selectedIntegration === integration.id ? (
+                ) : connectedIntegrations.has(integration.id) ? (
                   '✓ Connected'
                 ) : (
                   'Connect'
