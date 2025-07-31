@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       cycleName, 
       startDate, 
       endDate, 
-      assessmentDirections
+      checkInFocusAreas
     } = body
 
     // Validate required fields
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           content: snippet.content
         })),
         previousFeedback: userProfile.performanceFeedback || undefined,
-        assessmentDirections: assessmentDirections || undefined,
+        checkInFocusAreas: checkInFocusAreas || undefined,
         snippetCount: meaningfulSnippets.length
       }
 
