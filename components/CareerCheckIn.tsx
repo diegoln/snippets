@@ -94,7 +94,7 @@ function uiStateReducer(state: CareerCheckInState, action: UIStateAction): Caree
     case 'SELECT_ASSESSMENT':
       return {
         ...state,
-        selectedAssessment: action.assessment
+        selectedCheckIn: action.assessment
       }
     
     default:
