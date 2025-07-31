@@ -1,45 +1,51 @@
 # Claude Code Instructions
 
 ## System Overview
+**AdvanceWeekly**: Next.js app for weekly accomplishments with AI-powered career assessments.
+**Stack**: Next.js 14, TypeScript, Tailwind, PostgreSQL/Prisma, NextAuth, GCP
 
-**AdvanceWeekly**: Next.js app for tracking weekly accomplishments with AI-powered performance assessments.
+## Development Flow
 
-**Core Flow**: Users write Friday Reflections → System collects data from integrations (Calendar/Todoist/GitHub) → LLM generates insights → Career Check-Ins created from accumulated data.
+### 🚀 Quick Start
+```bash
+npm run dev                 # Start development (auto-generates schema)
+npm run check:dev          # Quick validation before commit (~5s)
+node run-basic-tests.js    # Run tests before push
+```
 
-**Tech Stack**: Next.js 14, TypeScript, Tailwind CSS, PostgreSQL/Prisma, NextAuth, Google Cloud Platform
+### 🔧 Common Tasks
+```bash
+npm run generate-schema:force  # Fix Prisma issues
+npm run db:studio             # Open database browser
+npm run deploy               # Deploy to production
+```
+
+### 🛡️ Before Committing
+Git hooks automatically run checks, but for manual validation:
+- **Development**: `npm run check:dev` (5s)
+- **Pull Request**: `npm run check:pr` (20s) 
+- **Pre-Deploy**: `npm run check:full` (2+ min)
 
 ## Critical Rules
+1. **Dev Server Must Work**: Always verify `npm run dev` works
+2. **Follow Patterns**: Check neighboring files before creating new code
+3. **Feature Branches**: Create branches off main for all changes
+4. **Edit > Create**: Prefer editing existing files over creating new ones
 
-1. **Dev Server Must Work**: ALWAYS verify `npm run dev` works before pushing code
-2. **Follow Existing Patterns**: Look at neighboring files before creating new code
-3. **Never Work on Main**: Create feature branches: `feat/`, `fix/`, `docs/`, `refactor/`
-4. **No Over-Engineering**: Build only what's needed now, not future possibilities
-5. **Respect File Structure**: Edit existing files rather than creating new ones when possible
+## Architecture Quick Reference
+- **Main App**: `AuthenticatedApp.tsx` - Tab orchestrator
+- **Data Layer**: `lib/user-scoped-data.ts` - User isolation
+- **APIs**: `app/api/` - NextAuth, snippets, assessments
+- **Components**: Follow existing patterns in neighboring files
 
-## Architecture Summary
-
-**Key Components**:
-- `AuthenticatedApp.tsx` - Main app orchestrator with tabs for Snippets and Performance
-- `lib/user-scoped-data.ts` - Data access layer ensuring user isolation
-- `lib/calendar-integration.ts` - Google Calendar data extraction for career context
-- `app/api/` - NextAuth, snippets, assessments, and integration endpoints
-
-**Environment Differences**:
+## Environment Context
 | Feature | Development | Production |
 |---------|------------|------------|
 | Database | PostgreSQL (Docker) | Cloud SQL |
-| Auth | Mock users (localStorage) | Google OAuth |
-| LLM | Local/Mock | OpenAI API |
-| Integrations | Mock data | Real OAuth |
-
-## Quick Reference
-
-- **Full Architecture**: See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for detailed system design
-- **Design System**: See [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) for styling rules
-- **Testing**: Run `node run-basic-tests.js` before commits
+| Auth | Mock (localStorage) | Google OAuth |
+| LLM | Mock/Local | OpenAI API |
 
 ## Component Pattern
-
 ```typescript
 'use client' // Only when needed
 
@@ -52,55 +58,5 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 }
 ```
 
-## Before Pushing Code
-
-**IMPORTANT: Git hooks are now enforced to prevent broken code from being committed or pushed.**
-
-### Automatic Checks (via Git Hooks)
-- **Pre-commit**: Runs TypeScript compilation, linting, and tests
-- **Pre-push**: Additional build verification for main branch
-
-### Manual Deployment
-```bash
-npm run deploy              # Full deployment with all checks
-```
-
-### Manual Checks (by context)
-
-#### Quick Development Validation ⚡
-```bash
-npm run typecheck:quick     # ⚡ Fast: Only modified files (~2-5 seconds)
-npm run lint                # ESLint check
-node run-basic-tests.js     # Run tests
-```
-
-#### Comprehensive Pre-Deployment Checks 🔍
-```bash
-npm run typecheck           # 🐌 Full project check (~2+ minutes)
-npm run build               # Production build
-npm run lint                # ESLint check
-```
-
-#### Smart Check Commands (Recommended)
-```bash
-npm run check:dev           # ⚡ Quick: typecheck:quick + lint (~5-10s)
-npm run check:pr            # 🔍 PR: typecheck:quick + lint + tests (~10-20s)  
-npm run check:full          # 🐌 Full: typecheck + lint + tests + build (~2+ min)
-npm run check [context]     # 🤖 Context-aware: dev|pr|full|ci
-npm run show-checks         # 📋 Show all available validation scripts
-```
-
-#### Available TypeScript Check Options
-| Script | Speed | Use Case | Duration |
-|--------|-------|----------|----------|
-| `typecheck:quick` | ⚡ Fastest | Development, PR review | ~2-5s |
-| `typecheck:fast` | 🚀 Fast | Pre-commit validation | ~10-30s |
-| `typecheck` | 🐌 Comprehensive | CI, pre-deployment | ~2+ min |
-
-## Common Mistakes to Avoid
-
-- Creating unnecessary abstractions or base classes
-- Adding features not explicitly requested
-- Storing sensitive data (tokens) in JWT
-- Creating new files when existing ones can be edited
-- Working directly on main branch after PR merge
+---
+**Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
