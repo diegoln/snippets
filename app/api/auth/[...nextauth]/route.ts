@@ -73,7 +73,7 @@ const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }
     
     // Default redirect for new OAuth sign-ins in production
     // TODO: Check if user has completed onboarding to differentiate new vs returning users
-    return `${correctBaseUrl}/onboarding`
+    return `${correctBaseUrl}/onboarding-wizard`
   }
   
   // Development uses our custom flow
@@ -232,9 +232,9 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   pages: process.env.NODE_ENV === 'development' ? {
     signIn: '/mock-signin',
-    newUser: '/onboarding',
+    newUser: '/onboarding-wizard',
   } : {
-    newUser: '/onboarding',
+    newUser: '/onboarding-wizard',
     signOut: '/', // Explicitly set signout page to home
   },
 })
