@@ -5,8 +5,8 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
-import { getWeekDates } from '../lib/utils'
-import { getCurrentWeekNumber } from '../lib/week-utils'
+import { getWeekDates } from '@/lib/utils'
+import { getCurrentWeekNumber } from '@/lib/week-utils'
 
 // Role and level options
 const ROLES = [
