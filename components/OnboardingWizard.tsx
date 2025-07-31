@@ -64,7 +64,6 @@ const INTEGRATIONS = [
 interface WizardFormData {
   role: string
   level: string
-  selectedIntegration: string | null
   reflectionContent: string
 }
 
@@ -74,14 +73,13 @@ export function OnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [integrationBullets, setIntegrationBullets] = useState<string[]>([])
+  const [integrationBullets, setIntegrationBullets] = useState<Record<string, string[]>>({})
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
   
   const [formData, setFormData] = useState<WizardFormData>({
     role: '',
     level: '',
-    selectedIntegration: null,
     reflectionContent: '',
   })
 
@@ -97,9 +95,12 @@ export function OnboardingWizard() {
 
     const tip = levelTips[formData.level] || ''
     
+    // Combine bullets from all connected integrations
+    const allBullets = Object.values(integrationBullets).flat()
+    
     return `## Done
 
-${integrationBullets.map(bullet => `- ${bullet}`).join('\n')}
+${allBullets.map(bullet => `- ${bullet}`).join('\n')}
 
 ## Next
 
@@ -142,8 +143,10 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         ],
       }
       
-      setIntegrationBullets(mockBullets[integrationType] || [])
-      setFormData(prev => ({ ...prev, selectedIntegration: integrationType }))
+      setIntegrationBullets(prev => ({
+        ...prev,
+        [integrationType]: mockBullets[integrationType] || []
+      }))
       setConnectedIntegrations(prev => new Set([...prev, integrationType]))
     } catch (err) {
       setError('Failed to connect integration. Please try again.')
