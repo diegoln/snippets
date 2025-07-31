@@ -5,7 +5,7 @@
  * form validation, state management, and user interactions.
  */
 
-import { AssessmentFormData, AssessmentAction, ASSESSMENT_CONSTANTS } from '../types/performance'
+import { CheckInFormData, AssessmentFormData, AssessmentAction, CHECKIN_CONSTANTS, ASSESSMENT_CONSTANTS } from '../types/performance'
 
 /**
  * Mock assessment reducer for testing
@@ -63,8 +63,8 @@ const validateForm = (data: AssessmentFormData): { isValid: boolean; errors: Rec
     errors.endDate = 'End date must be after start date'
   }
 
-  if (data.assessmentDirections && data.assessmentDirections.length > ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH) {
-    errors.assessmentDirections = `Directions must be less than ${ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH} characters`
+  if (data.checkInFocusAreas && data.checkInFocusAreas.length > CHECKIN_CONSTANTS.MAX_FOCUS_AREAS_LENGTH) {
+    errors.checkInFocusAreas = `Focus areas must be less than ${CHECKIN_CONSTANTS.MAX_FOCUS_AREAS_LENGTH} characters`
   }
 
   return {
@@ -261,7 +261,7 @@ describe('Performance Assessment', () => {
         cycleName: 'H1 2025 Review',
         startDate: '2025-01-01',
         endDate: '2025-06-30',
-        assessmentDirections: 'Focus on technical leadership'
+        checkInFocusAreas: 'Focus on technical leadership'
       }
 
       const result = validateForm(formData)
@@ -274,7 +274,7 @@ describe('Performance Assessment', () => {
   describe('Constants', () => {
     it('should have reasonable limits', () => {
       expect(ASSESSMENT_CONSTANTS.MAX_CYCLE_NAME_LENGTH).toBeGreaterThan(10)
-      expect(ASSESSMENT_CONSTANTS.MAX_DIRECTIONS_LENGTH).toBeGreaterThan(100)
+      expect(CHECKIN_CONSTANTS.MAX_FOCUS_AREAS_LENGTH).toBeGreaterThan(100)
       expect(ASSESSMENT_CONSTANTS.GENERATION_DELAY_MIN).toBeGreaterThan(1000)
       expect(ASSESSMENT_CONSTANTS.DRAFT_PREVIEW_LENGTH).toBeGreaterThan(50)
     })

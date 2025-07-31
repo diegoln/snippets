@@ -304,7 +304,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
             </div>
 
             <div>
-              <label htmlFor="assessmentDirections" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="checkInFocusAreas" className="block text-sm font-medium text-gray-700 mb-1">
                 Check-In Focus Areas (Optional)
                 <span className="text-gray-500 text-xs ml-1" title="Provide specific guidelines or focus areas to include in your career check-in">ⓘ</span>
               </label>

@@ -9,8 +9,8 @@ You are an expert career development assistant helping a professional create the
 {{#if previousFeedback}}
 - **Previous Feedback**: {{previousFeedback}}
 {{/if}}
-{{#if assessmentDirections}}
-- **Special Focus Areas**: {{assessmentDirections}}
+{{#if checkInFocusAreas}}
+- **Special Focus Areas**: {{checkInFocusAreas}}
 {{/if}}
 
 ## Weekly Work Summaries
@@ -56,8 +56,8 @@ Highlight your collaboration and communication:
 - Participation in technical discussions and decision-making
 - Support provided to other team members
 
-{{#if assessmentDirections}}
-### Special Focus: {{assessmentDirections}}
+{{#if checkInFocusAreas}}
+### Special Focus: {{checkInFocusAreas}}
 Address the specific areas mentioned in the check-in focus areas, providing concrete examples and evidence of your contributions in these areas.
 {{/if}}
 

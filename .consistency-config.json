@@ -1,0 +1,61 @@
+{
+  "propertyMappings": {
+    "assessmentDirections": "checkInFocusAreas",
+    "performanceAssessment": "careerCheckIn",
+    "assessmentId": "checkInId"
+  },
+  "apiContracts": {
+    "/api/assessments": {
+      "POST": {
+        "body": {
+          "required": ["cycleName", "startDate", "endDate"],
+          "optional": ["checkInFocusAreas"],
+          "deprecated": ["assessmentDirections"]
+        }
+      }
+    },
+    "/api/snippets": {
+      "POST": {
+        "body": {
+          "required": ["weekNumber", "year", "content"],
+          "optional": ["metadata"]
+        }
+      },
+      "PUT": {
+        "body": {
+          "required": ["id", "content"],
+          "optional": []
+        }
+      }
+    }
+  },
+  "fileGroups": {
+    "frontend": {
+      "patterns": ["components/**/*.tsx", "app/**/*.tsx"],
+      "checkFormFields": true,
+      "checkApiCalls": true
+    },
+    "api": {
+      "patterns": ["app/api/**/*.ts", "pages/api/**/*.ts"],
+      "checkRequestHandling": true
+    },
+    "templates": {
+      "patterns": ["lib/prompts/**/*.md", "templates/**/*.md"],
+      "checkTemplateVariables": true
+    },
+    "tests": {
+      "patterns": ["__tests__/**/*.ts", "**/*.test.ts", "**/*.test.tsx"],
+      "checkMockData": true
+    },
+    "types": {
+      "patterns": ["types/**/*.ts"],
+      "checkTypeDefinitions": true
+    }
+  },
+  "severity": {
+    "deprecatedProperty": "error",
+    "missingRequiredField": "error", 
+    "unknownField": "warning",
+    "mixedUsage": "warning"
+  }
+}
