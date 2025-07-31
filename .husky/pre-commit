@@ -19,7 +19,25 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-# 3. Run basic tests
+# 3. Check property consistency across codebase
+echo "🔗 Checking property consistency..."
+node scripts/check-property-consistency.js
+if [ $? -ne 0 ]; then
+  echo "❌ Property consistency check failed. Please fix errors before committing."
+  exit 1
+fi
+
+# 4. Validate API contracts (if TypeScript is available)
+if command -v npm list typescript >/dev/null 2>&1; then
+  echo "📋 Validating API contracts..."
+  node scripts/validate-api-contracts.js
+  if [ $? -ne 0 ]; then
+    echo "❌ API contract validation failed. Please fix errors before committing."
+    exit 1
+  fi
+fi
+
+# 5. Run basic tests
 echo "🧪 Running tests..."
 node run-basic-tests.js
 if [ $? -ne 0 ]; then

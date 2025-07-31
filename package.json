@@ -36,6 +36,10 @@
     "typecheck": "tsc --project tsconfig.build.json --noEmit",
     "typecheck:fast": "tsc --project tsconfig.build.json --noEmit --skipLibCheck",
     "typecheck:quick": "node scripts/quick-typecheck.js",
+    "check:consistency": "node scripts/check-property-consistency.js",
+    "check:contracts": "node scripts/validate-api-contracts.js", 
+    "check:templates": "node scripts/check-template-variables.js",
+    "check:all": "npm run check:consistency && npm run check:contracts && npm run check:templates",
     "prepare": "husky"
   },
   "dependencies": {
