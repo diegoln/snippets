@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
-import { prisma } from '@/lib/prisma'
+import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { createUserDataService } from '../../../lib/user-scoped-data'
 
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.email) {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Authentication required' },
         { status: 401 }
       )
     }
@@ -25,21 +24,24 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update user profile
-    const updatedUser = await prisma.user.update({
-      where: { email: session.user.email },
-      data: {
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
+
+    try {
+      // Update user profile
+      const updatedUser = await dataService.updateUserProfile({
         jobTitle,
         seniorityLevel,
-      },
-      select: {
-        id: true,
-        jobTitle: true,
-        seniorityLevel: true,
-      },
-    })
+      })
 
-    return NextResponse.json(updatedUser)
+      return NextResponse.json({
+        id: updatedUser.id,
+        jobTitle: updatedUser.jobTitle,
+        seniorityLevel: updatedUser.seniorityLevel,
+      })
+    } finally {
+      await dataService.disconnect()
+    }
   } catch (error) {
     console.error('Error updating user profile:', error)
     return NextResponse.json(
