@@ -318,8 +318,12 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
                 {integration.description}
               </p>
               <button
-                onClick={() => connectIntegration(integration.id)}
-                disabled={isConnecting !== null || connectedIntegrations.has(integration.id)}
+                onClick={() => {
+                  if (!connectedIntegrations.has(integration.id)) {
+                    connectIntegration(integration.id)
+                  }
+                }}
+                disabled={isConnecting !== null}
                 className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-all ${
                   connectedIntegrations.has(integration.id)
                     ? 'bg-green-600 text-white'
