@@ -199,7 +199,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       ...prev,
       [integrationType]: tempBullets
     }))
-    setConnectedIntegrations(prev => new Set([...prev, integrationType]))
+    setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
     
     try {
       // Simulate API call delay
@@ -321,7 +321,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     } finally {
       setLoadingState({ isLoading: false })
     }
-  }, [formData, integrationBullets, router, handleApiError])
+  }, [formData, integrationBullets, handleApiError])
 
   // Update reflection content when we reach step 3
   useEffect(() => {
