@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
@@ -86,12 +86,56 @@ export function OnboardingWizard() {
   const [integrationBullets, setIntegrationBullets] = useState<Record<string, string[]>>({})
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
+
+  // Standardized error handler for API responses
+  const handleApiError = useCallback(async (response: Response, operation: string) => {
+    const errorData = await response.json().catch(() => ({ 
+      error: `Failed to ${operation.toLowerCase()}` 
+    }))
+    
+    console.error(`${operation} failed:`, response.status, errorData)
+    
+    // Provide helpful error message for development
+    if (response.status === 401 && process.env.NODE_ENV === 'development') {
+      throw new Error('Please sign in first at /mock-signin')
+    }
+    
+    throw new Error(errorData.error || `Failed to ${operation.toLowerCase()}`)
+  }, [])
   
   const [formData, setFormData] = useState<WizardFormData>({
     role: '',
     level: '',
     reflectionContent: '',
   })
+
+  // Ref to store debounce timer
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Debounced localStorage save function
+  const saveProgressToLocalStorage = useCallback((
+    step: number,
+    data: WizardFormData,
+    integrations: Set<string>,
+    bullets: Record<string, string[]>
+  ) => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      const progressData = {
+        step,
+        data,
+        integrations: Array.from(integrations),
+        bullets,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('onboarding-progress', JSON.stringify(progressData))
+    }, 500) // 500ms debounce
+  }, [])
 
   // Load progress from localStorage on mount
   useEffect(() => {
@@ -109,17 +153,19 @@ export function OnboardingWizard() {
     }
   }, [])
 
-  // Save progress to localStorage whenever state changes
+  // Save progress to localStorage whenever state changes (debounced)
   useEffect(() => {
-    const progressData = {
-      step: currentStep,
-      data: formData,
-      integrations: Array.from(connectedIntegrations),
-      bullets: integrationBullets,
-      timestamp: Date.now()
+    saveProgressToLocalStorage(currentStep, formData, connectedIntegrations, integrationBullets)
+  }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
     }
-    localStorage.setItem('onboarding-progress', JSON.stringify(progressData))
-  }, [currentStep, formData, connectedIntegrations, integrationBullets])
+  }, [])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -219,9 +265,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       })
       
       if (!profileResponse.ok) {
-        const errorData = await profileResponse.json().catch(() => ({ error: 'Failed to update profile' }))
-        console.error('Profile update failed:', profileResponse.status, errorData)
-        throw new Error(errorData.error || 'Failed to update profile')
+        await handleApiError(profileResponse, 'Update profile')
       }
       
       // Update loading state for snippet creation
@@ -239,32 +283,28 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         body: JSON.stringify({
           weekNumber: currentWeek,
           year: year,
-          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''}`,
+          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''}`,
         }),
       })
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Snippet save failed:', response.status, errorData)
-        
-        // Provide helpful error message for development
-        if (response.status === 401 && process.env.NODE_ENV === 'development') {
-          throw new Error('Please sign in first at /mock-signin')
-        }
-        
-        throw new Error(errorData.error || 'Failed to save reflection')
+        await handleApiError(response, 'Save reflection')
       }
       
       // Update loading state for completion
       setLoadingState({ isLoading: true, operation: 'completing-onboarding', message: 'Finishing setup...' })
       
       // Mark onboarding as complete
-      await fetch('/api/user/onboarding', {
+      const onboardingResponse = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
       })
+      
+      if (!onboardingResponse.ok) {
+        await handleApiError(onboardingResponse, 'Complete onboarding')
+      }
       
       // Clear saved progress since onboarding is complete
       localStorage.removeItem('onboarding-progress')
@@ -288,7 +328,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     if (currentStep === 2 && !formData.reflectionContent) {
       const allBullets = Object.values(integrationBullets).flat()
       const tip = formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''
-      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
+      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
       
       setFormData(prev => ({
         ...prev,
