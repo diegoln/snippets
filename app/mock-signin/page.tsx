@@ -48,7 +48,7 @@ export default function MockSignInPage() {
       // Use redirect: false to control the redirect manually
       const result = await signIn('credentials', {
         userId,
-        callbackUrl: '/onboarding-wizard',
+        callbackUrl: '/',
         redirect: false
       })
       
@@ -58,13 +58,10 @@ export default function MockSignInPage() {
         console.error('Sign in error:', result.error)
         setSigningIn(null)
       } else if (result?.ok) {
-        console.log('✅ Sign-in successful, refreshing session...')
+        console.log('✅ Sign-in successful, redirecting to root...')
         
-        // Wait a moment for session to be established, then redirect
-        setTimeout(() => {
-          console.log('🔄 Redirecting to onboarding wizard...')
-          window.location.href = '/onboarding-wizard'
-        }, 500)
+        // Redirect to root page which will handle the appropriate flow
+        window.location.href = '/'
       } else {
         console.log('⚠️ Unexpected sign-in result:', result)
         setSigningIn(null)

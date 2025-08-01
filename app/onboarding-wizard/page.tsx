@@ -33,8 +33,8 @@ export default function OnboardingWizardPage() {
           setUserData(fetchedUserData)
           
           if (fetchedUserData.onboardingCompleted) {
-            // User has already completed onboarding, redirect to dashboard
-            router.replace('/dashboard')
+            // User has already completed onboarding, redirect to root
+            router.replace('/')
             return
           }
         }
