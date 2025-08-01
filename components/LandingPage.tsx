@@ -53,7 +53,7 @@ export function LandingPage() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-8">
-            <Logo variant="horizontal" width={320} className="w-64 sm:w-80 lg:w-96" priority />
+            <Logo variant="horizontal" className="w-64 sm:w-80 lg:w-96" priority />
           </div>
           
           <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-primary-600 mb-6 leading-tight">
