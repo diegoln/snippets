@@ -93,45 +93,44 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [snippets.length])
 
   useEffect(() => {
-    const fetchSnippets = async () => {
+    // Fetch both snippets and assessments concurrently for faster loading
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/snippets')
-        if (response.ok) {
-          const snippetsData = await response.json()
+        // Start both requests simultaneously
+        const [snippetsResponse, assessmentsResponse] = await Promise.all([
+          fetch('/api/snippets'),
+          fetch('/api/assessments')
+        ])
+        
+        // Handle snippets response
+        if (snippetsResponse.ok) {
+          const snippetsData = await snippetsResponse.json()
           setSnippets(snippetsData)
           
           if (snippetsData.length > 0) {
             setSelectedSnippet(snippetsData[0])
           }
         } else {
-          console.error('Failed to fetch snippets:', response.statusText)
+          console.error('Failed to fetch snippets:', snippetsResponse.statusText)
           setSnippets([])
         }
-      } catch (error) {
-        console.error('Error fetching snippets:', error)
-        setSnippets([])
-      }
-    }
-
-    fetchSnippets()
-
-    const fetchAssessments = async () => {
-      try {
-        const response = await fetch('/api/assessments')
-        if (response.ok) {
-          const assessmentsData = await response.json()
+        
+        // Handle assessments response
+        if (assessmentsResponse.ok) {
+          const assessmentsData = await assessmentsResponse.json()
           dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
         } else {
-          console.error('Failed to fetch assessments:', response.statusText)
+          console.error('Failed to fetch assessments:', assessmentsResponse.statusText)
           dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
         }
       } catch (error) {
-        console.error('Error fetching assessments:', error)
+        console.error('Error fetching data:', error)
+        setSnippets([])
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
       }
     }
 
-    fetchAssessments()
+    fetchData()
   }, [])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
@@ -211,7 +210,6 @@ export const AuthenticatedApp = (): JSX.Element => {
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
     setUserSettings(settings)
     setShowSettings(false)
-    console.log('Saving settings:', settings)
   }, [])
 
   const handleGenerateDraft = useCallback(async (request: CheckInFormData): Promise<void> => {
@@ -374,7 +372,7 @@ export const AuthenticatedApp = (): JSX.Element => {
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <div className="flex flex-col items-start">
-                <Logo variant="horizontal" width={160} priority />
+                <Logo variant="horizontal" width={120} priority />
                 <p className="text-sm text-secondary font-medium tracking-wide mt-1 hidden lg:block">See beyond the busy.</p>
               </div>
             </div>

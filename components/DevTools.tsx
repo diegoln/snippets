@@ -1,10 +1,11 @@
 'use client'
 
 /**
- * Development Tools Component
+ * Development Tools Component - Updated 2025-01-01
  * 
  * This component provides quick access to development utilities
  * Only visible in development mode to help with testing auth flows
+ * Uses NextAuth-based authentication, not localStorage sessions
  */
 
 export function DevTools() {
@@ -15,6 +16,7 @@ export function DevTools() {
   const clearSession = () => {
     // Clear all auth-related data
     localStorage.removeItem('dev-session')
+    localStorage.removeItem('onboarding-progress')
     // Clear all user onboarding flags
     for (let i = 1; i <= 3; i++) {
       localStorage.removeItem(`user_${i}_onboarded`)
@@ -22,31 +24,56 @@ export function DevTools() {
     window.location.href = '/'
   }
 
-  const viewSession = () => {
-    const session = localStorage.getItem('dev-session')
-    if (session) {
-      const user = JSON.parse(session)
-      const onboardingFlag = localStorage.getItem(`user_${user.id}_onboarded`)
-      console.log('Current session:', user)
-      alert(`Current user: ${user.name}\nUser ID: ${user.id}\nOnboarding completed: ${user.hasCompletedOnboarding || false}\nOnboarding flag: ${onboardingFlag || 'not set'}`)
-    } else {
-      alert('No active session')
+  const viewSession = async () => {
+    try {
+      // Check current user via API
+      const response = await fetch('/api/user/profile', {
+        method: 'GET',
+        credentials: 'same-origin',
+      })
+      
+      if (response.ok) {
+        const userData = await response.json()
+        alert(`Current user: ${userData.name || 'Unknown'}\nUser ID: ${userData.id}\nEmail: ${userData.email}\nJob Title: ${userData.jobTitle || 'Not set'}\nSeniority Level: ${userData.seniorityLevel || 'Not set'}\nOnboarding completed: ${userData.onboardingCompleted ? 'Yes' : 'No'}\nCompleted at: ${userData.onboardingCompletedAt || 'N/A'}`)
+      } else if (response.status === 401) {
+        alert('Not authenticated - please sign in first')
+      } else {
+        alert('Failed to fetch user session')
+      }
+    } catch (err) {
+      alert('Error fetching session - check console for details')
     }
   }
 
-  const resetOnboarding = () => {
-    const session = localStorage.getItem('dev-session')
-    if (session) {
-      const user = JSON.parse(session)
-      // Remove onboarding flag
-      localStorage.removeItem(`user_${user.id}_onboarded`)
-      // Update user object
-      const updatedUser = { ...user, hasCompletedOnboarding: false }
-      localStorage.setItem('dev-session', JSON.stringify(updatedUser))
-      alert(`Onboarding reset for ${user.name}`)
-    } else {
-      alert('No active session')
+  const resetOnboarding = async () => {
+    try {
+      // Clear onboarding progress from localStorage
+      localStorage.removeItem('onboarding-progress')
+      
+      // Reset onboarding status in database via API
+      const response = await fetch('/api/user/onboarding', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const confirmRedirect = confirm('Onboarding reset successfully! Would you like to go to the onboarding wizard now?')
+        if (confirmRedirect) {
+          window.location.href = '/onboarding-wizard'
+        }
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+        alert(`Failed to reset onboarding: ${error.error}`)
+      }
+    } catch (err) {
+      alert('Failed to reset onboarding. Check console for details.')
     }
+  }
+
+  const goToOnboarding = () => {
+    window.location.href = '/onboarding-wizard'
   }
 
   return (
@@ -69,13 +96,22 @@ export function DevTools() {
             View Session
           </button>
         </div>
-        <button
-          onClick={resetOnboarding}
-          className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 w-full"
-          title="Reset onboarding for current user"
-        >
-          Reset Onboarding
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={resetOnboarding}
+            className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex-1"
+            title="Reset onboarding for current user"
+          >
+            Reset Onboarding
+          </button>
+          <button
+            onClick={goToOnboarding}
+            className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 flex-1"
+            title="Go to onboarding wizard"
+          >
+            Go to Onboarding
+          </button>
+        </div>
       </div>
     </div>
   )

@@ -9,8 +9,8 @@
 ### 🚀 Quick Start
 ```bash
 npm run dev                 # Start development (auto-generates schema)
-npm run check:dev          # Quick validation before commit (~5s)
-node run-basic-tests.js    # Run tests before push
+npm run check:dev          # Quick validation before commit (~5s, includes API tests)
+npm run test               # Run all tests before push
 ```
 
 ### 🔧 Common Tasks
@@ -70,6 +70,9 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 - Dev server PostgreSQL configuration:
   * Noted that dev server is NOT using a local Docker-initialized PostgreSQL server
   * This deviates from the expected setup where dev and prod environments should have consistent data interface to prevent deployment errors
+
+## Error Handling and Quality Assurance
+- For every bug found, implement tests that would have caught them and add the tests to the development routine
 
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)

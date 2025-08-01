@@ -46,3 +46,48 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  // Only allow in development
+  if (process.env.NODE_ENV !== 'development') {
+    return NextResponse.json(
+      { error: 'This endpoint is only available in development' },
+      { status: 403 }
+    )
+  }
+
+  try {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Reset onboarding status by clearing the completion timestamp
+    const dataService = createUserDataService(userId)
+    try {
+      await dataService.updateUserProfile({
+        onboardingCompletedAt: null
+      })
+
+      console.log(`🔄 DevTools: Reset onboarding for user ${userId}`)
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Onboarding status reset successfully',
+        resetAt: new Date().toISOString()
+      })
+    } finally {
+      await dataService.disconnect()
+    }
+  } catch (error) {
+    console.error('Error resetting onboarding:', error)
+    return NextResponse.json(
+      { error: 'Failed to reset onboarding status' },
+      { status: 500 }
+    )
+  }
+}

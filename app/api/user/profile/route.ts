@@ -3,7 +3,6 @@ import { getUserIdFromRequest } from '@/lib/auth-utils'
 import { createUserDataService } from '@/lib/user-scoped-data'
 import { getToken } from 'next-auth/jwt'
 import { PrismaClient } from '@prisma/client'
-import { isValidRole, isValidLevel } from '@/constants/user'
 
 const prisma = new PrismaClient()
 
@@ -29,20 +28,8 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Validate role and level enums
-    if (!isValidRole(jobTitle)) {
-      return NextResponse.json(
-        { error: 'Invalid job title. Must be one of: engineer, designer, product, data' },
-        { status: 400 }
-      )
-    }
-
-    if (!isValidLevel(seniorityLevel)) {
-      return NextResponse.json(
-        { error: 'Invalid seniority level. Must be one of: junior, mid, senior, staff, principal' },
-        { status: 400 }
-      )
-    }
+    // Note: We don't validate against enums anymore since we allow custom values
+    // The frontend sends the actual custom value when "other" is selected
 
     // In development with mock auth, ensure user exists
     if (process.env.NODE_ENV === 'development') {
@@ -97,6 +84,43 @@ export async function PUT(request: NextRequest) {
     console.error('Error updating user profile:', error)
     return NextResponse.json(
       { error: 'Failed to update profile' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get user profile data
+    const dataService = createUserDataService(userId)
+    try {
+      const user = await dataService.getUserProfile()
+      
+      return NextResponse.json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        jobTitle: user.jobTitle,
+        seniorityLevel: user.seniorityLevel,
+        onboardingCompleted: !!user.onboardingCompletedAt,
+        onboardingCompletedAt: user.onboardingCompletedAt?.toISOString() || null,
+      })
+    } finally {
+      await dataService.disconnect()
+    }
+  } catch (error) {
+    console.error('Error fetching user profile:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch profile' },
       { status: 500 }
     )
   }
