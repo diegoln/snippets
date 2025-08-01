@@ -97,15 +97,11 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
     localStorage.removeItem('onboarding-progress')
   }
   
-  // Force step to 0 if clearPreviousProgress is true - more aggressive approach
-  const [currentStep, setCurrentStep] = useState(() => {
-    if (clearPreviousProgress) {
-      return 0
-    }
-    return 0
-  })
+  // Always start at step 0 - localStorage restoration happens in useEffect if needed
+  const [currentStep, setCurrentStep] = useState(0)
   const [loadingState, setLoadingState] = useState<LoadingState>({ isLoading: false })
   const [error, setError] = useState<string | null>(null)
+  const [notification, setNotification] = useState<string | null>(null)
   const [integrationBullets, setIntegrationBullets] = useState<Record<string, string[]>>({})
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
@@ -177,7 +173,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
     if (clearPreviousProgress) {
       // Clear any previous progress and start fresh
       localStorage.removeItem('onboarding-progress')
-      setCurrentStep(0)
+      // No need to setCurrentStep(0) since we already initialize to 0
       return
     }
 
@@ -195,25 +191,16 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
           setConnectedIntegrations(new Set(integrations || []))
           setIntegrationBullets(bullets || {})
         } else {
+          // User reached success step but onboarding wasn't completed, start over
           localStorage.removeItem('onboarding-progress')
-          // Don't reset to 0 if we're already at step 3 from a successful save
-          if (currentStep !== 3) {
-            setCurrentStep(0)
-          }
+          // currentStep is already 0 from initialization, no need to set again
         }
       } catch (err) {
         localStorage.removeItem('onboarding-progress')
-        setCurrentStep(0)
+        // currentStep is already 0 from initialization, no need to set again
       }
     }
   }, [clearPreviousProgress])
-
-  // Safeguard: If we're on the success step but clearPreviousProgress is true, reset to step 0
-  useEffect(() => {
-    if (clearPreviousProgress && currentStep === 3) {
-      setCurrentStep(0)
-    }
-  }, [clearPreviousProgress, currentStep])
 
   // Save progress to localStorage whenever state changes (debounced)
   useEffect(() => {
@@ -230,7 +217,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [])
+  }, [saveTimeoutRef])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -426,7 +413,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     } finally {
       setLoadingState({ isLoading: false })
     }
-  }, [formData, integrationBullets, handleApiError])
+  }, [formData, integrationBullets, handleApiError, onOnboardingComplete])
 
   // Update reflection content when we reach step 3
   useEffect(() => {
@@ -585,8 +572,9 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                   type="button"
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
                   onClick={() => {
-                    // TODO: Add career ladder upload functionality
-                    alert('Career ladder upload will be available in Settings after onboarding!')
+                    // Show notification instead of alert
+                    setNotification('Career ladder upload will be available in Settings after onboarding!')
+                    setTimeout(() => setNotification(null), 3000)
                   }}
                 >
                   Learn more about career ladder uploads →
@@ -701,7 +689,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               </p>
             </div>
             <button
-              onClick={() => alert('Calendar integration coming soon!')}
+              onClick={() => {
+                setNotification('Calendar integration coming soon!')
+                setTimeout(() => setNotification(null), 3000)
+              }}
               className="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-medium"
             >
               Add to Calendar
@@ -778,6 +769,12 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             {error && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
                 {error}
+              </div>
+            )}
+            
+            {notification && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-md">
+                {notification}
               </div>
             )}
             

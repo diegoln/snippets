@@ -111,7 +111,12 @@ export const AuthenticatedApp = (): JSX.Element => {
             setSelectedSnippet(snippetsData[0])
           }
         } else {
-          console.error('Failed to fetch snippets:', snippetsResponse.statusText)
+          console.error('Failed to fetch snippets:', {
+            status: snippetsResponse.status,
+            statusText: snippetsResponse.statusText,
+            userId: currentUser?.id,
+            timestamp: new Date().toISOString()
+          })
           setSnippets([])
         }
         
@@ -120,11 +125,21 @@ export const AuthenticatedApp = (): JSX.Element => {
           const assessmentsData = await assessmentsResponse.json()
           dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
         } else {
-          console.error('Failed to fetch assessments:', assessmentsResponse.statusText)
+          console.error('Failed to fetch assessments:', {
+            status: assessmentsResponse.status,
+            statusText: assessmentsResponse.statusText,
+            userId: currentUser?.id,
+            timestamp: new Date().toISOString()
+          })
           dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
         }
       } catch (error) {
-        console.error('Error fetching data:', error)
+        console.error('Error fetching data:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          userId: currentUser?.id,
+          timestamp: new Date().toISOString()
+        })
         setSnippets([])
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
       }
