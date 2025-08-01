@@ -5,9 +5,27 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
+import { ErrorBoundary } from './ErrorBoundary'
 import { getWeekDates } from '@/lib/utils'
 import { getCurrentWeekNumber } from '@/lib/week-utils'
 import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '@/constants/user'
+
+// Constants
+const SAVE_DEBOUNCE_MS = 500
+
+// Enhanced input sanitization for role/level values
+const sanitizeRoleInput = (input: string): string => {
+  return input
+    .trim()
+    .replace(/[<>\"'&]/g, '') // Remove potential XSS characters
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .substring(0, 100) // Reasonable length limit
+}
+
+const validateRoleInput = (input: string): boolean => {
+  const sanitized = sanitizeRoleInput(input)
+  return sanitized.length >= 2 && sanitized.length <= 100 && /^[a-zA-Z0-9\s\-_]+$/.test(sanitized)
+}
 // Only import mock data in development
 let getMockIntegrationBullets: (integrationType: string) => string[]
 if (process.env.NODE_ENV === 'development') {
@@ -165,7 +183,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
         timestamp: Date.now()
       }
       localStorage.setItem('onboarding-progress', JSON.stringify(progressData))
-    }, 500) // 500ms debounce
+    }, SAVE_DEBOUNCE_MS) // Debounced save to localStorage
   }, [])
 
   // Load progress from localStorage on mount (only if not clearing previous progress)
@@ -217,7 +235,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
         clearTimeout(saveTimeoutRef.current)
       }
     }
-  }, [saveTimeoutRef])
+  }, [])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -285,17 +303,17 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
   // Handle step navigation
   const handleNext = useCallback(async () => {
     if (currentStep === 0) {
-      // Require both role and level
-      const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
-      const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
+      // Require both role and level with enhanced validation
+      const effectiveRole = formData.role === 'other' ? sanitizeRoleInput(formData.customRole) : formData.role
+      const effectiveLevel = formData.level === 'other' ? sanitizeRoleInput(formData.customLevel) : formData.level
       
-      if (!effectiveRole || (formData.role === 'other' && !formData.customRole.trim())) {
-        setError('Please specify your role')
+      if (!effectiveRole || (formData.role === 'other' && !validateRoleInput(formData.customRole))) {
+        setError('Please enter a valid role (2-100 characters, letters, numbers, spaces, hyphens only)')
         return
       }
       
-      if (!effectiveLevel || (formData.level === 'other' && !formData.customLevel.trim())) {
-        setError('Please specify your level')
+      if (!effectiveLevel || (formData.level === 'other' && !validateRoleInput(formData.customLevel))) {
+        setError('Please enter a valid level (2-100 characters, letters, numbers, spaces, hyphens only)')
         return
       }
       
@@ -493,7 +511,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
                   role: 'other', 
-                  customRole: e.target.value 
+                  customRole: sanitizeRoleInput(e.target.value)
                 }))}
                 placeholder="Enter your role (e.g., Solutions Architect, DevOps)"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent disabled:bg-gray-50"
@@ -543,7 +561,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                 onChange={(e) => setFormData(prev => ({ 
                   ...prev, 
                   level: 'other', 
-                  customLevel: e.target.value 
+                  customLevel: sanitizeRoleInput(e.target.value)
                 }))}
                 placeholder="Enter your level (e.g., Lead, Principal Consultant)"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent disabled:bg-gray-50"
@@ -778,7 +796,35 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               </div>
             )}
             
-            {steps[currentStep].content}
+            <ErrorBoundary
+              fallback={
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                  <div className="text-red-500 text-4xl mb-3">⚠️</div>
+                  <h3 className="text-red-800 font-semibold mb-2">Step Error</h3>
+                  <p className="text-red-600 mb-4">
+                    Something went wrong with this onboarding step. Please try refreshing the page or contact support if the issue persists.
+                  </p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    Refresh Page
+                  </button>
+                </div>
+              }
+              onError={(error, errorInfo) => {
+                console.error('Onboarding step error:', {
+                  error: error.message,
+                  stack: error.stack,
+                  currentStep,
+                  stepName: steps[currentStep]?.title || 'Unknown step',
+                  componentStack: errorInfo.componentStack,
+                  timestamp: new Date().toISOString()
+                })
+              }}
+            >
+              {steps[currentStep].content}
+            </ErrorBoundary>
           </div>
 
           {/* Navigation */}
