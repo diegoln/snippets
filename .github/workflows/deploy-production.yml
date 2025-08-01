@@ -48,14 +48,13 @@ jobs:
 
       - name: Update OAuth redirect URIs
         run: |
-          # Make the script executable
-          chmod +x ./scripts/update-oauth-uris.sh
-          
-          # Run the OAuth URI update script
-          ./scripts/update-oauth-uris.sh
+          # Use the simplified OAuth fix script
+          ./scripts/fix-oauth-uris.sh
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ env.GOOGLE_OAUTH_CLIENT_ID }}
           PROJECT_ID: ${{ env.PROJECT_ID }}
+          SERVICE_NAME: ${{ env.SERVICE_NAME }}
+          REGION: ${{ env.REGION }}
 
       - name: Verify deployment
         run: |
