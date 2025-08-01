@@ -154,6 +154,9 @@ const markdownComponents = {
 }
 
 export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+  // Handle literal \n characters in content by converting them to actual newlines
+  const processedContent = content.replace(/\\n/g, '\n')
+  
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
@@ -161,7 +164,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
         rehypePlugins={[rehypeHighlight]}
         components={markdownComponents}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   )

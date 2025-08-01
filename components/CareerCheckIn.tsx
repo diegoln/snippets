@@ -2,7 +2,7 @@
  * Performance Assessment Component
  * 
  * Allows users to generate AI-powered performance self-assessment drafts
- * based on their Friday reflections and career context through LLMProxy integration.
+ * based on their weekly reflections and career context through LLMProxy integration.
  */
 
 'use client'
@@ -202,7 +202,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
         <div>
           <h2 className="text-heading-2 text-primary">Career Check-In Drafts</h2>
           <p className="text-secondary mt-1">
-            Generate AI-powered career check-in drafts based on your Friday reflections
+            Generate AI-powered career check-in drafts based on your weekly reflections
           </p>
         </div>
         {!isFormOpen && (
@@ -225,7 +225,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
           aria-describedby="form-description"
         >
           <h3 id="form-heading" className="text-heading-2 text-primary mb-4">Create Career Check-In Draft</h3>
-          <p id="form-description" className="sr-only">Fill out this form to create an AI-powered career check-in draft based on your Friday reflections</p>
+          <p id="form-description" className="sr-only">Fill out this form to create an AI-powered career check-in draft based on your weekly reflections</p>
           
           <form onSubmit={handleGenerateNewDraft} className="space-y-4" aria-busy={isFormDisabled}>
             <div>
@@ -401,7 +401,7 @@ export const CareerCheckInComponent: React.FC<CareerCheckInProps> = ({
             <div className="text-gray-400 text-4xl mb-4">📊</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Career Check-In Drafts Yet</h3>
             <p className="text-gray-600 mb-4">
-              Generate your first AI-powered career check-in draft based on your Friday reflections.
+              Generate your first AI-powered career check-in draft based on your weekly reflections.
             </p>
             <button
               onClick={() => dispatch({ type: 'OPEN_FORM' })}
