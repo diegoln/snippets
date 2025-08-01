@@ -114,7 +114,7 @@ export const AuthenticatedApp = (): JSX.Element => {
       } catch (error) {
         console.error('Error checking onboarding status:', {
           error: error instanceof Error ? error.message : 'Unknown error',
-          userId: currentUser?.id,
+          userEmail: currentUser?.email,
           timestamp: new Date().toISOString()
         })
         // On error, continue to dashboard (fail gracefully)
@@ -156,7 +156,7 @@ export const AuthenticatedApp = (): JSX.Element => {
           console.error('Failed to fetch snippets:', {
             status: snippetsResponse.status,
             statusText: snippetsResponse.statusText,
-            userId: currentUser?.id,
+            userEmail: currentUser?.email,
             timestamp: new Date().toISOString()
           })
           setSnippets([])
@@ -170,7 +170,7 @@ export const AuthenticatedApp = (): JSX.Element => {
           console.error('Failed to fetch assessments:', {
             status: assessmentsResponse.status,
             statusText: assessmentsResponse.statusText,
-            userId: currentUser?.id,
+            userEmail: currentUser?.email,
             timestamp: new Date().toISOString()
           })
           dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
@@ -179,7 +179,7 @@ export const AuthenticatedApp = (): JSX.Element => {
         console.error('Error fetching data:', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
-          userId: currentUser?.id,
+          userEmail: currentUser?.email,
           timestamp: new Date().toISOString()
         })
         setSnippets([])
