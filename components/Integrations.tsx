@@ -2,7 +2,7 @@
  * Integrations Component
  * 
  * Allows users to connect their Google Calendar and other third-party services
- * to automatically extract meeting context for Friday reflections and career tracking.
+ * to automatically extract meeting context for weekly reflections and career tracking.
  */
 
 'use client'
@@ -202,7 +202,7 @@ export const Integrations = (): JSX.Element => {
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
         <h2 className="text-xl font-semibold text-primary-900 mb-2">Connect Your Calendar</h2>
         <p className="text-secondary mb-6">
-          Connect your Google Calendar to automatically extract meeting context for your Friday reflections. 
+          Connect your Google Calendar to automatically extract meeting context for your weekly reflections. 
           This helps our AI understand your career progress and collaboration patterns.
         </p>
 
@@ -258,7 +258,7 @@ export const Integrations = (): JSX.Element => {
               <div className="flex-1">
                 <h3 className="text-lg font-medium text-green-900 mb-2">Google Calendar Connected</h3>
                 <p className="text-green-700 mb-4">
-                  Your calendar is connected and ready to provide meeting context for your Friday reflections.
+                  Your calendar is connected and ready to provide meeting context for your weekly reflections.
                 </p>
                 <div className="text-sm text-green-600 space-y-1">
                   <p>Connected: {new Date(calendarIntegration.createdAt).toLocaleDateString()}</p>
@@ -289,7 +289,7 @@ export const Integrations = (): JSX.Element => {
           </div>
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
-            <p>Context is used to improve Friday reflection suggestions and performance assessments</p>
+            <p>Context is used to improve weekly reflection suggestions and performance assessments</p>
           </div>
         </div>
       </div>

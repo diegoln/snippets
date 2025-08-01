@@ -88,7 +88,7 @@ export function LandingPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-primary-600 mb-4">
-              Friday Reflections
+              Weekly Reflections
             </h3>
             <p className="text-secondary leading-relaxed">
               Capture your weekly accomplishments in a structured format. Never forget what you&apos;ve achieved or lose track of your progress.
