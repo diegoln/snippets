@@ -1,10 +1,17 @@
 /**
- * Mock integration data for development environment
- * This file should not be included in production builds
+ * Mock integration data for development environment ONLY
+ * This file provides sample data to demonstrate the onboarding flow
+ * 
+ * PRODUCTION SAFETY: This data is never exposed in production builds
  */
 
+// Ensure this module only works in development
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('Mock integration data should not be imported in production')
+}
+
 // Mock bullets based on integration type
-export const MOCK_INTEGRATION_BULLETS: Record<string, string[]> = {
+const MOCK_INTEGRATION_BULLETS: Record<string, string[]> = {
   google_calendar: [
     'Led architecture review meeting for new microservice design',
     'Conducted 3 technical interviews for senior engineering positions',
@@ -27,11 +34,14 @@ export const MOCK_INTEGRATION_BULLETS: Record<string, string[]> = {
 
 /**
  * Get mock bullets for an integration type
- * Only works in development environment
+ * DEVELOPMENT ONLY - Returns empty array in production
  */
 export function getMockIntegrationBullets(integrationType: string): string[] {
+  // Double-check environment safety
   if (process.env.NODE_ENV !== 'development') {
-    console.warn('Mock integration data requested in production environment')
+    if (process.env.NODE_ENV === 'production') {
+      console.error('CRITICAL: Mock data accessed in production - this should never happen')
+    }
     return []
   }
 
