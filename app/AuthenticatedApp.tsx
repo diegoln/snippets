@@ -190,7 +190,7 @@ export const AuthenticatedApp = (): JSX.Element => {
     }
 
     fetchData()
-  }, [isCheckingOnboarding])
+  }, [isCheckingOnboarding, currentUser?.email])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
