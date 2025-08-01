@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { createUserDataService } from '@/lib/user-scoped-data'
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,11 +23,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // In a real implementation, we would add an 'onboardingCompleted' field to the User model
-    // For now, we'll just return success
-    // The presence of jobTitle and seniorityLevel can indicate onboarding completion
-    
-    return NextResponse.json({ success: true, completed: true })
+    // Mark onboarding as completed with timestamp
+    const dataService = createUserDataService(userId)
+    try {
+      await dataService.updateUserProfile({
+        onboardingCompletedAt: new Date()
+      })
+
+      return NextResponse.json({ 
+        success: true, 
+        completed: true,
+        completedAt: new Date().toISOString()
+      })
+    } finally {
+      await dataService.disconnect()
+    }
   } catch (error) {
     console.error('Error marking onboarding complete:', error)
     return NextResponse.json(

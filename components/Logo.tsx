@@ -105,6 +105,7 @@ export const Logo: React.FC<LogoProps> = ({
         style={{
           maxWidth: '100%',
           height: 'auto',
+          width: 'auto',
         }}
       />
     </div>

@@ -21,6 +21,7 @@ model User {
   jobTitle            String?
   seniorityLevel      String?
   performanceFeedback String?
+  onboardingCompletedAt DateTime?
   
   accounts        Account[]
   sessions        Session[]

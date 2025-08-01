@@ -8,10 +8,10 @@
 import { NextRequest } from 'next/server'
 import { GET as getSnippets, POST as createSnippet, PUT as updateSnippet } from '../snippets/route'
 import { GET as getAssessments, POST as createAssessment } from '../assessments/route'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
 
 // Mock the auth utils
-jest.mock('../../../lib/auth-utils', () => ({
+jest.mock('@/lib/auth-utils', () => ({
   getUserIdFromRequest: jest.fn()
 }))
 

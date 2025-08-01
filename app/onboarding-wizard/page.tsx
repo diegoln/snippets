@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { OnboardingWizard } from '../../components/OnboardingWizard'
 import { LoadingSpinner } from '../../components/LoadingSpinner'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 
 export default function OnboardingWizardPage() {
   const { data: session, status } = useSession()
@@ -38,5 +39,12 @@ export default function OnboardingWizardPage() {
     return null
   }
 
-  return <OnboardingWizard />
+  return (
+    <ErrorBoundary onError={(error, errorInfo) => {
+      console.error('OnboardingWizard error:', error, errorInfo)
+      // Could send to error tracking service here
+    }}>
+      <OnboardingWizard />
+    </ErrorBoundary>
+  )
 }

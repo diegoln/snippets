@@ -7,22 +7,19 @@ import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
 import { getWeekDates } from '@/lib/utils'
 import { getCurrentWeekNumber } from '@/lib/week-utils'
+import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '@/constants/user'
+import { getMockIntegrationBullets } from '@/lib/integration-mock-data'
 
-// Role and level options
-const ROLES = [
-  { value: 'engineer', label: 'Engineer' },
-  { value: 'designer', label: 'Designer' },
-  { value: 'product', label: 'Product Manager' },
-  { value: 'data', label: 'Data Scientist' },
-]
+// Role and level options from constants
+const ROLES = VALID_ROLES.map(role => ({
+  value: role,
+  label: ROLE_LABELS[role],
+}))
 
-const LEVELS = [
-  { value: 'junior', label: 'Junior' },
-  { value: 'mid', label: 'Mid-level' },
-  { value: 'senior', label: 'Senior' },
-  { value: 'staff', label: 'Staff' },
-  { value: 'principal', label: 'Principal' },
-]
+const LEVELS = VALID_LEVELS.map(level => ({
+  value: level,
+  label: LEVEL_LABELS[level],
+}))
 
 // Integration options
 const INTEGRATIONS = [
@@ -85,15 +82,7 @@ export function OnboardingWizard() {
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
-    const levelTips: Record<string, string> = {
-      junior: 'Focus on learning milestones and skill development',
-      mid: 'Highlight cross-team collaboration and independent delivery',
-      senior: 'Emphasize technical leadership and mentoring',
-      staff: 'Show system design and strategic initiatives',
-      principal: 'Demonstrate org-wide impact and technical direction',
-    }
-
-    const tip = levelTips[formData.level] || ''
+    const tip = LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS] || ''
     
     // Combine bullets from all connected integrations
     const allBullets = Object.values(integrationBullets).flat()
@@ -121,31 +110,12 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Mock bullets based on integration type
-      const mockBullets: Record<string, string[]> = {
-        google_calendar: [
-          'Led architecture review meeting for new microservice design',
-          'Conducted 3 technical interviews for senior engineering positions',
-          'Presented Q4 roadmap to executive team',
-          'Mentored junior developers in weekly 1:1 sessions',
-        ],
-        github: [
-          'Merged 12 PRs including critical auth service refactor',
-          'Reviewed 28 pull requests across 3 repositories',
-          'Implemented new CI/CD pipeline reducing deploy time by 40%',
-          'Fixed critical production bug affecting 10k users',
-        ],
-        jira: [
-          'Completed 8 story points in sprint 42',
-          'Resolved 3 high-priority bugs in payment system',
-          'Delivered user profile feature ahead of schedule',
-          'Created technical design docs for upcoming epic',
-        ],
-      }
+      // Get mock bullets for this integration type (development only)
+      const bullets = getMockIntegrationBullets(integrationType)
       
       setIntegrationBullets(prev => ({
         ...prev,
-        [integrationType]: mockBullets[integrationType] || []
+        [integrationType]: bullets
       }))
       setConnectedIntegrations(prev => new Set([...prev, integrationType]))
     } catch (err) {
@@ -211,7 +181,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         body: JSON.stringify({
           weekNumber: currentWeek,
           year: year,
-          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: Focus on learning milestones and skill development` : ''}`,
+          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''}`,
         }),
       })
       
@@ -253,7 +223,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
   useEffect(() => {
     if (currentStep === 2 && !formData.reflectionContent) {
       const allBullets = Object.values(integrationBullets).flat()
-      const tip = formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: Focus on learning milestones and skill development` : ''
+      const tip = formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''
       const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
       
       setFormData(prev => ({

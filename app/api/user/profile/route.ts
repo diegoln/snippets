@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
-import { createUserDataService } from '../../../lib/user-scoped-data'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { createUserDataService } from '@/lib/user-scoped-data'
+import { getToken } from 'next-auth/jwt'
+import { PrismaClient } from '@prisma/client'
+import { isValidRole, isValidLevel } from '@/constants/user'
+
+const prisma = new PrismaClient()
 
 export async function PUT(request: NextRequest) {
   try {
@@ -24,11 +29,57 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Create user-scoped data service
-    const dataService = createUserDataService(userId)
+    // Validate role and level enums
+    if (!isValidRole(jobTitle)) {
+      return NextResponse.json(
+        { error: 'Invalid job title. Must be one of: engineer, designer, product, data' },
+        { status: 400 }
+      )
+    }
 
+    if (!isValidLevel(seniorityLevel)) {
+      return NextResponse.json(
+        { error: 'Invalid seniority level. Must be one of: junior, mid, senior, staff, principal' },
+        { status: 400 }
+      )
+    }
+
+    // In development with mock auth, ensure user exists
+    if (process.env.NODE_ENV === 'development') {
+      const token = await getToken({ 
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET || 'development'
+      })
+      
+      if (token?.email) {
+        // Create or update user directly
+        const user = await prisma.user.upsert({
+          where: { id: userId },
+          create: {
+            id: userId,
+            email: token.email as string,
+            name: token.name as string || null,
+            image: token.picture as string || null,
+            jobTitle,
+            seniorityLevel,
+          },
+          update: {
+            jobTitle,
+            seniorityLevel,
+          }
+        })
+
+        return NextResponse.json({
+          id: user.id,
+          jobTitle: user.jobTitle,
+          seniorityLevel: user.seniorityLevel,
+        })
+      }
+    }
+
+    // Production path - use data service
+    const dataService = createUserDataService(userId)
     try {
-      // Update user profile
       const updatedUser = await dataService.updateUserProfile({
         jobTitle,
         seniorityLevel,

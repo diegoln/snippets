@@ -24,7 +24,7 @@ const mockUsers = [
     id: '2', 
     name: 'Sarah Engineer',
     email: 'sarah@example.com',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b9f2d30c?w=100&h=100&fit=crop&crop=face',
+    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
     role: 'Staff Engineer'
   },
   {

@@ -66,5 +66,10 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
   * Avoid using static mock content from the front-end
   * Minimize potential environment-specific bugs by keeping data fetching consistent
 
+## Observations and Insights
+- Dev server PostgreSQL configuration:
+  * Noted that dev server is NOT using a local Docker-initialized PostgreSQL server
+  * This deviates from the expected setup where dev and prod environments should have consistent data interface to prevent deployment errors
+
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
