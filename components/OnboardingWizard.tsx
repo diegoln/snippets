@@ -153,7 +153,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     } finally {
       setIsConnecting(null)
     }
-  }, [])
+  }, [isConnecting, connectedIntegrations])
 
   // Handle step navigation
   const handleNext = useCallback(() => {
@@ -183,14 +183,21 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     
     try {
       // Save user role/level
-      await fetch('/api/user/profile', {
+      const profileResponse = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           jobTitle: formData.role,
           seniorityLevel: formData.level,
         }),
       })
+      
+      if (!profileResponse.ok) {
+        const errorData = await profileResponse.json().catch(() => ({ error: 'Failed to update profile' }))
+        console.error('Profile update failed:', profileResponse.status, errorData)
+        throw new Error(errorData.error || 'Failed to update profile')
+      }
       
       // Create first snippet
       const currentWeek = getCurrentWeekNumber()
@@ -200,49 +207,65 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       const response = await fetch('/api/snippets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({
           weekNumber: currentWeek,
           year: year,
-          content: formData.reflectionContent || generateInitialReflection(),
+          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: Focus on learning milestones and skill development` : ''}`,
         }),
       })
       
       if (!response.ok) {
-        throw new Error('Failed to save reflection')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Snippet save failed:', response.status, errorData)
+        
+        // Provide helpful error message for development
+        if (response.status === 401 && process.env.NODE_ENV === 'development') {
+          throw new Error('Please sign in first at /mock-signin')
+        }
+        
+        throw new Error(errorData.error || 'Failed to save reflection')
       }
       
       // Mark onboarding as complete
       await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
       })
       
-      // Offer calendar block
-      if (window.confirm('Would you like to add a weekly "Friday Reflection ✍️" block to your calendar?')) {
-        // TODO: Implement calendar block creation
-        console.log('Calendar block creation not yet implemented')
-      }
-      
-      // Redirect to dashboard
-      router.push('/dashboard')
+      // Move to success step
+      setCurrentStep(3)
     } catch (err) {
-      setError('Failed to save. Please try again.')
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to save. Please try again.')
+      }
       console.error('Save error:', err)
     } finally {
       setIsLoading(false)
     }
-  }, [formData, generateInitialReflection, router])
+  }, [formData, integrationBullets, router])
 
   // Update reflection content when we reach step 3
   useEffect(() => {
     if (currentStep === 2 && !formData.reflectionContent) {
+      const allBullets = Object.values(integrationBullets).flat()
+      const tip = formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: Focus on learning milestones and skill development` : ''
+      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
+      
       setFormData(prev => ({
         ...prev,
-        reflectionContent: generateInitialReflection(),
+        reflectionContent: content,
       }))
     }
-  }, [currentStep, formData.reflectionContent, generateInitialReflection])
+  }, [currentStep, formData.reflectionContent, formData.level, formData.role, integrationBullets])
+
+  const handleGoToDashboard = useCallback(() => {
+    router.push('/dashboard')
+  }, [router])
 
   const steps = [
     {
@@ -362,6 +385,70 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         </div>
       ),
     },
+    {
+      title: '🎉 Welcome to AdvanceWeekly!',
+      subtitle: 'Your first reflection is saved. Here\'s how to make the most of your weekly practice.',
+      content: (
+        <div className="space-y-6">
+          {/* Success message */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+            <div className="flex items-start">
+              <svg className="w-6 h-6 text-green-600 mt-1 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h3 className="text-lg font-semibold text-green-900">Your first reflection is saved!</h3>
+                <p className="text-green-700 mt-1">
+                  We'll use this to help you track your growth and prepare for performance reviews.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Calendar recommendation */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📅 Set up your reflection habit</h3>
+            
+            <p className="text-gray-600 mb-4">
+              The most successful users block 15 minutes every Friday afternoon for their weekly reflection.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                Pro tip: Add a recurring calendar event
+              </p>
+              <p className="text-sm text-blue-700">
+                "Friday Reflection ✍️" - Every Friday at 4:30 PM
+              </p>
+            </div>
+            <button
+              onClick={() => alert('Calendar integration coming soon!')}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md font-medium"
+            >
+              Add to Calendar
+            </button>
+          </div>
+
+          {/* Next steps */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 What happens next?</h3>
+            <ul className="space-y-3 text-gray-600">
+              <li className="flex items-start">
+                <span className="text-accent-500 mr-2">•</span>
+                <span>Add reflections each week to build your performance story</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-accent-500 mr-2">•</span>
+                <span>Your connected integrations will automatically pull in context</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-accent-500 mr-2">•</span>
+                <span>Generate AI-powered assessments when you're ready for reviews</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      ),
+    },
   ]
 
   return (
@@ -419,13 +506,17 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
 
           {/* Navigation */}
           <div className="flex justify-between items-center">
-            <button
-              onClick={handleBack}
-              disabled={currentStep === 0}
-              className="px-6 py-3 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ← Back
-            </button>
+            {currentStep < 3 ? (
+              <button
+                onClick={handleBack}
+                disabled={currentStep === 0}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Back
+              </button>
+            ) : (
+              <div /> // Empty div for spacing
+            )}
             
             {currentStep < 2 ? (
               <button
@@ -434,13 +525,20 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
               >
                 Continue →
               </button>
-            ) : (
+            ) : currentStep === 2 ? (
               <button
                 onClick={handleSave}
                 disabled={isLoading}
                 className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1 disabled:opacity-50"
               >
                 {isLoading ? <LoadingSpinner size="sm" /> : 'Save Reflection'}
+              </button>
+            ) : (
+              <button
+                onClick={handleGoToDashboard}
+                className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1"
+              >
+                Go to Dashboard →
               </button>
             )}
           </div>
