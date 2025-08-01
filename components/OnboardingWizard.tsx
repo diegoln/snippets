@@ -268,7 +268,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       ...prev,
       [integrationType]: tempBullets
     }))
-    setConnectedIntegrations(prev => new Set([...prev, integrationType]))
+    setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
     
     try {
       // Simulate API call delay
@@ -426,7 +426,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     } finally {
       setLoadingState({ isLoading: false })
     }
-  }, [formData, integrationBullets, router])
+  }, [formData, integrationBullets, handleApiError])
 
   // Update reflection content when we reach step 3
   useEffect(() => {
@@ -679,7 +679,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <div>
                 <h3 className="text-lg font-semibold text-green-900">Your first reflection is saved!</h3>
                 <p className="text-green-700 mt-1">
-                  We'll use this to help you track your growth and prepare for performance reviews.
+                  We&apos;ll use this to help you track your growth and prepare for performance reviews.
                 </p>
               </div>
             </div>
@@ -697,7 +697,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                 Pro tip: Add a recurring calendar event
               </p>
               <p className="text-sm text-blue-700">
-                "Friday Reflection ✍️" - Every Friday at 4:30 PM
+                &quot;Friday Reflection ✍️&quot; - Every Friday at 4:30 PM
               </p>
             </div>
             <button
@@ -722,7 +722,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               </li>
               <li className="flex items-start">
                 <span className="text-accent-500 mr-2">•</span>
-                <span>Generate AI-powered assessments when you're ready for reviews</span>
+                <span>Generate AI-powered assessments when you&apos;re ready for reviews</span>
               </li>
             </ul>
           </div>
