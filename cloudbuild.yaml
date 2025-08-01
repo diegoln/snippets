@@ -34,21 +34,36 @@ options:
   machineType: 'E2_HIGHCPU_8'  # Faster build with more CPU
 
 steps:
-  # Step 1: Quality Gates - Ensure code passes all checks before building
+  # Step 1: Install Dependencies (shared cache for performance)
+  - name: 'node:18-slim'
+    id: 'install-deps'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "📦 Installing dependencies for quality checks and build..."
+        apt-get update && apt-get install -y curl
+        npm ci --frozen-lockfile
+        echo "✅ Dependencies installed successfully!"
+    volumes:
+      - name: 'node-modules'
+        path: '/workspace/node_modules'
+    timeout: 180s  # 3 minutes for dependency installation
+
+  # Step 2: Quality Gates - Ensure code passes all checks before building
   - name: 'node:18-slim'
     id: 'lint-and-typecheck'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        echo "🔍 Installing dependencies and running quality checks..."
-        apt-get update && apt-get install -y curl
-        npm ci --frozen-lockfile
+        echo "🔍 Running quality checks with cached dependencies..."
         
         echo "🧹 Running ESLint..."
         npm run lint
         if [ $$? -ne 0 ]; then
           echo "❌ Lint checks failed. Fix errors before deploying to production."
+          echo "💡 Run 'npm run lint' locally to see detailed errors"
           exit 1
         fi
         
@@ -56,13 +71,18 @@ steps:
         npm run typecheck:quick
         if [ $$? -ne 0 ]; then
           echo "❌ TypeScript compilation failed. Fix errors before deploying to production."
+          echo "💡 Run 'npm run typecheck:quick' locally to see detailed errors"
           exit 1
         fi
         
         echo "✅ All quality checks passed!"
-    timeout: 300s  # 5 minutes for quality checks
+    volumes:
+      - name: 'node-modules'
+        path: '/workspace/node_modules'
+    waitFor: ['install-deps']
+    timeout: 120s  # 2 minutes for quality checks (faster without npm install)
 
-  # Step 2: Build the Docker image
+  # Step 3: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-image'
     args: 
@@ -79,7 +99,7 @@ steps:
     waitFor: ['lint-and-typecheck']  # Only build after quality checks pass
     timeout: 900s  # 15 minutes for build
 
-  # Step 2: Push the images to Artifact Registry  
+  # Step 4: Push the images to Artifact Registry  
   - name: 'gcr.io/cloud-builders/docker'
     id: 'push-build-id'
     args:
@@ -94,7 +114,7 @@ steps:
       - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
     waitFor: ['build-image']
 
-  # Step 3: Deploy to Cloud Run
+  # Step 5: Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'deploy-cloud-run'
     args:
@@ -133,7 +153,7 @@ steps:
     waitFor: ['push-build-id', 'push-latest']
     timeout: 300s  # 5 minutes for deployment
 
-  # Step 4: Update OAuth redirect URIs after deployment
+  # Step 6: Update OAuth redirect URIs after deployment
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'update-oauth-uris'
     entrypoint: 'bash'
