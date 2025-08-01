@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
-import { createUserDataService } from '../../../lib/user-scoped-data'
-import { isWeekInFuture, isValidWeekNumber } from '../../../lib/week-utils'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { createUserDataService } from '@/lib/user-scoped-data'
+import { isWeekInFuture, isValidWeekNumber } from '@/lib/week-utils'
+import { getToken } from 'next-auth/jwt'
+import { PrismaClient } from '@prisma/client'
 
 /**
  * GET /api/snippets - Fetch all weekly snippets for the authenticated user
@@ -101,6 +103,29 @@ export async function POST(request: NextRequest) {
         { error: 'Cannot create snippets for future weeks' },
         { status: 400 }
       )
+    }
+
+    // In development, ensure user exists before creating snippet
+    if (process.env.NODE_ENV === 'development') {
+      const prisma = new PrismaClient()
+      const token = await getToken({ 
+        req: request,
+        secret: process.env.NEXTAUTH_SECRET || 'development'
+      })
+      
+      if (token?.email) {
+        // Ensure user exists
+        await prisma.user.upsert({
+          where: { id: userId },
+          create: {
+            id: userId,
+            email: token.email as string,
+            name: token.name as string || null,
+            image: token.picture as string || null,
+          },
+          update: {}
+        })
+      }
     }
 
     // Create user-scoped data service

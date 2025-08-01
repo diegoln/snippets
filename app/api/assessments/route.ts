@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
-import { createUserDataService } from '../../../lib/user-scoped-data'
-import { PromptProcessor } from '../../../lib/prompt-processor'
-import { llmProxy } from '../../../lib/llmproxy'
-import { AssessmentContext } from '../../../types/performance'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { createUserDataService } from '@/lib/user-scoped-data'
+import { PromptProcessor } from '@/lib/prompt-processor'
+import { llmProxy } from '@/lib/llmproxy'
+import { AssessmentContext } from '@/types/performance'
 
 /**
  * POST /api/assessments - Generate a new performance assessment for the authenticated user

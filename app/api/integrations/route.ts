@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getUserIdFromRequest } from '../../../lib/auth-utils'
-import { createUserDataService } from '../../../lib/user-scoped-data'
-import { GoogleCalendarService } from '../../../lib/calendar-integration'
+import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { createUserDataService } from '@/lib/user-scoped-data'
+import { GoogleCalendarService } from '@/lib/calendar-integration'
 
 // Input validation schemas
 const ConnectIntegrationSchema = z.object({

@@ -33,6 +33,7 @@ export interface UserProfile {
   jobTitle: string | null
   seniorityLevel: string | null
   performanceFeedback: string | null
+  onboardingCompletedAt: Date | null
 }
 
 /**
@@ -75,7 +76,8 @@ export class UserScopedDataService {
           name: true,
           jobTitle: true,
           seniorityLevel: true,
-          performanceFeedback: true
+          performanceFeedback: true,
+          onboardingCompletedAt: true
         }
       })
 
@@ -89,7 +91,7 @@ export class UserScopedDataService {
   /**
    * Update user profile information
    */
-  async updateUserProfile(data: Partial<Pick<UserProfile, 'name' | 'jobTitle' | 'seniorityLevel' | 'performanceFeedback'>>): Promise<UserProfile> {
+  async updateUserProfile(data: Partial<Pick<UserProfile, 'name' | 'jobTitle' | 'seniorityLevel' | 'performanceFeedback' | 'onboardingCompletedAt'>>): Promise<UserProfile> {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id: this.userId },
@@ -100,7 +102,8 @@ export class UserScopedDataService {
           name: true,
           jobTitle: true,
           seniorityLevel: true,
-          performanceFeedback: true
+          performanceFeedback: true,
+          onboardingCompletedAt: true
         }
       })
 
@@ -208,10 +211,23 @@ export class UserScopedDataService {
         throw new Error('Cannot create snippets for future weeks')
       }
 
-      const snippet = await this.prisma.weeklySnippet.create({
-        data: {
+      const snippet = await this.prisma.weeklySnippet.upsert({
+        where: {
+          userId_year_weekNumber: {
+            userId: this.userId,
+            year: data.year,
+            weekNumber: data.weekNumber
+          }
+        },
+        create: {
           ...data,
           userId: this.userId
+        },
+        update: {
+          content: data.content,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          updatedAt: new Date()
         },
         select: {
           id: true,
