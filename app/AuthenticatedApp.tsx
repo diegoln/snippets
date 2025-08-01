@@ -79,7 +79,6 @@ export const AuthenticatedApp = (): JSX.Element => {
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
-  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true)
   const [isLoadingData, setIsLoadingData] = useState(true)
 
   const sortedAssessments = useMemo(() => 
@@ -97,53 +96,22 @@ export const AuthenticatedApp = (): JSX.Element => {
     setCurrentPage(0)
   }, [snippets.length])
 
-  // Check onboarding status first
+  // Load dashboard data (onboarding already verified in root page)
   useEffect(() => {
-    const checkOnboardingStatus = async () => {
-      try {
-        const response = await fetch('/api/user/profile')
-        if (response.ok) {
-          const userData = await response.json()
-          
-          if (!userData.onboardingCompleted) {
-            // User hasn't completed onboarding, redirect to onboarding wizard
-            router.replace('/onboarding-wizard')
-            return
-          }
-        }
-      } catch (error) {
-        console.error('Error checking onboarding status:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          userEmail: currentUser?.email,
-          timestamp: new Date().toISOString()
-        })
-        // On error, continue to dashboard (fail gracefully)
-      } finally {
-        setIsCheckingOnboarding(false)
+    const loadDashboardData = async () => {
+      if (!currentUser) {
+        return
       }
-    }
 
-    if (currentUser) {
-      checkOnboardingStatus()
-    } else {
-      setIsCheckingOnboarding(false)
-    }
-  }, [currentUser, router])
-
-  useEffect(() => {
-    // Only fetch data if we're not checking onboarding and onboarding check is complete
-    if (isCheckingOnboarding) return
-    
-    // Fetch both snippets and assessments concurrently for faster loading
-    const fetchData = async () => {
-      setIsLoadingData(true)
       try {
-        // Start both requests simultaneously
+        console.log('📊 Loading dashboard data for authenticated user...')
+        
+        // Fetch dashboard data in parallel
         const [snippetsResponse, assessmentsResponse] = await Promise.all([
           fetch('/api/snippets'),
           fetch('/api/assessments')
         ])
-        
+
         // Handle snippets response
         if (snippetsResponse.ok) {
           const snippetsData = await snippetsResponse.json()
@@ -175,8 +143,10 @@ export const AuthenticatedApp = (): JSX.Element => {
           })
           dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
         }
+        
+        console.log('✅ Dashboard data loaded successfully')
       } catch (error) {
-        console.error('Error fetching data:', {
+        console.error('Error fetching dashboard data:', {
           error: error instanceof Error ? error.message : 'Unknown error',
           stack: error instanceof Error ? error.stack : undefined,
           userEmail: currentUser?.email,
@@ -189,8 +159,8 @@ export const AuthenticatedApp = (): JSX.Element => {
       }
     }
 
-    fetchData()
-  }, [isCheckingOnboarding, currentUser?.email])
+    loadDashboardData()
+  }, [currentUser])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
@@ -381,15 +351,17 @@ export const AuthenticatedApp = (): JSX.Element => {
     signOut({ callbackUrl })
   }
 
-  // Show loading screen while checking onboarding or loading initial data
-  if (isCheckingOnboarding || isLoadingData) {
+  // Show loading overlay while loading dashboard data (non-blocking)
+  if (isLoadingData) {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <LoadingSpinner size="lg" />
-          <p className="text-secondary mt-4">
-            {isCheckingOnboarding ? 'Checking your profile...' : 'Loading your dashboard...'}
-          </p>
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Loading<span className="animate-pulse">...</span>
+            </h2>
+          </div>
         </div>
       </div>
     )

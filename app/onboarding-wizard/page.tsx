@@ -13,7 +13,11 @@ export default function OnboardingWizardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [checkingOnboarding, setCheckingOnboarding] = useState(true)
-  const [userData, setUserData] = useState<any>(null)
+  const [userData, setUserData] = useState<{
+    jobTitle?: string
+    seniorityLevel?: string
+    onboardingCompleted?: boolean
+  } | null>(null)
 
   useEffect(() => {
     // Redirect to signin if not authenticated
@@ -33,8 +37,8 @@ export default function OnboardingWizardPage() {
           setUserData(fetchedUserData)
           
           if (fetchedUserData.onboardingCompleted) {
-            // User has already completed onboarding, redirect to dashboard
-            router.replace('/dashboard')
+            // User has already completed onboarding, redirect to root
+            router.replace('/')
             return
           }
         }

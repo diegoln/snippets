@@ -7,9 +7,11 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export async function PUT(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -96,9 +98,11 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -110,6 +114,13 @@ export async function GET(request: NextRequest) {
     const dataService = createUserDataService(userId)
     try {
       const user = await dataService.getUserProfile()
+      
+      if (!user) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        )
+      }
       
       return NextResponse.json({
         id: user.id,

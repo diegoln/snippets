@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
 import { ErrorBoundary } from './ErrorBoundary'
-import { getWeekDates } from '@/lib/utils'
-import { getCurrentWeekNumber } from '@/lib/week-utils'
-import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '@/constants/user'
+import { getWeekDates } from '../lib/utils'
+import { getCurrentWeekNumber } from '../lib/week-utils'
+import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '../constants/user'
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
@@ -29,7 +29,7 @@ const validateRoleInput = (input: string): boolean => {
 // Only import mock data in development
 let getMockIntegrationBullets: (integrationType: string) => string[]
 if (process.env.NODE_ENV === 'development') {
-  getMockIntegrationBullets = require('@/lib/integration-mock-data').getMockIntegrationBullets
+  getMockIntegrationBullets = require('../lib/integration-mock-data').getMockIntegrationBullets
 } else {
   // In production, provide empty function that returns no mock data
   getMockIntegrationBullets = () => []
@@ -460,8 +460,8 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     })
     
     // Use replace instead of push to avoid back navigation to onboarding
-    // This makes navigation feel faster and more intentional
-    router.replace('/dashboard')
+    // Navigate to root page which will handle proper component rendering
+    router.replace('/')
   }, [router])
 
   const steps = [
