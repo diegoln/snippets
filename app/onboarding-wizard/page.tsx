@@ -51,7 +51,12 @@ export default function OnboardingWizardPage() {
   if (status === 'loading' || checkingOnboarding) {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-secondary mt-4">
+            {status === 'loading' ? 'Checking authentication...' : 'Verifying onboarding status...'}
+          </p>
+        </div>
       </div>
     )
   }

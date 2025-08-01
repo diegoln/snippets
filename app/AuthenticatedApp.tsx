@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Settings } from '../components/Settings'
 import { CareerCheckInComponent } from '../components/CareerCheckIn'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Logo } from '../components/Logo'
+import { LoadingSpinner } from '../components/LoadingSpinner'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
 import { PerformanceSettings } from '../types/settings'
@@ -62,6 +64,7 @@ interface SnippetEditorProps {
 export const AuthenticatedApp = (): JSX.Element => {
   const { data: session } = useSession()
   const currentUser = session?.user
+  const router = useRouter()
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
@@ -76,6 +79,8 @@ export const AuthenticatedApp = (): JSX.Element => {
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   const sortedAssessments = useMemo(() => 
     [...assessments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -92,9 +97,46 @@ export const AuthenticatedApp = (): JSX.Element => {
     setCurrentPage(0)
   }, [snippets.length])
 
+  // Check onboarding status first
   useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const userData = await response.json()
+          
+          if (!userData.onboardingCompleted) {
+            // User hasn't completed onboarding, redirect to onboarding wizard
+            router.replace('/onboarding-wizard')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          userId: currentUser?.id,
+          timestamp: new Date().toISOString()
+        })
+        // On error, continue to dashboard (fail gracefully)
+      } finally {
+        setIsCheckingOnboarding(false)
+      }
+    }
+
+    if (currentUser) {
+      checkOnboardingStatus()
+    } else {
+      setIsCheckingOnboarding(false)
+    }
+  }, [currentUser, router])
+
+  useEffect(() => {
+    // Only fetch data if we're not checking onboarding and onboarding check is complete
+    if (isCheckingOnboarding) return
+    
     // Fetch both snippets and assessments concurrently for faster loading
     const fetchData = async () => {
+      setIsLoadingData(true)
       try {
         // Start both requests simultaneously
         const [snippetsResponse, assessmentsResponse] = await Promise.all([
@@ -142,11 +184,13 @@ export const AuthenticatedApp = (): JSX.Element => {
         })
         setSnippets([])
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+      } finally {
+        setIsLoadingData(false)
       }
     }
 
     fetchData()
-  }, [])
+  }, [isCheckingOnboarding])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
@@ -335,6 +379,20 @@ export const AuthenticatedApp = (): JSX.Element => {
       : '/';
     
     signOut({ callbackUrl })
+  }
+
+  // Show loading screen while checking onboarding or loading initial data
+  if (isCheckingOnboarding || isLoadingData) {
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-secondary mt-4">
+            {isCheckingOnboarding ? 'Checking your profile...' : 'Loading your dashboard...'}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
