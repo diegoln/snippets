@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useReducer, useMemo } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Settings } from '../components/Settings'
 import { CareerCheckInComponent } from '../components/CareerCheckIn'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Logo } from '../components/Logo'
+import { LoadingSpinner } from '../components/LoadingSpinner'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
 import { PerformanceSettings } from '../types/settings'
@@ -62,6 +64,7 @@ interface SnippetEditorProps {
 export const AuthenticatedApp = (): JSX.Element => {
   const { data: session } = useSession()
   const currentUser = session?.user
+  const router = useRouter()
   const [snippets, setSnippets] = useState<WeeklySnippet[]>([])
   const [selectedSnippet, setSelectedSnippet] = useState<WeeklySnippet | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(false)
@@ -76,6 +79,8 @@ export const AuthenticatedApp = (): JSX.Element => {
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   const sortedAssessments = useMemo(() => 
     [...assessments].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
@@ -92,47 +97,100 @@ export const AuthenticatedApp = (): JSX.Element => {
     setCurrentPage(0)
   }, [snippets.length])
 
+  // Check onboarding status first
   useEffect(() => {
-    const fetchSnippets = async () => {
+    const checkOnboardingStatus = async () => {
       try {
-        const response = await fetch('/api/snippets')
+        const response = await fetch('/api/user/profile')
         if (response.ok) {
-          const snippetsData = await response.json()
+          const userData = await response.json()
+          
+          if (!userData.onboardingCompleted) {
+            // User hasn't completed onboarding, redirect to onboarding wizard
+            router.replace('/onboarding-wizard')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          userId: currentUser?.id,
+          timestamp: new Date().toISOString()
+        })
+        // On error, continue to dashboard (fail gracefully)
+      } finally {
+        setIsCheckingOnboarding(false)
+      }
+    }
+
+    if (currentUser) {
+      checkOnboardingStatus()
+    } else {
+      setIsCheckingOnboarding(false)
+    }
+  }, [currentUser, router])
+
+  useEffect(() => {
+    // Only fetch data if we're not checking onboarding and onboarding check is complete
+    if (isCheckingOnboarding) return
+    
+    // Fetch both snippets and assessments concurrently for faster loading
+    const fetchData = async () => {
+      setIsLoadingData(true)
+      try {
+        // Start both requests simultaneously
+        const [snippetsResponse, assessmentsResponse] = await Promise.all([
+          fetch('/api/snippets'),
+          fetch('/api/assessments')
+        ])
+        
+        // Handle snippets response
+        if (snippetsResponse.ok) {
+          const snippetsData = await snippetsResponse.json()
           setSnippets(snippetsData)
           
           if (snippetsData.length > 0) {
             setSelectedSnippet(snippetsData[0])
           }
         } else {
-          console.error('Failed to fetch snippets:', response.statusText)
+          console.error('Failed to fetch snippets:', {
+            status: snippetsResponse.status,
+            statusText: snippetsResponse.statusText,
+            userId: currentUser?.id,
+            timestamp: new Date().toISOString()
+          })
           setSnippets([])
         }
-      } catch (error) {
-        console.error('Error fetching snippets:', error)
-        setSnippets([])
-      }
-    }
-
-    fetchSnippets()
-
-    const fetchAssessments = async () => {
-      try {
-        const response = await fetch('/api/assessments')
-        if (response.ok) {
-          const assessmentsData = await response.json()
+        
+        // Handle assessments response
+        if (assessmentsResponse.ok) {
+          const assessmentsData = await assessmentsResponse.json()
           dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
         } else {
-          console.error('Failed to fetch assessments:', response.statusText)
+          console.error('Failed to fetch assessments:', {
+            status: assessmentsResponse.status,
+            statusText: assessmentsResponse.statusText,
+            userId: currentUser?.id,
+            timestamp: new Date().toISOString()
+          })
           dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
         }
       } catch (error) {
-        console.error('Error fetching assessments:', error)
+        console.error('Error fetching data:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+          userId: currentUser?.id,
+          timestamp: new Date().toISOString()
+        })
+        setSnippets([])
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+      } finally {
+        setIsLoadingData(false)
       }
     }
 
-    fetchAssessments()
-  }, [])
+    fetchData()
+  }, [isCheckingOnboarding])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
@@ -211,7 +269,6 @@ export const AuthenticatedApp = (): JSX.Element => {
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
     setUserSettings(settings)
     setShowSettings(false)
-    console.log('Saving settings:', settings)
   }, [])
 
   const handleGenerateDraft = useCallback(async (request: CheckInFormData): Promise<void> => {
@@ -324,6 +381,20 @@ export const AuthenticatedApp = (): JSX.Element => {
     signOut({ callbackUrl })
   }
 
+  // Show loading screen while checking onboarding or loading initial data
+  if (isCheckingOnboarding || isLoadingData) {
+    return (
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-secondary mt-4">
+            {isCheckingOnboarding ? 'Checking your profile...' : 'Loading your dashboard...'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-neutral-100">
       <div className="container mx-auto px-4 py-8">
@@ -374,7 +445,7 @@ export const AuthenticatedApp = (): JSX.Element => {
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <div className="flex flex-col items-start">
-                <Logo variant="horizontal" width={160} priority />
+                <Logo variant="horizontal" width={120} priority />
                 <p className="text-sm text-secondary font-medium tracking-wide mt-1 hidden lg:block">See beyond the busy.</p>
               </div>
             </div>

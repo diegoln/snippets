@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { OnboardingWizard } from '../../components/OnboardingWizard'
 import { LoadingSpinner } from '../../components/LoadingSpinner'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
@@ -12,6 +12,8 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 export default function OnboardingWizardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true)
+  const [userData, setUserData] = useState<any>(null)
 
   useEffect(() => {
     // Redirect to signin if not authenticated
@@ -23,14 +25,38 @@ export default function OnboardingWizardPage() {
     }
     
     // Check if user has already completed onboarding
-    // This would normally check a database flag
-    // For now, we'll assume they haven't if they're on this page
+    const checkOnboardingStatus = async () => {
+      try {
+        const response = await fetch('/api/user/profile')
+        if (response.ok) {
+          const fetchedUserData = await response.json()
+          setUserData(fetchedUserData)
+          
+          if (fetchedUserData.onboardingCompleted) {
+            // User has already completed onboarding, redirect to dashboard
+            router.replace('/dashboard')
+            return
+          }
+        }
+      } catch (error) {
+        // Continue to onboarding wizard on error
+      } finally {
+        setCheckingOnboarding(false)
+      }
+    }
+
+    checkOnboardingStatus()
   }, [session, status, router])
 
-  if (status === 'loading') {
+  if (status === 'loading' || checkingOnboarding) {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="text-secondary mt-4">
+            {status === 'loading' ? 'Checking authentication...' : 'Verifying onboarding status...'}
+          </p>
+        </div>
       </div>
     )
   }
@@ -40,11 +66,18 @@ export default function OnboardingWizardPage() {
   }
 
   return (
-    <ErrorBoundary onError={(error, errorInfo) => {
-      console.error('OnboardingWizard error:', error, errorInfo)
-      // Could send to error tracking service here
-    }}>
-      <OnboardingWizard />
+    <ErrorBoundary>
+      <OnboardingWizard 
+        initialData={userData ? {
+          jobTitle: userData.jobTitle,
+          seniorityLevel: userData.seniorityLevel
+        } : undefined}
+        clearPreviousProgress={!!userData && !userData.onboardingCompleted}
+        onOnboardingComplete={() => {
+          // Update userData when onboarding is completed to prevent clearPreviousProgress from being true
+          setUserData(prev => prev ? { ...prev, onboardingCompleted: true } : prev)
+        }}
+      />
     </ErrorBoundary>
   )
 }
