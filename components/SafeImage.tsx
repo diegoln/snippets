@@ -51,8 +51,8 @@ export const SafeImage: React.FC<SafeImageProps> = ({
 
   const safeSrc = currentSrc && isValidImageUrl(currentSrc) ? currentSrc : fallbackSrc
 
+  // eslint-disable-next-line @next/next/no-img-element
   return (
-    {/* eslint-disable-next-line @next/next/no-img-element */}
     <img
       src={safeSrc}
       alt={alt}
