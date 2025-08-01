@@ -42,8 +42,8 @@ export function LandingPage() {
       window.location.href = '/mock-signin'
     } else {
       // In production, use real Google OAuth with NextAuth
-      // NextAuth callbacks will handle redirecting to onboarding-wizard or dashboard
-      signIn('google', { callbackUrl: '/dashboard' })
+      // NextAuth callbacks will handle redirecting to root page for proper routing
+      signIn('google', { callbackUrl: '/' })
     }
   }
 
