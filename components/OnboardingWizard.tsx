@@ -321,7 +321,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     } finally {
       setLoadingState({ isLoading: false })
     }
-  }, [formData, integrationBullets, router])
+  }, [formData, integrationBullets, router, handleApiError])
 
   // Update reflection content when we reach step 3
   useEffect(() => {
@@ -479,7 +479,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
               <div>
                 <h3 className="text-lg font-semibold text-green-900">Your first reflection is saved!</h3>
                 <p className="text-green-700 mt-1">
-                  We'll use this to help you track your growth and prepare for performance reviews.
+                  We&apos;ll use this to help you track your growth and prepare for performance reviews.
                 </p>
               </div>
             </div>
