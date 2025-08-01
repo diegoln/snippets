@@ -331,7 +331,10 @@ export const AuthenticatedApp = (): JSX.Element => {
           {/* Mobile Layout */}
           <div className="block md:hidden">
             <div className="flex justify-between items-center mb-3">
-              <Logo variant="horizontal" width={120} priority />
+              <div className="flex flex-col items-start">
+                <Logo variant="horizontal" width={120} priority />
+                <p className="text-xs text-secondary opacity-75 mt-1">See beyond the busy.</p>
+              </div>
               <div className="flex items-center space-x-2">
                 {currentUser && (
                   <SafeImage
@@ -363,7 +366,6 @@ export const AuthenticatedApp = (): JSX.Element => {
             {currentUser && (
               <div className="text-center">
                 <p className="text-sm text-secondary font-medium">Welcome back, {currentUser.name}</p>
-                <p className="text-xs text-secondary opacity-75">See beyond the busy.</p>
               </div>
             )}
           </div>
@@ -371,9 +373,9 @@ export const AuthenticatedApp = (): JSX.Element => {
           {/* Desktop Layout */}
           <div className="hidden md:flex justify-between items-center">
             <div className="flex items-center space-x-4">
-              <Logo variant="horizontal" width={160} priority />
-              <div className="hidden lg:block">
-                <p className="text-sm text-secondary font-medium tracking-wide">See beyond the busy.</p>
+              <div className="flex flex-col items-start">
+                <Logo variant="horizontal" width={160} priority />
+                <p className="text-sm text-secondary font-medium tracking-wide mt-1 hidden lg:block">See beyond the busy.</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -425,7 +427,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                 aria-controls="snippets-panel"
                 id="snippets-tab"
               >
-                Friday Reflections
+Weekly Reflections
               </button>
               <button
                 onClick={() => setActiveTab('performance')}
@@ -515,7 +517,7 @@ export const AuthenticatedApp = (): JSX.Element => {
                     <div className="flex-1">
                       <h4 className="text-sm font-medium text-blue-900 mb-1">Get more from your reflections</h4>
                       <p className="text-sm text-blue-700 mb-3">
-                        Connect your Google Calendar to automatically include meeting context in your Friday reflections.
+                        Connect your Google Calendar to automatically include meeting context in your weekly reflections.
                       </p>
                       <button
                         onClick={() => setShowSettings(true)}
@@ -527,14 +529,16 @@ export const AuthenticatedApp = (): JSX.Element => {
                   </div>
                 </div>
                 
-                <button 
-                  onClick={handleAddCurrentWeek}
-                  className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                  aria-label="Add current week reflection"
-                  title={`Add reflection for week ${getCurrentWeek()}`}
-                >
-                  + Add Current Week (Week {getCurrentWeek()})
-                </button>
+                {!snippets.find(snippet => snippet.weekNumber === getCurrentWeek()) && (
+                  <button 
+                    onClick={handleAddCurrentWeek}
+                    className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
+                    aria-label="Add current week reflection"
+                    title={`Add reflection for week ${getCurrentWeek()}`}
+                  >
+                    + Add Current Week (Week {getCurrentWeek()})
+                  </button>
+                )}
               </nav>
             </div>
           </aside>
