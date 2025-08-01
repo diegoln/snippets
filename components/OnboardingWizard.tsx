@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
@@ -8,7 +8,14 @@ import { LoadingSpinner } from './LoadingSpinner'
 import { getWeekDates } from '@/lib/utils'
 import { getCurrentWeekNumber } from '@/lib/week-utils'
 import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '@/constants/user'
-import { getMockIntegrationBullets } from '@/lib/integration-mock-data'
+// Only import mock data in development
+let getMockIntegrationBullets: (integrationType: string) => string[]
+if (process.env.NODE_ENV === 'development') {
+  getMockIntegrationBullets = require('@/lib/integration-mock-data').getMockIntegrationBullets
+} else {
+  // In production, provide empty function that returns no mock data
+  getMockIntegrationBullets = () => []
+}
 
 // Role and level options from constants
 const ROLES = VALID_ROLES.map(role => ({
@@ -64,21 +71,101 @@ interface WizardFormData {
   reflectionContent: string
 }
 
+interface LoadingState {
+  isLoading: boolean
+  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding'
+  message?: string
+}
+
 export function OnboardingWizard() {
   const { data: session } = useSession()
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loadingState, setLoadingState] = useState<LoadingState>({ isLoading: false })
   const [error, setError] = useState<string | null>(null)
   const [integrationBullets, setIntegrationBullets] = useState<Record<string, string[]>>({})
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
+
+  // Standardized error handler for API responses
+  const handleApiError = useCallback(async (response: Response, operation: string) => {
+    const errorData = await response.json().catch(() => ({ 
+      error: `Failed to ${operation.toLowerCase()}` 
+    }))
+    
+    console.error(`${operation} failed:`, response.status, errorData)
+    
+    // Provide helpful error message for development
+    if (response.status === 401 && process.env.NODE_ENV === 'development') {
+      throw new Error('Please sign in first at /mock-signin')
+    }
+    
+    throw new Error(errorData.error || `Failed to ${operation.toLowerCase()}`)
+  }, [])
   
   const [formData, setFormData] = useState<WizardFormData>({
     role: '',
     level: '',
     reflectionContent: '',
   })
+
+  // Ref to store debounce timer
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Debounced localStorage save function
+  const saveProgressToLocalStorage = useCallback((
+    step: number,
+    data: WizardFormData,
+    integrations: Set<string>,
+    bullets: Record<string, string[]>
+  ) => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Set new timeout for debounced save
+    saveTimeoutRef.current = setTimeout(() => {
+      const progressData = {
+        step,
+        data,
+        integrations: Array.from(integrations),
+        bullets,
+        timestamp: Date.now()
+      }
+      localStorage.setItem('onboarding-progress', JSON.stringify(progressData))
+    }, 500) // 500ms debounce
+  }, [])
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const savedProgress = localStorage.getItem('onboarding-progress')
+    if (savedProgress) {
+      try {
+        const { step, data, integrations, bullets } = JSON.parse(savedProgress)
+        setCurrentStep(step || 0)
+        setFormData(prev => ({ ...prev, ...data }))
+        setConnectedIntegrations(new Set(integrations || []))
+        setIntegrationBullets(bullets || {})
+      } catch (err) {
+        console.warn('Failed to restore onboarding progress:', err)
+      }
+    }
+  }, [])
+
+  // Save progress to localStorage whenever state changes (debounced)
+  useEffect(() => {
+    saveProgressToLocalStorage(currentStep, formData, connectedIntegrations, integrationBullets)
+  }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -106,24 +193,38 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     setIsConnecting(integrationType)
     setError(null)
     
+    // Optimistically update UI - add integration immediately
+    const tempBullets = getMockIntegrationBullets(integrationType)
+    setIntegrationBullets(prev => ({
+      ...prev,
+      [integrationType]: tempBullets
+    }))
+    setConnectedIntegrations(prev => new Set([...prev, integrationType]))
+    
     try {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000))
       
-      // Get mock bullets for this integration type (development only)
-      const bullets = getMockIntegrationBullets(integrationType)
+      // In a real implementation, this would be an actual API call
+      // If the call fails, we would revert the optimistic update
       
-      setIntegrationBullets(prev => ({
-        ...prev,
-        [integrationType]: bullets
-      }))
-      setConnectedIntegrations(prev => new Set([...prev, integrationType]))
     } catch (err) {
+      // Revert optimistic update on error
+      setIntegrationBullets(prev => {
+        const updated = { ...prev }
+        delete updated[integrationType]
+        return updated
+      })
+      setConnectedIntegrations(prev => {
+        const updated = new Set(prev)
+        updated.delete(integrationType)
+        return updated
+      })
       setError('Failed to connect integration. Please try again.')
     } finally {
       setIsConnecting(null)
     }
-  }, [isConnecting, connectedIntegrations])
+  }, [])
 
   // Handle step navigation
   const handleNext = useCallback(() => {
@@ -148,7 +249,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
 
   // Save reflection and complete onboarding
   const handleSave = useCallback(async () => {
-    setIsLoading(true)
+    setLoadingState({ isLoading: true, operation: 'saving-profile', message: 'Saving your profile...' })
     setError(null)
     
     try {
@@ -164,10 +265,11 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       })
       
       if (!profileResponse.ok) {
-        const errorData = await profileResponse.json().catch(() => ({ error: 'Failed to update profile' }))
-        console.error('Profile update failed:', profileResponse.status, errorData)
-        throw new Error(errorData.error || 'Failed to update profile')
+        await handleApiError(profileResponse, 'Update profile')
       }
+      
+      // Update loading state for snippet creation
+      setLoadingState({ isLoading: true, operation: 'creating-snippet', message: 'Creating your first reflection...' })
       
       // Create first snippet
       const currentWeek = getCurrentWeekNumber()
@@ -181,29 +283,31 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         body: JSON.stringify({
           weekNumber: currentWeek,
           year: year,
-          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''}`,
+          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''}`,
         }),
       })
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Snippet save failed:', response.status, errorData)
-        
-        // Provide helpful error message for development
-        if (response.status === 401 && process.env.NODE_ENV === 'development') {
-          throw new Error('Please sign in first at /mock-signin')
-        }
-        
-        throw new Error(errorData.error || 'Failed to save reflection')
+        await handleApiError(response, 'Save reflection')
       }
       
+      // Update loading state for completion
+      setLoadingState({ isLoading: true, operation: 'completing-onboarding', message: 'Finishing setup...' })
+      
       // Mark onboarding as complete
-      await fetch('/api/user/onboarding', {
+      const onboardingResponse = await fetch('/api/user/onboarding', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
       })
+      
+      if (!onboardingResponse.ok) {
+        await handleApiError(onboardingResponse, 'Complete onboarding')
+      }
+      
+      // Clear saved progress since onboarding is complete
+      localStorage.removeItem('onboarding-progress')
       
       // Move to success step
       setCurrentStep(3)
@@ -215,7 +319,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       }
       console.error('Save error:', err)
     } finally {
-      setIsLoading(false)
+      setLoadingState({ isLoading: false })
     }
   }, [formData, integrationBullets, router])
 
@@ -224,7 +328,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
     if (currentStep === 2 && !formData.reflectionContent) {
       const allBullets = Object.values(integrationBullets).flat()
       const tip = formData.level ? `💡 Tip for ${formData.level}-level ${formData.role}: ${LEVEL_TIPS[formData.level as keyof typeof LEVEL_TIPS]}` : ''
-      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
+      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
       
       setFormData(prev => ({
         ...prev,
@@ -244,42 +348,48 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
       content: (
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2" id="role-group-label">
               What's your role?
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="role-group-label">
               {ROLES.map(role => (
                 <button
                   key={role.value}
                   onClick={() => setFormData(prev => ({ ...prev, role: role.value }))}
-                  className={`p-4 rounded-lg border-2 transition-all ${
+                  className={`p-4 rounded-lg border-2 transition-all focus:ring-2 focus:ring-accent-500 focus:outline-none ${
                     formData.role === role.value
                       ? 'border-accent-500 bg-accent-50 text-accent-700'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
+                  role="radio"
+                  aria-checked={formData.role === role.value}
+                  aria-labelledby={`role-${role.value}-label`}
                 >
-                  {role.label}
+                  <span id={`role-${role.value}-label`}>{role.label}</span>
                 </button>
               ))}
             </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2" id="level-group-label">
               What's your level?
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3" role="radiogroup" aria-labelledby="level-group-label">
               {LEVELS.map(level => (
                 <button
                   key={level.value}
                   onClick={() => setFormData(prev => ({ ...prev, level: level.value }))}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-3 rounded-lg border-2 transition-all focus:ring-2 focus:ring-accent-500 focus:outline-none ${
                     formData.level === level.value
                       ? 'border-accent-500 bg-accent-50 text-accent-700'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
+                  role="radio"
+                  aria-checked={formData.level === level.value}
+                  aria-labelledby={`level-${level.value}-label`}
                 >
-                  {level.label}
+                  <span id={`level-${level.value}-label`}>{level.label}</span>
                 </button>
               ))}
             </div>
@@ -498,10 +608,18 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
             ) : currentStep === 2 ? (
               <button
                 onClick={handleSave}
-                disabled={isLoading}
+                disabled={loadingState.isLoading}
                 className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1 disabled:opacity-50"
+                aria-describedby={loadingState.isLoading ? "save-progress" : undefined}
               >
-                {isLoading ? <LoadingSpinner size="sm" /> : 'Save Reflection'}
+                {loadingState.isLoading ? (
+                  <div className="flex items-center space-x-2">
+                    <LoadingSpinner size="sm" />
+                    <span>{loadingState.message}</span>
+                  </div>
+                ) : (
+                  'Save Reflection'
+                )}
               </button>
             ) : (
               <button
