@@ -11,6 +11,7 @@ import { Logo, LogoWithClearSpace } from '../Logo'
 // Mock Next.js Image component
 jest.mock('next/image', () => {
   const MockImage = ({ src, alt, width, height, ...props }: any) => (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}

@@ -34,7 +34,35 @@ options:
   machineType: 'E2_HIGHCPU_8'  # Faster build with more CPU
 
 steps:
-  # Step 1: Build the Docker image
+  # Step 1: Quality Gates - Ensure code passes all checks before building
+  - name: 'node:18-slim'
+    id: 'lint-and-typecheck'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🔍 Installing dependencies and running quality checks..."
+        apt-get update && apt-get install -y curl
+        npm ci --frozen-lockfile
+        
+        echo "🧹 Running ESLint..."
+        npm run lint
+        if [ $$? -ne 0 ]; then
+          echo "❌ Lint checks failed. Fix errors before deploying to production."
+          exit 1
+        fi
+        
+        echo "📦 Running TypeScript checks..."
+        npm run typecheck:quick
+        if [ $$? -ne 0 ]; then
+          echo "❌ TypeScript compilation failed. Fix errors before deploying to production."
+          exit 1
+        fi
+        
+        echo "✅ All quality checks passed!"
+    timeout: 300s  # 5 minutes for quality checks
+
+  # Step 2: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-image'
     args: 
@@ -48,6 +76,7 @@ steps:
       - '--cache-from'
       - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
       - '.'
+    waitFor: ['lint-and-typecheck']  # Only build after quality checks pass
     timeout: 900s  # 15 minutes for build
 
   # Step 2: Push the images to Artifact Registry  
