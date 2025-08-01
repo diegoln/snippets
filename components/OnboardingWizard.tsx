@@ -349,7 +349,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2" id="role-group-label">
-              What's your role?
+              What&apos;s your role?
             </label>
             <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-labelledby="role-group-label">
               {ROLES.map(role => (
@@ -373,7 +373,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2" id="level-group-label">
-              What's your level?
+              What&apos;s your level?
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3" role="radiogroup" aria-labelledby="level-group-label">
               {LEVELS.map(level => (
@@ -497,7 +497,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
                 Pro tip: Add a recurring calendar event
               </p>
               <p className="text-sm text-blue-700">
-                "Friday Reflection ✍️" - Every Friday at 4:30 PM
+                &quot;Friday Reflection ✍️&quot; - Every Friday at 4:30 PM
               </p>
             </div>
             <button
@@ -522,7 +522,7 @@ ${tip ? `💡 Tip for ${formData.level}-level ${formData.role}: ${tip}` : ''}
               </li>
               <li className="flex items-start">
                 <span className="text-accent-500 mr-2">•</span>
-                <span>Generate AI-powered assessments when you're ready for reviews</span>
+                <span>Generate AI-powered assessments when you&apos;re ready for reviews</span>
               </li>
             </ul>
           </div>

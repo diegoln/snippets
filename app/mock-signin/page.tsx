@@ -111,6 +111,7 @@ export default function MockSignInPage() {
                       : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50 cursor-pointer'
                   }`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={user.image}
                     alt={user.name}
