@@ -467,7 +467,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         <div className="space-y-8">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3" id="role-group-label">
-              What's your role? <span className="text-red-500">*</span>
+              What&apos;s your role? <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 gap-3 mb-4" role="radiogroup" aria-labelledby="role-group-label">
               {ROLES.filter(role => role.value !== 'other').map(role => (
@@ -517,7 +517,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3" id="level-group-label">
-              What's your level? <span className="text-red-500">*</span>
+              What&apos;s your level? <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4" role="radiogroup" aria-labelledby="level-group-label">
               {LEVELS.filter(level => level.value !== 'other').map(level => (
@@ -576,10 +576,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                   💡 Get more personalized insights
                 </h4>
                 <p className="text-sm text-blue-700 mb-3">
-                  Upload your company's career ladder document to get insights tailored to your specific promotion criteria and growth expectations.
+                  Upload your company&apos;s career ladder document to get insights tailored to your specific promotion criteria and growth expectations.
                 </p>
                 <p className="text-xs text-blue-600 mb-3">
-                  <strong>Don't have it handy?</strong> No worries! You can upload it later in Settings to enhance your reflections.
+                  <strong>Don&apos;t have it handy?</strong> No worries! You can upload it later in Settings to enhance your reflections.
                 </p>
                 <button
                   type="button"
