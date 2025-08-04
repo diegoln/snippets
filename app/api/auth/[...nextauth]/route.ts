@@ -17,7 +17,7 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient()
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Create a safer database adapter that handles connection failures
-function createSafeAdapter() {
+export function createSafeAdapter() {
   if (process.env.NODE_ENV === 'development') {
     return undefined // Always use JWT in development
   }
