@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
+import { reflectionRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
 
 // Input validation schema
 const GenerateReflectionSchema = z.object({
@@ -17,12 +18,24 @@ const GenerateReflectionSchema = z.object({
  * Generate LLM-powered reflection draft from weekly snippet
  */
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
+      )
+    }
+
+    // Check rate limiting
+    const rateLimitResult = reflectionRateLimit.check(userId)
+    if (!rateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(rateLimitResult)
+      return NextResponse.json(
+        createRateLimitResponse(rateLimitResult.resetTime),
+        { status: 429, headers }
       )
     }
 
@@ -34,6 +47,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
         { status: 400 }
+      )
+    }
+
+    // Check payload size before processing
+    const payloadSize = JSON.stringify(body).length
+    if (payloadSize > 50000) { // 50KB limit for reflection drafts
+      return NextResponse.json(
+        { error: 'Reflection data too large. Please shorten the content.' },
+        { status: 413 }
       )
     }
 
@@ -65,7 +87,14 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error generating reflection draft:', error)
+    // Enhanced error logging with context  
+    const errorContext = {
+      userId: userId || 'unknown',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+    console.error('Error generating reflection draft:', errorContext)
+    
     return NextResponse.json(
       { error: 'Failed to generate reflection draft' },
       { status: 500 }

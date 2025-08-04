@@ -155,9 +155,19 @@ export class LLMProxyClient {
         }
       })
 
-      const result = await model.generateContent(prompt)
-      const response = await result.response
-      const text = response.text()
+      // Add timeout protection to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
+      })
+
+      const geminiPromise = (async () => {
+        const result = await model.generateContent(prompt)
+        const response = await result.response
+        const text = response.text()
+        return { text, response }
+      })()
+
+      const { text, response } = await Promise.race([geminiPromise, timeoutPromise]) as { text: string, response: any }
 
       // Check for empty response - might indicate model or content filtering issues
       if (!text || text.trim().length === 0) {
