@@ -103,7 +103,7 @@ export const Logo: React.FC<LogoProps> = ({
         priority={priority}
         className="logo-image"
         style={{
-          width: `${logoWidth}px`,
+          width: width ? `${logoWidth}px` : '100%',
           height: 'auto',
           maxWidth: '100%',
         }}
