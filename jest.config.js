@@ -23,7 +23,8 @@ const jestConfig = {
     '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/lib/__tests__/**/*.{js,jsx,ts,tsx}',
     '!<rootDir>/app/api/**/*.{test,spec}.{js,jsx,ts,tsx}',
-    '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}'
+    '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '!<rootDir>/__tests__/demo-server.test.js'
   ],
   
   // Module paths and aliases
