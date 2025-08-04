@@ -73,7 +73,6 @@ echo "🔒 Checking script permissions..."
 scripts=(
     "scripts/oauth-manager.sh"
     "scripts/deployment-health-check.sh"
-    "scripts/automated-oauth-update.sh"
 )
 
 for script in "${scripts[@]}"; do
