@@ -157,7 +157,14 @@ global.TextDecoder = TextDecoder
 // Using a simple mock that matches Next.js NextRequest interface
 global.Request = class MockRequest {
   constructor(url, init = {}) {
-    this.url = url
+    // Define url as a getter property to match NextRequest behavior
+    Object.defineProperty(this, 'url', {
+      value: url,
+      writable: false,
+      enumerable: true,
+      configurable: false
+    })
+    
     this.method = init.method || 'GET'
     this.headers = new Map(Object.entries(init.headers || {}))
     this.body = init.body
@@ -183,6 +190,18 @@ global.Response = class MockResponse {
       return JSON.parse(this.body)
     }
     return this.body
+  }
+  
+  // Static method to create JSON responses (NextResponse.json compatibility)
+  static json(data, init = {}) {
+    const body = JSON.stringify(data)
+    return new MockResponse(body, {
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...init.headers
+      }
+    })
   }
 }
 
