@@ -7,6 +7,93 @@
 
 require('@testing-library/jest-dom')
 
+// Browser API Mocks for Node.js Test Environment - MUST COME FIRST
+// Since we're using Node environment to avoid JSDOM issues, we need to provide browser mocks
+
+// Create comprehensive window and document mocks
+const createMockDocument = () => ({
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  createElement: jest.fn(() => ({
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+    style: {},
+    setAttribute: jest.fn(),
+    getAttribute: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn()
+  })),
+  body: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+    style: {}
+  },
+  head: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn()
+  },
+  documentElement: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    style: {}
+  },
+  querySelector: jest.fn(),
+  querySelectorAll: jest.fn(() => []),
+  getElementById: jest.fn(),
+  getElementsByTagName: jest.fn(() => []),
+  createTextNode: jest.fn(() => ({ textContent: '' }))
+});
+
+const createMockWindow = () => ({
+  document: createMockDocument(),
+  navigator: { 
+    userAgent: 'test',
+    language: 'en-US',
+    languages: ['en-US', 'en']
+  },
+  location: { 
+    href: 'http://localhost',
+    origin: 'http://localhost',
+    pathname: '/',
+    search: '',
+    hash: ''
+  },
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  localStorage: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn()
+  },
+  sessionStorage: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn()
+  },
+  getComputedStyle: jest.fn(() => ({})),
+  requestAnimationFrame: jest.fn(cb => setTimeout(cb, 0)),
+  cancelAnimationFrame: jest.fn(),
+  scrollTo: jest.fn(),
+  alert: jest.fn(),
+  confirm: jest.fn(() => true),
+  prompt: jest.fn()
+});
+
+// Set up global window and document FIRST
+global.window = createMockWindow();
+global.document = global.window.document;
+global.navigator = global.window.navigator;
+global.location = global.window.location;
+
 // Mock Next.js router
 jest.mock('next/router', () => ({
   useRouter() {
@@ -59,89 +146,6 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
-// Comprehensive JSDOM fixes - apply IMMEDIATELY before any other code runs
-// Create a completely safe document mock that prevents all addEventListener errors
-
-// Step 1: Create a mock document implementation
-const createMockDocument = () => ({
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
-  dispatchEvent: jest.fn(),
-  createElement: jest.fn(() => ({
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn()
-  })),
-  body: {
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn()
-  },
-  head: {
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn()
-  },
-  documentElement: {
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn()
-  }
-});
-
-// Step 2: Intercept any window/document access and ensure they're safe
-if (typeof global !== 'undefined') {
-  // Ensure global.window exists and has safe document
-  if (!global.window) {
-    global.window = {
-      document: createMockDocument(),
-      navigator: { userAgent: 'test' },
-      location: { href: 'http://localhost' }
-    };
-  } else if (!global.window.document) {
-    global.window.document = createMockDocument();
-  }
-  
-  // Force override any existing document methods that may be broken
-  if (global.window.document) {
-    Object.defineProperty(global.window.document, 'addEventListener', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-    Object.defineProperty(global.window.document, 'removeEventListener', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-    Object.defineProperty(global.window.document, 'dispatchEvent', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-  }
-}
-
-// Step 3: Also handle direct window access (if it exists)
-if (typeof window !== 'undefined') {
-  if (!window.document) {
-    window.document = createMockDocument();
-  } else {
-    // Force override existing methods
-    Object.defineProperty(window.document, 'addEventListener', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-    Object.defineProperty(window.document, 'removeEventListener', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-    Object.defineProperty(window.document, 'dispatchEvent', {
-      value: jest.fn(),
-      writable: true,
-      configurable: true
-    });
-  }
-}
 
 // Mock Web APIs for Next.js API route testing
 const { TextEncoder, TextDecoder } = require('util')
