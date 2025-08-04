@@ -68,6 +68,20 @@ if (typeof window !== 'undefined' && window.document) {
   }
 }
 
+// Additional JSDOM fixes for GitHub Actions
+if (typeof window !== 'undefined') {
+  // Ensure document methods exist
+  if (!window.document.addEventListener) {
+    window.document.addEventListener = jest.fn()
+  }
+  if (!window.document.removeEventListener) {
+    window.document.removeEventListener = jest.fn()
+  }
+  if (!window.document.dispatchEvent) {
+    window.document.dispatchEvent = jest.fn()
+  }
+}
+
 // Mock Web APIs for Next.js API route testing
 const { TextEncoder, TextDecoder } = require('util')
 
