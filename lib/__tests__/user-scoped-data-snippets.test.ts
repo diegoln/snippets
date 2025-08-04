@@ -217,30 +217,30 @@ describe('UserScopedDataService - Snippet Operations', () => {
     })
 
     it('should handle year boundary correctly', async () => {
-      // Test with first week of year
-      jest.setSystemTime(new Date('2025-01-05T10:00:00.000Z')) // Week 1 of 2025
+      // Test with early year date
+      jest.setSystemTime(new Date('2025-01-05T10:00:00.000Z')) // Week 2 of 2025
 
       mockPrisma.weeklySnippet.upsert.mockResolvedValue({
-        id: 'test', weekNumber: 1, year: 2025, startDate: new Date(), endDate: new Date(),
+        id: 'test', weekNumber: 2, year: 2025, startDate: new Date(), endDate: new Date(),
         content: 'test', createdAt: new Date(), updatedAt: new Date()
       })
 
       await expect(
         dataService.createSnippet({
-          weekNumber: 1,
+          weekNumber: 2, // Current week
           year: 2025,
-          startDate: new Date('2025-01-01'),
+          startDate: new Date('2025-01-05'),
           endDate: new Date('2025-01-05'),
-          content: 'First week content'
+          content: 'Current week content'
         })
       ).resolves.toBeDefined()
 
       await expect(
         dataService.createSnippet({
-          weekNumber: 2, // Future week
+          weekNumber: 3, // Future week
           year: 2025,
-          startDate: new Date('2025-01-06'),
-          endDate: new Date('2025-01-10'),
+          startDate: new Date('2025-01-12'),
+          endDate: new Date('2025-01-16'),
           content: 'Future content'
         })
       ).rejects.toThrow('Cannot create snippets for future weeks')

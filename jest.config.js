@@ -26,14 +26,13 @@ const jestConfig = {
     '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}'
   ],
 
-  // Completely exclude problematic test files
+  // Exclude only truly problematic test files (empty or requiring special setup)
   testPathIgnorePatterns: [
     '/node_modules/',
     '/__tests__/demo-server.test.js',
     '/__tests__/performance.test.ts',
-    '/lib/__tests__/week-utils.test.ts',
-    '/lib/__tests__/user-scoped-data-snippets.test.ts',
-    // Exclude React/JSX tests that need JSDOM
+    '/__tests__/snippet-creation-integration.test.js', // Empty test file
+    // Exclude React/JSX tests that need JSDOM environment
     '/__tests__/.*\\.tsx$',
     '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$',
     '/__tests__/onboarding.*\\.test\\.(ts|tsx)$'
