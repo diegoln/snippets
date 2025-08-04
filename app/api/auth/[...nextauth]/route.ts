@@ -1,35 +1,11 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
-import { PrismaClient } from '@prisma/client'
+import { createSafeAdapter } from '../../../../lib/auth-adapter'
 import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 
-// Singleton pattern for PrismaClient to prevent multiple connections in serverless
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
-
-// Create a safer database adapter that handles connection failures
-export function createSafeAdapter() {
-  if (process.env.NODE_ENV === 'development') {
-    return undefined // Always use JWT in development
-  }
-  
-  try {
-    // Create PrismaAdapter but let NextAuth handle connection failures
-    return PrismaAdapter(prisma)
-  } catch (error) {
-    authError('Failed to create PrismaAdapter, using JWT sessions:', error)
-    return undefined
-  }
-}
 
 // Conditional logging utility
 const isDev = process.env.NODE_ENV === 'development'

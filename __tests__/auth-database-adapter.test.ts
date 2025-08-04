@@ -52,7 +52,7 @@ describe('NextAuth Database Adapter', () => {
     jest.resetModules()
     
     // Reset environment variables to clean state
-    delete (require.cache as any)[require.resolve('../app/api/auth/[...nextauth]/route')]
+    delete (require.cache as any)[require.resolve('../lib/auth-adapter')]
   })
 
   describe('Database Adapter Creation', () => {
@@ -64,7 +64,7 @@ describe('NextAuth Database Adapter', () => {
       ;(PrismaAdapter as jest.Mock).mockReturnValue(mockAdapter)
 
       // Import and test the actual createSafeAdapter function
-      const { createSafeAdapter } = await import('../app/api/auth/[...nextauth]/route')
+      const { createSafeAdapter } = await import('../lib/auth-adapter')
       const adapter = createSafeAdapter()
       
       expect(adapter).toBeDefined()
@@ -100,7 +100,7 @@ describe('NextAuth Database Adapter', () => {
       process.env.NODE_ENV = 'development'
       
       // Import and test the actual createSafeAdapter function
-      const { createSafeAdapter } = await import('../app/api/auth/[...nextauth]/route')
+      const { createSafeAdapter } = await import('../lib/auth-adapter')
       const adapter = createSafeAdapter()
       
       expect(adapter).toBeUndefined()
