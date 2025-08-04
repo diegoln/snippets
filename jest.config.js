@@ -18,7 +18,7 @@ const jestConfig = {
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
-  // Test file patterns - exclude API tests for now due to environment conflicts
+  // Test file patterns - include all tests except problematic API tests with ESM issues
   testMatch: [
     '<rootDir>/**/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/**/*.(test|spec).{js,jsx,ts,tsx}',
@@ -68,9 +68,9 @@ const jestConfig = {
     }]
   },
   
-  // Transform ignore patterns
+  // Transform ignore patterns - allow transformation of ESM modules
   transformIgnorePatterns: [
-    '/node_modules/',
+    '/node_modules/(?!(jose|next-auth|@next-auth))',
     '^.+\\.module\\.(css|sass|scss)$'
   ],
   

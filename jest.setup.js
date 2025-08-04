@@ -68,6 +68,48 @@ if (typeof window !== 'undefined' && window.document) {
   }
 }
 
+// Mock Web APIs for Next.js API route testing
+const { TextEncoder, TextDecoder } = require('util')
+
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
+
+// Mock Request and Response for Next.js API route tests
+// Using a simple mock that matches Next.js NextRequest interface
+global.Request = class MockRequest {
+  constructor(url, init = {}) {
+    this.url = url
+    this.method = init.method || 'GET'
+    this.headers = new Map(Object.entries(init.headers || {}))
+    this.body = init.body
+  }
+  
+  async json() {
+    if (this.body) {
+      return JSON.parse(this.body)
+    }
+    return {}
+  }
+}
+
+global.Response = class MockResponse {
+  constructor(body, init = {}) {
+    this.body = body
+    this.status = init.status || 200
+    this.headers = new Map(Object.entries(init.headers || {}))
+  }
+  
+  async json() {
+    if (typeof this.body === 'string') {
+      return JSON.parse(this.body)
+    }
+    return this.body
+  }
+}
+
+// Mock fetch for API tests
+global.fetch = jest.fn()
+
 // Mock console methods to avoid noise in tests
 const originalError = console.error
 const originalWarn = console.warn

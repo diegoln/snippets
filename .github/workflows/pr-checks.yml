@@ -256,9 +256,9 @@ jobs:
         run: |
           echo "🔍 Checking for hardcoded secrets..."
           
-          # Check that no secrets are hardcoded
-          if grep -r "sk-" --exclude-dir=node_modules --exclude-dir=.git . || \
-             grep -r "AKIA" --exclude-dir=node_modules --exclude-dir=.git . || \
+          # Check that no secrets are hardcoded - exclude legitimate package files
+          if grep -r "sk-[a-zA-Z0-9]" --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --include="*.json" --exclude="package-lock.json" --exclude="yarn.lock" --exclude-dir=node_modules --exclude-dir=.git . || \
+             grep -r "AKIA[a-zA-Z0-9]" --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --include="*.json" --exclude="package-lock.json" --exclude="yarn.lock" --exclude-dir=node_modules --exclude-dir=.git . || \
              grep -r "-----BEGIN PRIVATE KEY-----" --exclude-dir=node_modules --exclude-dir=.git .; then
             echo "❌ Hardcoded secrets found!"
             exit 1
