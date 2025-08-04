@@ -16,6 +16,21 @@ const prisma = globalForPrisma.prisma ?? new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
+// Create a safer database adapter that handles connection failures
+function createSafeAdapter() {
+  if (process.env.NODE_ENV === 'development') {
+    return undefined // Always use JWT in development
+  }
+  
+  try {
+    // Create PrismaAdapter but let NextAuth handle connection failures
+    return PrismaAdapter(prisma)
+  } catch (error) {
+    authError('Failed to create PrismaAdapter, using JWT sessions:', error)
+    return undefined
+  }
+}
+
 // Conditional logging utility
 const isDev = process.env.NODE_ENV === 'development'
 const isDebugEnabled = process.env.NEXTAUTH_DEBUG === 'true'
@@ -179,10 +194,15 @@ authLog('NODE_ENV:', process.env.NODE_ENV);
 authLog('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
 authLog('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'Set' : 'Not set');
 
+const safeAdapter = createSafeAdapter()
+
+// Log adapter and session strategy for debugging
+authLog('Database adapter available:', !!safeAdapter)
+authLog('Session strategy:', (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database')
+
 const handler = NextAuth({
-  // Temporarily disable database adapter to diagnose sign-in issues
-  // adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
-  adapter: undefined, // Use JWT sessions for now
+  // Use safe adapter that handles database connection failures gracefully
+  adapter: safeAdapter,
   providers,
   debug: isDebugEnabled, // Only enable when explicitly requested
   callbacks: {
@@ -192,8 +212,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    // Temporarily use JWT sessions in production to bypass database issues
-    strategy: 'jwt', // Was: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
+    // Use JWT sessions in development or if no adapter available
+    strategy: (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database',
   },
   events: {
     async signIn(message) {
