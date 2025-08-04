@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
 import { snippetRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
+import { buildWeeklySnippetPrompt, WeeklySnippetPromptContext } from './weekly-snippet-prompt'
 
 // Input validation schema
 const GenerateSnippetSchema = z.object({
@@ -172,7 +173,11 @@ async function generateWeeklySnippetWithLLM({
   userId: string
 }) {
   try {
-    const prompt = buildWeeklySnippetPrompt(calendarData, userProfile)
+    const promptContext: WeeklySnippetPromptContext = {
+      calendarData,
+      userProfile
+    }
+    const prompt = buildWeeklySnippetPrompt(promptContext)
     
     // Use LLM proxy for environment-aware processing
     const llmResponse = await llmProxy.request({
@@ -191,42 +196,6 @@ async function generateWeeklySnippetWithLLM({
   }
 }
 
-/**
- * Build prompt for LLM based on calendar data and user profile
- */
-function buildWeeklySnippetPrompt(calendarData: any, userProfile: { jobTitle: string; seniorityLevel: string }) {
-  return `
-Create a weekly snippet for a ${userProfile.seniorityLevel} ${userProfile.jobTitle} based on their calendar data from ${calendarData.dateRange.start} to ${calendarData.dateRange.end}.
-
-CALENDAR DATA:
-- Total meetings: ${calendarData.totalMeetings}
-- Weekly summary: ${calendarData.weeklyContextSummary}
-
-MEETING DETAILS:
-${calendarData.meetingContext.join('\n')}
-
-KEY MEETINGS:
-${calendarData.keyMeetings.map((meeting: any) => 
-  `- ${meeting.summary}${meeting.description ? ': ' + meeting.description : ''}`
-).join('\n')}
-
-REQUIREMENTS:
-1. Write 4-6 bullet points highlighting key accomplishments and activities
-2. Focus on impact, collaboration, and technical contributions
-3. Use action verbs and quantify when possible
-4. Mention specific meetings that show leadership or technical expertise
-5. Include any blockers or challenges in a constructive way
-6. Match the tone appropriate for a ${userProfile.seniorityLevel} level engineer
-
-FORMAT:
-Return your response as JSON with:
-{
-  "weeklySnippet": "Full paragraph summary",
-  "bullets": ["bullet 1", "bullet 2", ...],
-  "insights": "Brief insight about performance patterns"
-}
-`
-}
 
 /**
  * Parse LLM response and extract structured data

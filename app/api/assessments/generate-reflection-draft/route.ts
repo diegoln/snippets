@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
 import { reflectionRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
+import { buildReflectionDraftPrompt, ReflectionPromptContext } from './reflection-prompt'
 
 // Input validation schema
 const GenerateReflectionSchema = z.object({
@@ -117,7 +118,12 @@ async function generateReflectionDraftWithLLM({
   userId: string
 }) {
   try {
-    const prompt = buildReflectionDraftPrompt(weeklySnippet, bullets, userProfile)
+    const promptContext: ReflectionPromptContext = {
+      weeklySnippet,
+      bullets,
+      userProfile
+    }
+    const prompt = buildReflectionDraftPrompt(promptContext)
     
     // Use LLM proxy for environment-aware processing
     const llmResponse = await llmProxy.request({
@@ -136,49 +142,6 @@ async function generateReflectionDraftWithLLM({
   }
 }
 
-/**
- * Build prompt for reflection draft generation
- */
-function buildReflectionDraftPrompt(weeklySnippet: string, bullets: string[], userProfile: { jobTitle: string; seniorityLevel: string }) {
-  return `
-Transform the following weekly activities into a structured reflection format suitable for a ${userProfile.seniorityLevel} ${userProfile.jobTitle}.
-
-WEEKLY SUMMARY:
-${weeklySnippet}
-
-KEY ACTIVITIES:
-${bullets.map(bullet => `- ${bullet}`).join('\n')}
-
-REQUIREMENTS:
-1. Create a structured weekly reflection in the format: ## Done, ## Next, ## Notes
-2. Under "Done" - list 3-5 specific accomplishments with impact focus
-3. Under "Next" - identify 2-3 concrete next steps or priorities
-4. Under "Notes" - include any blockers, learnings, or observations
-5. Write in first person, use action verbs
-6. Match the tone and scope appropriate for a ${userProfile.seniorityLevel} level engineer
-7. Be honest about challenges while staying constructive
-8. Focus on learning and growth opportunities
-
-FORMAT:
-Return as plain markdown text (not JSON) in the exact format:
-
-## Done
-
-- [accomplishment 1]
-- [accomplishment 2]
-...
-
-## Next
-
-- [next priority 1]
-- [next priority 2]
-...
-
-## Notes
-
-[Any blockers, learnings, or relevant observations]
-`
-}
 
 /**
  * Parse LLM response for reflection draft
