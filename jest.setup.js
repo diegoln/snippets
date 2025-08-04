@@ -59,24 +59,53 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
-// Fix JSDOM window.document.addEventListener issue
-if (typeof window !== 'undefined' && window.document) {
-  // Force override JSDOM document methods to prevent runtime errors
-  Object.defineProperty(window.document, 'addEventListener', {
-    value: jest.fn(),
-    writable: true,
-    configurable: true
-  })
-  Object.defineProperty(window.document, 'removeEventListener', {
-    value: jest.fn(),
-    writable: true,
-    configurable: true
-  })
-  Object.defineProperty(window.document, 'dispatchEvent', {
-    value: jest.fn(),
-    writable: true,
-    configurable: true
-  })
+// Comprehensive JSDOM fixes - apply before any other code runs
+// Fix 1: Ensure window and document are properly defined
+if (typeof global !== 'undefined' && !global.window) {
+  global.window = {};
+}
+
+if (typeof window !== 'undefined') {
+  // Fix 2: Force create document object if it doesn't exist
+  if (!window.document) {
+    window.document = {
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+      createElement: jest.fn(() => ({
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn()
+      })),
+      body: {},
+      head: {}
+    };
+  } else {
+    // Fix 3: Override existing document methods that may be broken
+    Object.defineProperty(window.document, 'addEventListener', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(window.document, 'removeEventListener', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(window.document, 'dispatchEvent', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+  }
+  
+  // Fix 4: Ensure window has all required properties
+  if (!window.navigator) {
+    window.navigator = { userAgent: 'test' };
+  }
+  
+  if (!window.location) {
+    window.location = { href: 'http://localhost' };
+  }
 }
 
 // Mock Web APIs for Next.js API route testing
