@@ -180,7 +180,9 @@ authLog('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
 authLog('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'Set' : 'Not set');
 
 const handler = NextAuth({
-  adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
+  // Temporarily disable database adapter to diagnose sign-in issues
+  // adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
+  adapter: undefined, // Use JWT sessions for now
   providers,
   debug: isDebugEnabled, // Only enable when explicitly requested
   callbacks: {
@@ -190,7 +192,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    strategy: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
+    // Temporarily use JWT sessions in production to bypass database issues
+    strategy: 'jwt', // Was: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
   },
   events: {
     async signIn(message) {
