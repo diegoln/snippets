@@ -61,11 +61,22 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 
 // Fix JSDOM window.document.addEventListener issue
 if (typeof window !== 'undefined' && window.document) {
-  if (!window.document.addEventListener) {
-    window.document.addEventListener = jest.fn()
-    window.document.removeEventListener = jest.fn()
-    window.document.dispatchEvent = jest.fn()
-  }
+  // Force override JSDOM document methods to prevent runtime errors
+  Object.defineProperty(window.document, 'addEventListener', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true
+  })
+  Object.defineProperty(window.document, 'removeEventListener', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true
+  })
+  Object.defineProperty(window.document, 'dispatchEvent', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true
+  })
 }
 
 // Mock Web APIs for Next.js API route testing

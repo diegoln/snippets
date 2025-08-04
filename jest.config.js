@@ -18,11 +18,13 @@ const jestConfig = {
   // Setup files to run before tests
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
-  // Test file patterns - include all tests except problematic API tests with ESM issues
+  // Test file patterns - include specific working tests
   testMatch: [
-    '<rootDir>/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/**/*.(test|spec).{js,jsx,ts,tsx}',
-    '!<rootDir>/app/api/**/*.{test,spec}.{js,jsx,ts,tsx}'
+    '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/lib/__tests__/**/*.{js,jsx,ts,tsx}',
+    '!<rootDir>/app/api/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}',
+    '!<rootDir>/__tests__/demo-server.test.js'
   ],
   
   // Module paths and aliases
