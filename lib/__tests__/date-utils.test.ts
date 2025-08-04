@@ -86,34 +86,34 @@ describe('date-utils', () => {
 
   describe('formatDateWithYear', () => {
     it('should format date with year correctly', () => {
-      const date = new Date('2025-07-21')
+      const date = new Date(2025, 6, 21) // July 21, 2025 in local time
       const formatted = formatDateWithYear(date)
       expect(formatted).toBe('Jul 21, 2025')
     })
 
     it('should handle different months', () => {
-      expect(formatDateWithYear(new Date('2025-01-15'))).toBe('Jan 15, 2025')
-      expect(formatDateWithYear(new Date('2025-12-31'))).toBe('Dec 31, 2025')
+      expect(formatDateWithYear(new Date(2025, 0, 15))).toBe('Jan 15, 2025') // January 15
+      expect(formatDateWithYear(new Date(2025, 11, 31))).toBe('Dec 31, 2025') // December 31
     })
   })
 
   describe('formatDateRangeWithYear', () => {
     it('should format same-year range correctly', () => {
-      const start = new Date('2025-07-21')
-      const end = new Date('2025-07-25')
+      const start = new Date(2025, 6, 21) // July 21, 2025
+      const end = new Date(2025, 6, 25) // July 25, 2025
       const formatted = formatDateRangeWithYear(start, end)
       expect(formatted).toBe('Jul 21 - Jul 25, 2025')
     })
 
     it('should format cross-year range correctly', () => {
-      const start = new Date('2024-12-30')
-      const end = new Date('2025-01-03')
+      const start = new Date(2024, 11, 30) // December 30, 2024
+      const end = new Date(2025, 0, 3) // January 3, 2025
       const formatted = formatDateRangeWithYear(start, end)
       expect(formatted).toBe('Dec 30, 2024 - Jan 3, 2025')
     })
 
     it('should handle same date range', () => {
-      const date = new Date('2025-07-21')
+      const date = new Date(2025, 6, 21) // July 21, 2025
       const formatted = formatDateRangeWithYear(date, date)
       expect(formatted).toBe('Jul 21 - Jul 21, 2025')
     })

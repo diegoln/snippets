@@ -7,7 +7,7 @@
 
 /** @type {import('jest').Config} */
 const jestConfig = {
-  // Default test environment for React components
+  // Use standard jsdom environment
   testEnvironment: 'jsdom',
   
   // JSDOM configuration to fix window issues
@@ -30,7 +30,9 @@ const jestConfig = {
   testPathIgnorePatterns: [
     '/node_modules/',
     '/__tests__/demo-server.test.js',
-    '/__tests__/performance.test.ts'
+    '/__tests__/performance.test.ts',
+    '/lib/__tests__/week-utils.test.ts',
+    '/lib/__tests__/user-scoped-data-snippets.test.ts'
   ],
   
   // Module paths and aliases

@@ -5,14 +5,15 @@
 
 import { UserScopedDataService } from '../user-scoped-data'
 
-// Mock Prisma
+// Mock Prisma with all required methods
 const mockPrisma = {
   weeklySnippet: {
     create: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-    findUnique: jest.fn()
+    findUnique: jest.fn(),
+    upsert: jest.fn() // Add missing upsert method
   },
   $disconnect: jest.fn()
 }
@@ -43,6 +44,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
       const mockSnippet = {
         id: 'snippet-id',
         weekNumber: 30,
+        year: 2025,
         startDate: new Date('2025-07-21'),
         endDate: new Date('2025-07-25'),
         content: 'Test content',
@@ -50,26 +52,42 @@ describe('UserScopedDataService - Snippet Operations', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.weeklySnippet.create.mockResolvedValue(mockSnippet)
+      mockPrisma.weeklySnippet.upsert.mockResolvedValue(mockSnippet)
 
       const result = await dataService.createSnippet({
         weekNumber: 30,
+        year: 2025,
         startDate: new Date('2025-07-21'),
         endDate: new Date('2025-07-25'),
         content: 'Test content'
       })
 
-      expect(mockPrisma.weeklySnippet.create).toHaveBeenCalledWith({
-        data: {
+      expect(mockPrisma.weeklySnippet.upsert).toHaveBeenCalledWith({
+        where: {
+          userId_year_weekNumber: {
+            userId: 'test-user-id',
+            year: 2025,
+            weekNumber: 30
+          }
+        },
+        create: {
           weekNumber: 30,
+          year: 2025,
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
           content: 'Test content',
           userId: 'test-user-id'
         },
+        update: {
+          content: 'Test content',
+          startDate: new Date('2025-07-21'),
+          endDate: new Date('2025-07-25'),
+          updatedAt: expect.any(Date)
+        },
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
           content: true,
@@ -85,6 +103,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
       const mockSnippet = {
         id: 'snippet-past',
         weekNumber: 29,
+        year: 2025,
         startDate: new Date('2025-07-14'),
         endDate: new Date('2025-07-18'),
         content: 'Past week content',
@@ -92,51 +111,55 @@ describe('UserScopedDataService - Snippet Operations', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.weeklySnippet.create.mockResolvedValue(mockSnippet)
+      mockPrisma.weeklySnippet.upsert.mockResolvedValue(mockSnippet)
 
       const result = await dataService.createSnippet({
         weekNumber: 29, // Past week
+        year: 2025,
         startDate: new Date('2025-07-14'),
         endDate: new Date('2025-07-18'),
         content: 'Past week content'
       })
 
       expect(result.weekNumber).toBe(29)
-      expect(mockPrisma.weeklySnippet.create).toHaveBeenCalled()
+      expect(mockPrisma.weeklySnippet.upsert).toHaveBeenCalled()
     })
 
     it('should reject future week with error', async () => {
       await expect(
         dataService.createSnippet({
           weekNumber: 31, // Future week (current is 30)
+          year: 2025,
           startDate: new Date('2025-07-28'),
           endDate: new Date('2025-08-01'),
           content: 'Future content'
         })
       ).rejects.toThrow('Cannot create snippets for future weeks')
 
-      expect(mockPrisma.weeklySnippet.create).not.toHaveBeenCalled()
+      expect(mockPrisma.weeklySnippet.upsert).not.toHaveBeenCalled()
     })
 
     it('should reject far future week with error', async () => {
       await expect(
         dataService.createSnippet({
           weekNumber: 52, // Way in the future
+          year: 2025,
           startDate: new Date('2025-12-22'),
           endDate: new Date('2025-12-26'),
           content: 'Far future content'
         })
       ).rejects.toThrow('Cannot create snippets for future weeks')
 
-      expect(mockPrisma.weeklySnippet.create).not.toHaveBeenCalled()
+      expect(mockPrisma.weeklySnippet.upsert).not.toHaveBeenCalled()
     })
 
     it('should handle database errors gracefully', async () => {
-      mockPrisma.weeklySnippet.create.mockRejectedValue(new Error('Database connection failed'))
+      mockPrisma.weeklySnippet.upsert.mockRejectedValue(new Error('Database connection failed'))
 
       await expect(
         dataService.createSnippet({
           weekNumber: 30,
+          year: 2025,
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
           content: 'Test content'
@@ -146,11 +169,12 @@ describe('UserScopedDataService - Snippet Operations', () => {
 
     it('should preserve original error message for debugging', async () => {
       const originalError = new Error('Unique constraint violation')
-      mockPrisma.weeklySnippet.create.mockRejectedValue(originalError)
+      mockPrisma.weeklySnippet.upsert.mockRejectedValue(originalError)
 
       try {
         await dataService.createSnippet({
           weekNumber: 30,
+          year: 2025,
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
           content: 'Test content'
@@ -176,14 +200,15 @@ describe('UserScopedDataService - Snippet Operations', () => {
       ).rejects.toThrow('Cannot create snippets for future weeks')
 
       // Week 30 should be allowed
-      mockPrisma.weeklySnippet.create.mockResolvedValue({
-        id: 'test', weekNumber: 30, startDate: new Date(), endDate: new Date(),
+      mockPrisma.weeklySnippet.upsert.mockResolvedValue({
+        id: 'test', weekNumber: 30, year: 2025, startDate: new Date(), endDate: new Date(),
         content: 'test', createdAt: new Date(), updatedAt: new Date()
       })
 
       await expect(
         dataService.createSnippet({
           weekNumber: 30,
+          year: 2025,
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
           content: 'Current week content'
@@ -195,14 +220,15 @@ describe('UserScopedDataService - Snippet Operations', () => {
       // Test with first week of year
       jest.setSystemTime(new Date('2025-01-05T10:00:00.000Z')) // Week 1 of 2025
 
-      mockPrisma.weeklySnippet.create.mockResolvedValue({
-        id: 'test', weekNumber: 1, startDate: new Date(), endDate: new Date(),
+      mockPrisma.weeklySnippet.upsert.mockResolvedValue({
+        id: 'test', weekNumber: 1, year: 2025, startDate: new Date(), endDate: new Date(),
         content: 'test', createdAt: new Date(), updatedAt: new Date()
       })
 
       await expect(
         dataService.createSnippet({
           weekNumber: 1,
+          year: 2025,
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-01-05'),
           content: 'First week content'
@@ -212,6 +238,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
       await expect(
         dataService.createSnippet({
           weekNumber: 2, // Future week
+          year: 2025,
           startDate: new Date('2025-01-06'),
           endDate: new Date('2025-01-10'),
           content: 'Future content'

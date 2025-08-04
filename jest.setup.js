@@ -59,28 +59,72 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
-// Comprehensive JSDOM fixes - apply before any other code runs
-// Fix 1: Ensure window and document are properly defined
-if (typeof global !== 'undefined' && !global.window) {
-  global.window = {};
+// Comprehensive JSDOM fixes - apply IMMEDIATELY before any other code runs
+// Create a completely safe document mock that prevents all addEventListener errors
+
+// Step 1: Create a mock document implementation
+const createMockDocument = () => ({
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  createElement: jest.fn(() => ({
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn()
+  })),
+  body: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn()
+  },
+  head: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn()
+  },
+  documentElement: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn()
+  }
+});
+
+// Step 2: Intercept any window/document access and ensure they're safe
+if (typeof global !== 'undefined') {
+  // Ensure global.window exists and has safe document
+  if (!global.window) {
+    global.window = {
+      document: createMockDocument(),
+      navigator: { userAgent: 'test' },
+      location: { href: 'http://localhost' }
+    };
+  } else if (!global.window.document) {
+    global.window.document = createMockDocument();
+  }
+  
+  // Force override any existing document methods that may be broken
+  if (global.window.document) {
+    Object.defineProperty(global.window.document, 'addEventListener', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(global.window.document, 'removeEventListener', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+    Object.defineProperty(global.window.document, 'dispatchEvent', {
+      value: jest.fn(),
+      writable: true,
+      configurable: true
+    });
+  }
 }
 
+// Step 3: Also handle direct window access (if it exists)
 if (typeof window !== 'undefined') {
-  // Fix 2: Force create document object if it doesn't exist
   if (!window.document) {
-    window.document = {
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-      createElement: jest.fn(() => ({
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn()
-      })),
-      body: {},
-      head: {}
-    };
+    window.document = createMockDocument();
   } else {
-    // Fix 3: Override existing document methods that may be broken
+    // Force override existing methods
     Object.defineProperty(window.document, 'addEventListener', {
       value: jest.fn(),
       writable: true,
@@ -96,15 +140,6 @@ if (typeof window !== 'undefined') {
       writable: true,
       configurable: true
     });
-  }
-  
-  // Fix 4: Ensure window has all required properties
-  if (!window.navigator) {
-    window.navigator = { userAgent: 'test' };
-  }
-  
-  if (!window.location) {
-    window.location = { href: 'http://localhost' };
   }
 }
 
