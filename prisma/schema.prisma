@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -118,7 +118,7 @@ model Integration {
   expiresAt    DateTime?
   isActive     Boolean @default(true)
   lastSyncAt   DateTime?
-  metadata     String @default("{}")
+  metadata     Json @default("{}")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

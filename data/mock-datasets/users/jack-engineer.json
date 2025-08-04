@@ -1,0 +1,523 @@
+{
+  "profile": {
+    "id": "1",
+    "name": "Jack Thompson",
+    "email": "jack@company.com",
+    "jobTitle": "Senior Software Engineer",
+    "seniorityLevel": "Senior",
+    "team": "Digital Identity Platform",
+    "persona": {
+      "description": "Senior engineer struggling with performance - gets stuck, needs direction, not proactive with mentoring",
+      "strengths": ["Technical knowledge", "Detail-oriented", "Follows instructions well"],
+      "challenges": ["Architecture decisions", "Proactive mentoring", "Independent problem solving", "Task prioritization"],
+      "workStyle": "Reactive, needs guidance, tends to over-engineer solutions"
+    }
+  },
+  "timeRange": {
+    "start": "2024-10-01",
+    "end": "2024-12-31", 
+    "totalWeeks": 13
+  },
+  "integrations": {
+    "google_calendar": {
+      "events": [
+        {
+          "id": "cal_001",
+          "summary": "Daily Standup - Identity Platform Team",
+          "description": "",
+          "start": { "dateTime": "2024-10-01T09:00:00-07:00" },
+          "end": { "dateTime": "2024-10-01T09:15:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"}, 
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez"},
+            {"email": "lisa@company.com", "displayName": "Lisa Park"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "alex@company.com", "displayName": "Alex Kumar"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen (Team Lead)"},
+          "recurring": "daily_weekdays"
+        },
+        {
+          "id": "cal_002", 
+          "summary": "1:1 with Sarah - Performance Discussion",
+          "description": "Weekly check-in. Agenda:\n- Progress on user authentication module\n- Blockers and support needed\n- Feedback on recent PRs\n- Career development goals",
+          "start": { "dateTime": "2024-10-01T14:00:00-07:00" },
+          "end": { "dateTime": "2024-10-01T14:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+          "recurring": "weekly"
+        },
+        {
+          "id": "cal_003",
+          "summary": "Architecture Review - Identity Verification Service",
+          "description": "Review proposed architecture for new identity verification microservice. Focus areas:\n- Database schema design\n- API contracts\n- Security considerations\n- Scalability requirements",
+          "start": { "dateTime": "2024-10-02T10:00:00-07:00" },
+          "end": { "dateTime": "2024-10-02T11:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez (Senior Architect)"},
+            {"email": "david@company.com", "displayName": "David Kim (Staff Engineer)"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"}
+          ],
+          "organizer": {"email": "mike@company.com", "displayName": "Mike Rodriguez"},
+          "location": "Conference Room B / Google Meet"
+        },
+        {
+          "id": "cal_004",
+          "summary": "URGENT: Debug Session - Auth Service Down", 
+          "description": "Production issue - authentication service is failing intermittently. Need all hands to investigate.\n\nImpact: 15% of login attempts failing\nStarted: 2:30 PM\nPriority: P0",
+          "start": { "dateTime": "2024-10-03T15:00:00-07:00" },
+          "end": { "dateTime": "2024-10-03T17:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez"},
+            {"email": "david@company.com", "displayName": "David Kim"},
+            {"email": "oncall@company.com", "displayName": "OnCall Engineer"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+          "location": "War Room / Slack #incident-auth",
+          "colorId": "11"
+        },
+        {
+          "id": "cal_005",
+          "summary": "Help Session: Lisa needs guidance on OAuth implementation",
+          "description": "Lisa (junior engineer) is stuck on OAuth flow implementation. Jack to provide guidance.\n\nTopics to cover:\n- OAuth 2.0 flow explanation\n- Code review of current implementation\n- Best practices for token handling",
+          "start": { "dateTime": "2024-10-04T11:00:00-07:00" },
+          "end": { "dateTime": "2024-10-04T11:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "lisa@company.com", "displayName": "Lisa Park"}
+          ],
+          "organizer": {"email": "lisa@company.com", "displayName": "Lisa Park"},
+          "notes": "Meeting cancelled by Jack - 'Still working on my own OAuth issues, maybe Sarah can help instead?'"
+        },
+        {
+          "id": "cal_006",
+          "summary": "Identity Platform - Sprint Planning",
+          "description": "Sprint 23 planning session\n\nGoals:\n- Complete user authentication module\n- Begin identity verification service\n- Address technical debt in session management\n\nEstimated velocity: 42 points",
+          "start": { "dateTime": "2024-10-07T13:00:00-07:00" },
+          "end": { "dateTime": "2024-10-07T15:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez"}, 
+            {"email": "lisa@company.com", "displayName": "Lisa Park"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "alex@company.com", "displayName": "Alex Kumar"},
+            {"email": "product@company.com", "displayName": "Jennifer Walsh (PM)"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+          "location": "Conference Room A"
+        },
+        {
+          "id": "cal_007",
+          "summary": "Deep Dive: JWT Token Management Architecture",
+          "description": "Technical deep dive session to clarify JWT implementation approach.\n\nJack requested this session after struggling with token refresh logic.\n\nCovering:\n- JWT vs session tokens\n- Refresh token rotation\n- Security best practices\n- Implementation patterns",
+          "start": { "dateTime": "2024-10-08T14:00:00-07:00" },
+          "end": { "dateTime": "2024-10-08T15:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez"},
+            {"email": "david@company.com", "displayName": "David Kim"}
+          ],
+          "organizer": {"email": "jack@company.com", "displayName": "Jack Thompson"},
+          "location": "Mike's office"
+        },
+        {
+          "id": "cal_008",
+          "summary": "Code Review Session - Jack's Auth Module PR",
+          "description": "Collaborative code review for PR #234: Implement JWT authentication\n\n⚠️ PR has been open for 2 weeks with multiple change requests\n\nFocus areas:\n- Error handling improvements\n- Code organization\n- Test coverage\n- Security considerations",
+          "start": { "dateTime": "2024-10-09T10:00:00-07:00" },
+          "end": { "dateTime": "2024-10-09T11:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "david@company.com", "displayName": "David Kim"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+          "location": "Sarah's desk / Screen share"
+        },
+        {
+          "id": "cal_009",
+          "summary": "All Hands - Q4 Platform Roadmap",
+          "description": "Company-wide update on digital identity platform progress and Q4 objectives.\n\nPresenting:\n- Current platform capabilities\n- Performance metrics\n- Upcoming features\n- Team introductions",
+          "start": { "dateTime": "2024-10-10T11:00:00-07:00" },
+          "end": { "dateTime": "2024-10-10T12:00:00-07:00" },
+          "attendees": [
+            {"email": "everyone@company.com", "displayName": "All Company"}
+          ],
+          "organizer": {"email": "ceo@company.com", "displayName": "CEO"},
+          "location": "Main Conference Room / Zoom"
+        },
+        {
+          "id": "cal_010",
+          "summary": "Blocked: Waiting for Architecture Decision",
+          "description": "Jack blocked on authentication module - needs architecture decision on session storage approach.\n\nOptions discussed:\n1. Redis-based sessions\n2. Database sessions with caching\n3. Stateless JWT-only approach\n\nWaiting for Mike and David to provide guidance.",
+          "start": { "dateTime": "2024-10-11T09:30:00-07:00" },
+          "end": { "dateTime": "2024-10-11T10:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+          ],
+          "organizer": {"email": "jack@company.com", "displayName": "Jack Thompson"},
+          "status": "tentative"
+        },
+        {
+          "id": "cal_011",
+          "summary": "Tom needs help with API integration - DECLINED by Jack",
+          "description": "Tom (junior dev) requested help with third-party API integration for document verification service.\n\nDeclined reason: 'Still working on my authentication stuff, maybe ask Sarah or Mike?'",
+          "start": { "dateTime": "2024-10-14T15:00:00-07:00" },
+          "end": { "dateTime": "2024-10-14T15:30:00-07:00" },
+          "attendees": [
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "jack@company.com", "displayName": "Jack Thompson", "responseStatus": "declined"}
+          ],
+          "organizer": {"email": "tom@company.com", "displayName": "Tom Wilson"}
+        },
+        {
+          "id": "cal_012",
+          "summary": "Sprint Retrospective - Sprint 23",
+          "description": "Team retrospective for completed sprint.\n\nWhat went well:\n- Profile validation fix deployed successfully\n- Good collaboration on production incident\n\nWhat could improve:\n- Authentication module still blocked\n- Need better knowledge sharing\n- Junior devs need more support\n\nAction items:\n- Jack to provide architecture decision by Friday\n- More pairing sessions for complex features",
+          "start": { "dateTime": "2024-10-18T14:00:00-07:00" },
+          "end": { "dateTime": "2024-10-18T15:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},  
+            {"email": "lisa@company.com", "displayName": "Lisa Park"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "alex@company.com", "displayName": "Alex Kumar"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+        },
+        {
+          "id": "cal_013",
+          "summary": "1:1 with Sarah - Performance Check-in",
+          "description": "Mid-sprint check-in. Topics:\n- Authentication module progress\n- Blockers and challenges\n- Support needed from team\n- Career development discussion\n\nNotes from Sarah: 'Jack seems overwhelmed by the complexity. Need to provide more structured guidance and possibly pair programming.'",
+          "start": { "dateTime": "2024-10-22T14:00:00-07:00" },
+          "end": { "dateTime": "2024-10-22T14:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+        },
+        {
+          "id": "cal_014",
+          "summary": "Architecture Deep Dive - Session vs Stateless Auth",
+          "description": "Follow-up session to finalize authentication architecture approach.\n\nDecision made: Hybrid approach with short-lived JWTs and refresh tokens stored in Redis.\n\nJack's concerns:\n- Implementation complexity\n- Testing strategy\n- Error handling patterns\n\nNext steps: Jack to create implementation plan by next week",
+          "start": { "dateTime": "2024-10-23T10:00:00-07:00" },
+          "end": { "dateTime": "2024-10-23T11:30:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "mike@company.com", "displayName": "Mike Rodriguez"},
+            {"email": "david@company.com", "displayName": "David Kim"}
+          ],
+          "organizer": {"email": "mike@company.com", "displayName": "Mike Rodriguez"}
+        },
+        {
+          "id": "cal_015",
+          "summary": "MISSED: Team Knowledge Sharing - OAuth Best Practices",
+          "description": "Weekly team knowledge sharing session. This week: OAuth 2.0 best practices and common pitfalls.\n\nJack was invited to present but didn't attend. Sarah covered the topic instead.\n\nMissed opportunity for Jack to share knowledge and build credibility with junior team members.",
+          "start": { "dateTime": "2024-10-25T16:00:00-07:00" },
+          "end": { "dateTime": "2024-10-25T17:00:00-07:00" },
+          "attendees": [
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "lisa@company.com", "displayName": "Lisa Park"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "alex@company.com", "displayName": "Alex Kumar"},
+            {"email": "jack@company.com", "displayName": "Jack Thompson", "responseStatus": "declined"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"}
+        },
+        {
+          "id": "cal_016",
+          "summary": "Identity Platform - Demo Prep",
+          "description": "Preparing for upcoming demo to stakeholders. Each team member to present their component.\n\nJack's concern: 'My auth module isn't ready for demo. Still has bugs and incomplete features.'\n\nDecision: Sarah will demo a mock version of authentication flow, Jack to provide technical details if questions arise.",
+          "start": { "dateTime": "2024-10-28T13:00:00-07:00" },
+          "end": { "dateTime": "2024-10-28T14:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "lisa@company.com", "displayName": "Lisa Park"},
+            {"email": "tom@company.com", "displayName": "Tom Wilson"},
+            {"email": "alex@company.com", "displayName": "Alex Kumar"},
+            {"email": "jennifer@company.com", "displayName": "Jennifer Walsh (PM)"}
+          ],
+          "organizer": {"email": "jennifer@company.com", "displayName": "Jennifer Walsh"}
+        },
+        {
+          "id": "cal_017",
+          "summary": "URGENT: Production Auth Issues - Debug Session",
+          "description": "Authentication service experiencing intermittent failures in production.\n\nSymptoms:\n- Token validation failing randomly\n- Users getting logged out unexpectedly\n- 401 errors on valid requests\n\nSeverity: P1 - affecting user experience\n\nJack called in as authentication module owner, though his recent changes haven't been deployed yet.",
+          "start": { "dateTime": "2024-10-30T11:00:00-07:00" },
+          "end": { "dateTime": "2024-10-30T13:00:00-07:00" },
+          "attendees": [
+            {"email": "jack@company.com", "displayName": "Jack Thompson"},
+            {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+            {"email": "david@company.com", "displayName": "David Kim"},
+            {"email": "oncall@company.com", "displayName": "OnCall Team"}
+          ],
+          "organizer": {"email": "sarah@company.com", "displayName": "Sarah Chen"},
+          "location": "War Room / Slack #incident-auth-oct30",
+          "colorId": "11"
+        }
+      ]
+    },
+    "github": {
+      "pullRequests": [
+        {
+          "id": 234,
+          "title": "Implement JWT authentication for user sessions",
+          "body": "This PR implements JWT-based authentication to replace the current session-based approach.\n\n## Changes\n- Added JWT token generation and validation\n- Updated login/logout endpoints\n- Added middleware for token verification\n- Basic error handling\n\n## Notes\nStill working on refresh token logic. Some edge cases may not be handled yet.\n\n## Testing\nManual testing done, automated tests pending.",
+          "state": "open",
+          "created_at": "2024-09-25T10:30:00Z",
+          "updated_at": "2024-10-09T16:45:00Z",
+          "user": {"login": "jack-thompson", "avatar_url": "https://avatars.githubusercontent.com/u/jack"},
+          "additions": 285,
+          "deletions": 45,
+          "changed_files": 8,
+          "draft": false,
+          "comments": [
+            {
+              "user": "sarah-chen",
+              "created_at": "2024-09-26T14:20:00Z",
+              "body": "Thanks for getting this started Jack. A few initial observations:\n\n1. The error handling in `validateToken()` could be more robust\n2. Consider extracting the JWT configuration to environment variables\n3. We need tests for the token refresh flow\n\nLet's sync up tomorrow to discuss the approach."
+            },
+            {
+              "user": "david-kim", 
+              "created_at": "2024-09-30T09:15:00Z",
+              "body": "Jack, I see some security concerns here:\n\n- Token expiration is set to 24 hours, should be much shorter\n- No rate limiting on token refresh endpoint\n- JWT secret is hardcoded\n\nCan you address these before we move forward?"
+            },
+            {
+              "user": "jack-thompson",
+              "created_at": "2024-10-02T11:30:00Z", 
+              "body": "Thanks for the feedback. Working on addressing the security issues. Having some trouble with the refresh token rotation - it's more complex than I initially thought. Might need some guidance on the pattern we want to use."
+            },
+            {
+              "user": "sarah-chen",
+              "created_at": "2024-10-09T16:45:00Z",
+              "body": "Jack, this has been open for 2 weeks now. Can we schedule a pairing session to get this unblocked? The authentication work is holding up other team members."
+            }
+          ],
+          "requested_reviewers": ["sarah-chen", "david-kim", "mike-rodriguez"]
+        },
+        {
+          "id": 198,
+          "title": "Fix user profile validation logic",
+          "body": "Quick fix for profile validation that was causing registration failures.\n\n## Problem\nUsers with special characters in names couldn't register.\n\n## Solution\nUpdated regex pattern to allow more characters.\n\n## Testing\nTested manually with various name formats.",
+          "state": "merged",
+          "created_at": "2024-09-15T14:20:00Z",
+          "merged_at": "2024-09-18T10:15:00Z",
+          "user": {"login": "jack-thompson", "avatar_url": "https://avatars.githubusercontent.com/u/jack"},
+          "additions": 12,
+          "deletions": 8,
+          "changed_files": 2,
+          "comments": [
+            {
+              "user": "lisa-park",
+              "created_at": "2024-09-16T09:30:00Z",
+              "body": "This looks good! I was actually running into this issue yesterday. Thanks for the fix."
+            },
+            {
+              "user": "sarah-chen",
+              "created_at": "2024-09-18T10:15:00Z",
+              "body": "LGTM. Merging now."
+            }
+          ]
+        }
+      ],
+      "commits": [
+        {
+          "sha": "a1b2c3d4e5f6",
+          "commit": {
+            "message": "WIP: JWT authentication implementation\n\nStarting work on JWT tokens. Basic structure in place but refresh logic still needs work.",
+            "author": {"name": "Jack Thompson", "email": "jack@company.com", "date": "2024-09-25T10:30:00Z"}
+          },
+          "stats": {"additions": 145, "deletions": 12}
+        },
+        {
+          "sha": "b2c3d4e5f6a1",
+          "commit": {
+            "message": "Add JWT token validation middleware\n\nAdded middleware to validate JWT tokens on protected routes. Error handling is basic for now.",
+            "author": {"name": "Jack Thompson", "email": "jack@company.com", "date": "2024-09-26T16:45:00Z"}
+          },
+          "stats": {"additions": 87, "deletions": 5}
+        },
+        {
+          "sha": "c3d4e5f6a1b2", 
+          "commit": {
+            "message": "Update token expiration logic\n\nTrying to implement refresh token rotation but getting confused by the flow. Committing current progress.",
+            "author": {"name": "Jack Thompson", "email": "jack@company.com", "date": "2024-10-02T14:20:00Z"}
+          },
+          "stats": {"additions": 53, "deletions": 28}
+        },
+        {
+          "sha": "d4e5f6a1b2c3",
+          "commit": {
+            "message": "Fix profile validation regex\n\nUsers with apostrophes in names (like O'Connor) couldn't register. Updated pattern.",
+            "author": {"name": "Jack Thompson", "email": "jack@company.com", "date": "2024-09-15T14:20:00Z"}
+          },
+          "stats": {"additions": 12, "deletions": 8}
+        }
+      ],
+      "issues": [
+        {
+          "id": 89,
+          "title": "JWT token refresh endpoint returns 500 error",
+          "body": "The `/auth/refresh` endpoint is throwing a 500 error when trying to refresh tokens.\n\n## Steps to reproduce\n1. Login and get initial token\n2. Wait for token to expire\n3. Call refresh endpoint with refresh token\n4. Gets 500 error\n\n## Expected\nShould return new access token\n\n## Actual\nServer error 500\n\n## Stack trace\n```\nTypeError: Cannot read property 'id' of undefined\n    at refreshToken (/src/auth/token.js:45)\n    at ...\n```",
+          "state": "open",
+          "created_at": "2024-10-01T11:20:00Z",
+          "assignee": {"login": "jack-thompson"},
+          "labels": [
+            {"name": "bug", "color": "d73a4a"},
+            {"name": "priority:high", "color": "b60205"}
+          ],
+          "comments": [
+            {
+              "user": "jack-thompson",
+              "created_at": "2024-10-01T15:30:00Z",
+              "body": "Looking into this. I think the issue is in how I'm parsing the refresh token payload. The user lookup is failing."
+            },
+            {
+              "user": "jack-thompson", 
+              "created_at": "2024-10-03T09:15:00Z",
+              "body": "Still debugging this. The token validation is working but there's something wrong with the database query. Might need help from someone more familiar with our ORM."
+            },
+            {
+              "user": "sarah-chen",
+              "created_at": "2024-10-07T14:45:00Z",
+              "body": "Jack, this is blocking QA testing. Can we pair on this tomorrow morning?"
+            }
+          ]
+        }
+      ]
+    },
+    "jira": {
+      "stories": [
+        {
+          "key": "IDP-145",
+          "summary": "Implement JWT-based authentication system",
+          "description": "Replace current session-based authentication with JWT tokens to improve scalability and support for microservices architecture.\n\n## Acceptance Criteria\n- [ ] JWT token generation on login\n- [ ] Token validation middleware\n- [ ] Refresh token rotation\n- [ ] Secure token storage recommendations\n- [ ] Migration path from current sessions\n\n## Technical Notes\n- Use RS256 for signing\n- Tokens expire in 15 minutes\n- Refresh tokens expire in 7 days\n- Support for token revocation",
+          "status": "In Progress", 
+          "assignee": "jack.thompson",
+          "reporter": "sarah.chen",
+          "priority": "High",
+          "storyPoints": 8,
+          "created": "2024-09-20T10:00:00Z",
+          "updated": "2024-10-09T16:30:00Z",
+          "dueDate": "2024-10-15T23:59:59Z",
+          "labels": ["authentication", "security", "backend"],
+          "comments": [
+            {
+              "author": "jack.thompson",
+              "created": "2024-09-25T14:20:00Z",
+              "body": "Started implementation. Created initial PR #234. Basic token generation is working but refresh logic is more complex than expected."
+            },
+            {
+              "author": "sarah.chen",
+              "created": "2024-10-02T11:15:00Z", 
+              "body": "Jack, we're approaching the due date. What's the current blocker? Do you need additional support or should we consider reducing scope?"
+            },
+            {
+              "author": "jack.thompson",
+              "created": "2024-10-02T15:45:00Z",
+              "body": "Main blocker is the refresh token rotation. I understand the concept but struggling with the implementation details. Also running into some edge cases with concurrent requests."
+            },
+            {
+              "author": "mike.rodriguez",
+              "created": "2024-10-05T09:30:00Z",
+              "body": "Jack, I can help with the architecture design. Let's schedule a deep dive session to clarify the approach."
+            },
+            {
+              "author": "jack.thompson",
+              "created": "2024-10-09T16:30:00Z",
+              "body": "Thanks Mike, that session helped a lot. Still working through implementation but have a clearer path forward now."
+            }
+          ],
+          "transitions": [
+            {"date": "2024-09-20T10:00:00Z", "from": "To Do", "to": "In Progress"},
+            {"date": "2024-09-25T14:20:00Z", "from": "In Progress", "to": "Code Review"},
+            {"date": "2024-09-30T16:00:00Z", "from": "Code Review", "to": "In Progress", "reason": "Changes requested"}
+          ]
+        },
+        {
+          "key": "IDP-132",
+          "summary": "User profile validation improvements", 
+          "description": "Fix validation logic that prevents users with certain special characters in their names from registering.\n\n## Acceptance Criteria\n- [x] Support apostrophes in names (O'Connor, D'Angelo)\n- [x] Support hyphens (Mary-Jane, Jean-Luc) \n- [x] Support accented characters (José, François)\n- [x] Update tests to cover edge cases\n\n## Impact\n~5% of registration attempts are failing due to overly strict validation.",
+          "status": "Done",
+          "assignee": "jack.thompson", 
+          "reporter": "jennifer.walsh",
+          "priority": "Medium",
+          "storyPoints": 2,
+          "created": "2024-09-10T09:15:00Z",
+          "updated": "2024-09-18T10:15:00Z",
+          "resolved": "2024-09-18T10:15:00Z",
+          "labels": ["validation", "bugfix", "user-experience"],
+          "transitions": [
+            {"date": "2024-09-10T09:15:00Z", "from": "To Do", "to": "In Progress"},
+            {"date": "2024-09-15T14:20:00Z", "from": "In Progress", "to": "Code Review"},
+            {"date": "2024-09-18T10:15:00Z", "from": "Code Review", "to": "Done"}
+          ]
+        },
+        {
+          "key": "IDP-167",
+          "summary": "Identity verification service architecture design",
+          "description": "Design the architecture for the new identity verification microservice that will handle document verification, biometric matching, and risk assessment.\n\n## Scope\n- Database schema design\n- API contract definition\n- Security and compliance requirements\n- Integration with existing platform\n- Scalability considerations\n\n## Dependencies\n- Requires completion of JWT authentication (IDP-145)\n- Legal review of data retention policies",
+          "status": "To Do",
+          "assignee": "jack.thompson",
+          "reporter": "mike.rodriguez", 
+          "priority": "High",
+          "storyPoints": 13,
+          "created": "2024-10-01T11:00:00Z",
+          "updated": "2024-10-01T11:00:00Z",
+          "labels": ["architecture", "microservice", "verification"],
+          "comments": [
+            {
+              "author": "mike.rodriguez",
+              "created": "2024-10-01T11:00:00Z",
+              "body": "Jack, this is a big architectural piece. We should start with a design doc before jumping into implementation. I'm available to pair on the initial architecture if needed."
+            }
+          ]
+        }
+      ],
+      "bugs": [
+        {
+          "key": "IDP-178",
+          "summary": "Token refresh endpoint returns 500 error",
+          "description": "The JWT token refresh endpoint is throwing internal server errors when attempting to refresh expired tokens.\n\n## Steps to Reproduce\n1. Login to get initial access/refresh token pair\n2. Wait for access token to expire (15 minutes)\n3. Call POST /auth/refresh with refresh token\n4. Observe 500 error response\n\n## Expected Result\nShould return new access token and optionally rotated refresh token\n\n## Actual Result\nHTTP 500 Internal Server Error\n\n## Error Details\n```\nTypeError: Cannot read property 'id' of undefined\n    at refreshToken (/src/auth/token.js:45)\n    at /src/routes/auth.js:67\n```\n\n## Environment\n- Development environment\n- Node.js v18.17.0\n- JWT library v9.0.2",
+          "status": "Open",
+          "assignee": "jack.thompson",
+          "reporter": "qa.team",
+          "priority": "High", 
+          "severity": "Major",
+          "created": "2024-10-01T16:30:00Z",
+          "updated": "2024-10-07T14:45:00Z",
+          "labels": ["authentication", "api", "500-error"],
+          "comments": [
+            {
+              "author": "jack.thompson",
+              "created": "2024-10-02T09:00:00Z",
+              "body": "I can reproduce this locally. The issue seems to be in the user lookup when validating the refresh token. Investigating..."
+            },
+            {
+              "author": "jack.thompson",
+              "created": "2024-10-04T11:30:00Z",
+              "body": "Found the issue - I'm not properly handling the case where the refresh token payload doesn't contain the expected user ID structure. Working on a fix."
+            },
+            {
+              "author": "qa.team",
+              "created": "2024-10-07T14:45:00Z",
+              "body": "This is blocking our testing of the authentication flow. What's the ETA on the fix?"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

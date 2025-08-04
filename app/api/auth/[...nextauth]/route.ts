@@ -5,6 +5,7 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { PrismaClient } from '@prisma/client'
 import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
+import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 
 // Singleton pattern for PrismaClient to prevent multiple connections in serverless
 const globalForPrisma = globalThis as unknown as {
@@ -114,28 +115,6 @@ const handleJWT = async (params: any) => {
   return token
 }
 
-// Mock users for development
-const mockUsers = [
-  {
-    id: '1',
-    name: 'John Developer',
-    email: 'john@example.com',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
-  },
-  {
-    id: '2', 
-    name: 'Sarah Engineer',
-    email: 'sarah@example.com',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face'
-  },
-  {
-    id: '3',
-    name: 'Alex Designer',
-    email: 'alex@example.com', 
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
-  }
-]
-
 // Use mock credentials provider in development, real Google OAuth in production  
 const providers = process.env.NODE_ENV === 'development' 
   ? [
@@ -158,7 +137,7 @@ const providers = process.env.NODE_ENV === 'development'
             return null
           }
           
-          const user = mockUsers.find(u => u.id === credentials.userId)
+          const user = getMockUserById(credentials.userId)
           if (!user) {
             authLog('❌ User not found for ID:', credentials.userId);
             return null
