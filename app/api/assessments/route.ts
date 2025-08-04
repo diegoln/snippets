@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/auth-utils'
-import { createUserDataService } from '@/lib/user-scoped-data'
-import { PromptProcessor } from '@/lib/prompt-processor'
-import { llmProxy } from '@/lib/llmproxy'
-import { AssessmentContext } from '@/types/performance'
+import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { createUserDataService } from '../../../lib/user-scoped-data'
+import { llmProxy } from '../../../lib/llmproxy'
+import { AssessmentContext } from '../../../types/performance'
+import { buildPerformanceAssessmentPrompt } from './performance-assessment-prompt'
 
 /**
  * POST /api/assessments - Generate a new performance assessment for the authenticated user
@@ -103,13 +103,15 @@ export async function POST(request: NextRequest) {
         snippetCount: meaningfulSnippets.length
       }
 
-      // Generate prompt from template
-      console.log('📝 Processing prompt template...')
-      const prompt = await PromptProcessor.processPerformanceAssessmentPrompt(assessmentContext)
-      
       // Generate assessment using LLM
       console.log('🤖 Generating assessment with LLM...')
-      const llmResponse = await llmProxy.generatePerformanceAssessment(assessmentContext)
+      const prompt = buildPerformanceAssessmentPrompt(assessmentContext)
+      const llmResponse = await llmProxy.request({
+        prompt,
+        temperature: 0.7,
+        maxTokens: 2000,
+        context: assessmentContext
+      })
       
       // Create assessment record
       const assessment = await dataService.createAssessment({

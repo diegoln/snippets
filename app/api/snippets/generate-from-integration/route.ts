@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
+import { snippetRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
+import { buildWeeklySnippetPrompt, WeeklySnippetPromptContext } from './weekly-snippet-prompt'
 
 // Input validation schema
 const GenerateSnippetSchema = z.object({
@@ -26,12 +28,24 @@ const GenerateSnippetSchema = z.object({
  * Generate LLM-powered weekly snippet from integration data
  */
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
+      )
+    }
+
+    // Check rate limiting
+    const rateLimitResult = snippetRateLimit.check(userId)
+    if (!rateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(rateLimitResult)
+      return NextResponse.json(
+        createRateLimitResponse(rateLimitResult.resetTime),
+        { status: 429, headers }
       )
     }
 
@@ -43,6 +57,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
         { status: 400 }
+      )
+    }
+
+    // Check payload size before processing (prevent memory issues and excessive API costs)
+    const payloadSize = JSON.stringify(body).length
+    if (payloadSize > 100000) { // 100KB limit
+      return NextResponse.json(
+        { error: 'Calendar data too large. Please reduce the date range or contact support.' },
+        { status: 413 }
       )
     }
 
@@ -59,9 +82,12 @@ export async function POST(request: NextRequest) {
 
     const { weekData, userProfile } = validationResult.data
 
+    // Sanitize calendar data before sending to LLM (remove sensitive information)
+    const sanitizedCalendarData = sanitizeCalendarData(weekData)
+
     // Generate LLM-powered weekly snippet
     const llmResponse = await generateWeeklySnippetWithLLM({
-      calendarData: weekData,
+      calendarData: sanitizedCalendarData,
       userProfile,
       userId
     })
@@ -74,11 +100,63 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error generating snippet from integration:', error)
+    // Enhanced error logging with context
+    const errorContext = {
+      userId: userId || 'unknown',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+    console.error('Error generating snippet from integration:', errorContext)
+    
     return NextResponse.json(
       { error: 'Failed to generate weekly snippet' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Sanitize calendar data to remove sensitive information before sending to LLM
+ */
+function sanitizeCalendarData(weekData: any) {
+  // Keywords that indicate potentially sensitive content
+  const sensitiveKeywords = [
+    'confidential', 'private', 'salary', 'compensation', 'performance review',
+    'layoffs', 'termination', 'resignation', 'interview', 'candidate',
+    'legal', 'lawsuit', 'compliance', 'audit', 'security incident',
+    'password', 'credentials', 'api key', 'token', 'secret'
+  ]
+
+  const sanitizeText = (text: string): string => {
+    if (!text) return text
+    
+    // Check for sensitive keywords (case insensitive)
+    const lowerText = text.toLowerCase()
+    const hasSensitiveContent = sensitiveKeywords.some(keyword => 
+      lowerText.includes(keyword)
+    )
+    
+    if (hasSensitiveContent) {
+      // Replace with generic description
+      return '[Meeting content filtered for privacy]'
+    }
+    
+    // Remove potential email addresses and phone numbers
+    return text
+      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email]')
+      .replace(/\b\d{3}-\d{3}-\d{4}\b/g, '[phone]')
+      .replace(/\b\d{10}\b/g, '[phone]')
+  }
+
+  return {
+    ...weekData,
+    meetingContext: weekData.meetingContext.map(sanitizeText),
+    weeklyContextSummary: sanitizeText(weekData.weeklyContextSummary),
+    keyMeetings: weekData.keyMeetings.map((meeting: any) => ({
+      ...meeting,
+      summary: sanitizeText(meeting.summary || ''),
+      description: sanitizeText(meeting.description || '')
+    }))
   }
 }
 
@@ -95,7 +173,11 @@ async function generateWeeklySnippetWithLLM({
   userId: string
 }) {
   try {
-    const prompt = buildWeeklySnippetPrompt(calendarData, userProfile)
+    const promptContext: WeeklySnippetPromptContext = {
+      calendarData,
+      userProfile
+    }
+    const prompt = buildWeeklySnippetPrompt(promptContext)
     
     // Use LLM proxy for environment-aware processing
     const llmResponse = await llmProxy.request({
@@ -114,42 +196,6 @@ async function generateWeeklySnippetWithLLM({
   }
 }
 
-/**
- * Build prompt for LLM based on calendar data and user profile
- */
-function buildWeeklySnippetPrompt(calendarData: any, userProfile: { jobTitle: string; seniorityLevel: string }) {
-  return `
-Create a weekly snippet for a ${userProfile.seniorityLevel} ${userProfile.jobTitle} based on their calendar data from ${calendarData.dateRange.start} to ${calendarData.dateRange.end}.
-
-CALENDAR DATA:
-- Total meetings: ${calendarData.totalMeetings}
-- Weekly summary: ${calendarData.weeklyContextSummary}
-
-MEETING DETAILS:
-${calendarData.meetingContext.join('\n')}
-
-KEY MEETINGS:
-${calendarData.keyMeetings.map((meeting: any) => 
-  `- ${meeting.summary}${meeting.description ? ': ' + meeting.description : ''}`
-).join('\n')}
-
-REQUIREMENTS:
-1. Write 4-6 bullet points highlighting key accomplishments and activities
-2. Focus on impact, collaboration, and technical contributions
-3. Use action verbs and quantify when possible
-4. Mention specific meetings that show leadership or technical expertise
-5. Include any blockers or challenges in a constructive way
-6. Match the tone appropriate for a ${userProfile.seniorityLevel} level engineer
-
-FORMAT:
-Return your response as JSON with:
-{
-  "weeklySnippet": "Full paragraph summary",
-  "bullets": ["bullet 1", "bullet 2", ...],
-  "insights": "Brief insight about performance patterns"
-}
-`
-}
 
 /**
  * Parse LLM response and extract structured data
