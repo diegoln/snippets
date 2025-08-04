@@ -74,5 +74,12 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 ## Error Handling and Quality Assurance
 - For every bug found, implement tests that would have caught them and add the tests to the development routine
 
+## PR and Code Review Workflow
+- Whenever a PR is requested, follow this workflow:
+  * Create the PR automatically
+  * Wait for Claude bot to review the PR in GitHub
+  * Address all comments and feedback from the review
+  * Once the PR is fully approved, merge the changes
+
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
