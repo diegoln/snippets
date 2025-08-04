@@ -303,6 +303,12 @@ export class GoogleCalendarService {
    * Generate mock data for development
    */
   static generateMockData(request: WeeklyDataRequest): WeeklyCalendarData {
+    // Load realistic user data based on userId
+    if (request.userId === '1') { // Jack Thompson
+      return GoogleCalendarService.generateJacksPreviousWeekData(request)
+    }
+
+    // Default generic mock data for other users
     const mockEvents: CalendarEvent[] = [
       {
         id: 'mock-1',
@@ -336,5 +342,103 @@ export class GoogleCalendarService {
       keyMeetings: mockEvents.filter(e => e.summary.includes('1:1')),
       weeklyContextSummary: `This week included ${mockEvents.length} meetings. Had 1 1:1 meeting(s) for development discussions. Participated in 1 career-relevant meetings including: 1:1 with Manager.`
     }
+  }
+
+  /**
+   * Generate Jack's realistic previous week data for onboarding
+   */
+  static generateJacksPreviousWeekData(request: WeeklyDataRequest): WeeklyCalendarData {
+    // Jack's realistic events from previous week (Oct 28 - Nov 1, 2024)
+    const jackEvents: CalendarEvent[] = [
+      {
+        id: 'jack_week_1',
+        summary: 'Daily Standup - Identity Platform Team',
+        description: 'Team standup. Jack mentioned still working on JWT refresh token issues.',
+        start: { dateTime: '2024-10-28T09:00:00-07:00' },
+        end: { dateTime: '2024-10-28T09:15:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
+          { email: 'lisa@company.com', displayName: 'Lisa Park' },
+          { email: 'tom@company.com', displayName: 'Tom Wilson' },
+          { email: 'alex@company.com', displayName: 'Alex Kumar' }
+        ],
+        status: 'confirmed'
+      },
+      {
+        id: 'jack_week_2',
+        summary: 'Identity Platform - Demo Prep',
+        description: 'Preparing for upcoming demo to stakeholders. Jack expressed concerns about his auth module not being ready for demo.',
+        start: { dateTime: '2024-10-28T13:00:00-07:00' },
+        end: { dateTime: '2024-10-28T14:00:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen' },
+          { email: 'jennifer@company.com', displayName: 'Jennifer Walsh (PM)', organizer: true }
+        ],
+        status: 'confirmed'
+      },
+      {
+        id: 'jack_week_3',
+        summary: 'Daily Standup - Identity Platform Team',
+        description: '',
+        start: { dateTime: '2024-10-29T09:00:00-07:00' },
+        end: { dateTime: '2024-10-29T09:15:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
+          { email: 'lisa@company.com', displayName: 'Lisa Park' },
+          { email: 'tom@company.com', displayName: 'Tom Wilson' },
+          { email: 'alex@company.com', displayName: 'Alex Kumar' }
+        ],
+        status: 'confirmed'
+      },
+      {
+        id: 'jack_week_4',
+        summary: 'URGENT: Production Auth Issues - Debug Session',
+        description: 'Authentication service experiencing intermittent failures. Jack called in as auth module owner despite his implementation not being deployed yet. Stressful 2-hour debug session.',
+        start: { dateTime: '2024-10-30T11:00:00-07:00' },
+        end: { dateTime: '2024-10-30T13:00:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen', organizer: true },
+          { email: 'david@company.com', displayName: 'David Kim' },
+          { email: 'oncall@company.com', displayName: 'OnCall Team' }
+        ],
+        location: 'War Room / Slack #incident-auth-oct30',
+        status: 'confirmed'
+      },
+      {
+        id: 'jack_week_5',
+        summary: 'Daily Standup - Identity Platform Team',
+        description: '',
+        start: { dateTime: '2024-10-31T09:00:00-07:00' },
+        end: { dateTime: '2024-10-31T09:15:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
+          { email: 'lisa@company.com', displayName: 'Lisa Park' },
+          { email: 'tom@company.com', displayName: 'Tom Wilson' },
+          { email: 'alex@company.com', displayName: 'Alex Kumar' }
+        ],
+        status: 'confirmed'
+      },
+      {
+        id: 'jack_week_6',
+        summary: '1:1 with Sarah - Urgent Performance Discussion',
+        description: 'Urgent check-in after production incident. Topics: JWT implementation blockers, need for additional support, timeline concerns for auth module delivery.',
+        start: { dateTime: '2024-11-01T14:00:00-07:00' },
+        end: { dateTime: '2024-11-01T15:00:00-07:00' },
+        attendees: [
+          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
+          { email: 'sarah@company.com', displayName: 'Sarah Chen', organizer: true }
+        ],
+        status: 'confirmed'
+      }
+    ]
+
+    // Process the events using the same logic as real calendar data
+    const service = new GoogleCalendarService()
+    return service['processCalendarData'](jackEvents)
   }
 }

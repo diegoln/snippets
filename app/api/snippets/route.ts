@@ -227,3 +227,60 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+/**
+ * DELETE /api/snippets - Delete a specific weekly snippet
+ * 
+ * Requires snippet ID in request body and ensures user can only delete their own snippets.
+ */
+export async function DELETE(request: NextRequest) {
+  try {
+    // Get authenticated user ID from session
+    const userId = await getUserIdFromRequest(request)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { id } = body
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'id is required' },
+        { status: 400 }
+      )
+    }
+
+    // Create user-scoped data service
+    const dataService = createUserDataService(userId)
+
+    try {
+      await dataService.deleteSnippet(id)
+
+      return NextResponse.json({
+        success: true,
+        message: 'Snippet deleted successfully'
+      })
+    } finally {
+      await dataService.disconnect()
+    }
+  } catch (error) {
+    console.error('Error deleting snippet:', error)
+    
+    // Handle specific error cases
+    if (error instanceof Error && error.message.includes('access denied')) {
+      return NextResponse.json(
+        { error: 'Snippet not found or access denied' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(
+      { error: 'Failed to delete snippet' },
+      { status: 500 }
+    )
+  }
+}

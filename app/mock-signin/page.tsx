@@ -11,30 +11,9 @@
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import { Logo } from '../../components/Logo'
+import { getAllMockUsers } from '../../lib/mock-users'
 
-const mockUsers = [
-  {
-    id: '1',
-    name: 'John Developer',
-    email: 'john@example.com',
-    image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
-    role: 'Senior Software Engineer'
-  },
-  {
-    id: '2', 
-    name: 'Sarah Engineer',
-    email: 'sarah@example.com',
-    image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
-    role: 'Staff Engineer'
-  },
-  {
-    id: '3',
-    name: 'Alex Designer',
-    email: 'alex@example.com', 
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
-    role: 'Senior Product Designer'
-  }
-]
+const mockUsers = getAllMockUsers()
 
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)

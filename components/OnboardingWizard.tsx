@@ -124,6 +124,24 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
 
+  // Load existing integrations on component mount
+  useEffect(() => {
+    const loadExistingIntegrations = async () => {
+      try {
+        const response = await fetch('/api/integrations')
+        if (response.ok) {
+          const integrations = await response.json()
+          const existingTypes = new Set<string>(integrations.map((i: any) => i.type as string))
+          setConnectedIntegrations(existingTypes)
+        }
+      } catch (error) {
+        console.error('Failed to load existing integrations:', error)
+      }
+    }
+
+    loadExistingIntegrations()
+  }, [])
+
   // Standardized error handler for API responses
   const handleApiError = useCallback(async (response: Response, operation: string) => {
     const errorData = await response.json().catch(() => ({ 
@@ -262,43 +280,104 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 `
   }, [formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
-  // Mock integration connection for demo
+  // Real integration connection with LLM-powered snippet generation
   const connectIntegration = useCallback(async (integrationType: string) => {
     setIsConnecting(integrationType)
     setError(null)
     
-    // Optimistically update UI - add integration immediately
-    const tempBullets = getMockIntegrationBullets(integrationType)
-    setIntegrationBullets(prev => ({
-      ...prev,
-      [integrationType]: tempBullets
-    }))
-    setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
-    
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // In a real implementation, this would be an actual API call
-      // If the call fails, we would revert the optimistic update
+      if (integrationType === 'google_calendar') {
+        // Connect to Google Calendar integration and generate LLM-powered snippet
+        const response = await fetch('/api/integrations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'google_calendar' })
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to connect calendar integration')
+        }
+
+        // Fetch previous week's calendar data with LLM processing
+        const dataResponse = await fetch('/api/integrations?test=true')
+        if (!dataResponse.ok) {
+          throw new Error('Failed to fetch calendar data')
+        }
+
+        const calendarData = await dataResponse.json()
+        
+        // Generate LLM-powered weekly snippet from calendar data
+        const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            integrationType: 'google_calendar',
+            weekData: calendarData.weekData,
+            userProfile: {
+              jobTitle: formData.role === 'other' ? formData.customRole : formData.role,
+              seniorityLevel: formData.level === 'other' ? formData.customLevel : formData.level
+            }
+          })
+        })
+
+        if (!snippetResponse.ok) {
+          throw new Error('Failed to generate weekly snippet')
+        }
+
+        const snippetData = await snippetResponse.json()
+        
+        // Update UI with LLM-generated bullets
+        setIntegrationBullets(prev => ({
+          ...prev,
+          [integrationType]: snippetData.bullets || []
+        }))
+        setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
+        
+        // Generate LLM-powered reflection draft from weekly snippet
+        const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            weeklySnippet: snippetData.weeklySnippet,
+            bullets: snippetData.bullets,
+            userProfile: {
+              jobTitle: formData.role === 'other' ? formData.customRole : formData.role,
+              seniorityLevel: formData.level === 'other' ? formData.customLevel : formData.level
+            }
+          })
+        })
+
+        if (reflectionResponse.ok) {
+          const reflectionData = await reflectionResponse.json()
+          setFormData(prev => ({
+            ...prev,
+            reflectionContent: reflectionData.reflectionDraft || snippetData.weeklySnippet || ''
+          }))
+        } else {
+          // Fallback to weekly snippet if reflection generation fails
+          setFormData(prev => ({
+            ...prev,
+            reflectionContent: snippetData.weeklySnippet || ''
+          }))
+        }
+        
+      } else {
+        // For other integrations, use mock data for now
+        const tempBullets = getMockIntegrationBullets(integrationType)
+        setIntegrationBullets(prev => ({
+          ...prev,
+          [integrationType]: tempBullets
+        }))
+        setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
+      }
       
     } catch (err) {
-      // Revert optimistic update on error
-      setIntegrationBullets(prev => {
-        const updated = { ...prev }
-        delete updated[integrationType]
-        return updated
-      })
-      setConnectedIntegrations(prev => {
-        const updated = new Set(prev)
-        updated.delete(integrationType)
-        return updated
-      })
-      setError('Failed to connect integration. Please try again.')
+      console.error('Integration connection failed:', err)
+      setError(err instanceof Error ? err.message : 'Failed to connect integration. Please try again.')
     } finally {
       setIsConnecting(null)
     }
-  }, [])
+  }, [formData.role, formData.customRole, formData.level, formData.customLevel])
 
   // Handle step navigation
   const handleNext = useCallback(async () => {

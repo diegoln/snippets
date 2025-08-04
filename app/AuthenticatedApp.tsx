@@ -299,6 +299,36 @@ export const AuthenticatedApp = (): JSX.Element => {
     }
   }, [])
 
+  const handleDeleteSnippet = useCallback(async (snippetId: string): Promise<void> => {
+    try {
+      const response = await fetch('/api/snippets', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: snippetId })
+      })
+
+      if (response.ok) {
+        // Remove snippet from local state
+        const updatedSnippets = snippets.filter(snippet => snippet.id !== snippetId)
+        setSnippets(updatedSnippets)
+        
+        // Clear selection if deleted snippet was selected
+        if (selectedSnippet?.id === snippetId) {
+          setSelectedSnippet(null)
+          setIsEditing(false)
+        }
+        
+        console.log('Snippet deleted successfully:', snippetId)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete snippet')
+      }
+    } catch (error) {
+      console.error('Failed to delete snippet:', error)
+      alert(`Failed to delete reflection: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }, [snippets, selectedSnippet])
+
   const handleAddCurrentWeek = useCallback(async (): Promise<void> => {
     try {
       const currentWeek = getCurrentWeek()
@@ -504,25 +534,41 @@ Weekly Reflections
               
               <nav className="space-y-2">
                 {paginatedSnippets.map((snippet) => (
-                  <button
-                    key={snippet.id}
-                    onClick={() => handleSelectSnippet(snippet)}
-                    className={`w-full text-left p-4 rounded-card cursor-pointer transition-advance ${
-                      selectedSnippet?.id === snippet.id
-                        ? 'bg-primary-100 border-accent-500 border-2 shadow-elevation-1'
-                        : isEditing && selectedSnippet?.id === snippet.id
-                        ? 'bg-accent-500/10 border-accent-500/30 border'
-                        : 'bg-neutral-100 hover:bg-primary-100/50'
-                    }`}
-                    aria-pressed={selectedSnippet?.id === snippet.id}
-                  >
-                    <div className="font-semibold text-primary">
-                      Week {snippet.weekNumber}
-                    </div>
-                    <div className="text-sm text-secondary font-mono">
-                      {formatDateRange(snippet.startDate, snippet.endDate)}
-                    </div>
-                  </button>
+                  <div key={snippet.id} className="relative group">
+                    <button
+                      onClick={() => handleSelectSnippet(snippet)}
+                      className={`w-full text-left p-4 rounded-card cursor-pointer transition-advance ${
+                        selectedSnippet?.id === snippet.id
+                          ? 'bg-primary-100 border-accent-500 border-2 shadow-elevation-1'
+                          : isEditing && selectedSnippet?.id === snippet.id
+                          ? 'bg-accent-500/10 border-accent-500/30 border'
+                          : 'bg-neutral-100 hover:bg-primary-100/50'
+                      }`}
+                      aria-pressed={selectedSnippet?.id === snippet.id}
+                    >
+                      <div className="font-semibold text-primary">
+                        Week {snippet.weekNumber}
+                      </div>
+                      <div className="text-sm text-secondary font-mono">
+                        {formatDateRange(snippet.startDate, snippet.endDate)}
+                      </div>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm(`Are you sure you want to delete the reflection for Week ${snippet.weekNumber}?`)) {
+                          handleDeleteSnippet(snippet.id)
+                        }
+                      }}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-red-100 text-red-600 hover:text-red-700"
+                      title="Delete reflection"
+                      aria-label={`Delete reflection for Week ${snippet.weekNumber}`}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
                 
                 {totalPages > 1 && (

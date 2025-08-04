@@ -412,7 +412,7 @@ export class UserScopedDataService {
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
           expiresAt: data.expiresAt,
-          metadata: data.metadata || {},
+          metadata: JSON.stringify(data.metadata || {}),
           isActive: data.isActive ?? true
         },
         select: {
