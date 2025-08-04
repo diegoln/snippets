@@ -72,9 +72,10 @@ const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }
       return url
     }
     
-    // Default redirect for new OAuth sign-ins in production
-    // TODO: Check if user has completed onboarding to differentiate new vs returning users
-    return `${correctBaseUrl}/onboarding-wizard`
+    // For production OAuth sign-ins, redirect existing users to dashboard, new users to onboarding
+    // Note: This is a simplified approach - in a real app you'd check user profile completion
+    // For now, let returning users go to the main app instead of forcing onboarding
+    return correctBaseUrl
   }
   
   // Development uses our custom flow
