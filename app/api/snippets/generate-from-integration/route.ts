@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
+import { snippetRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
 
 // Input validation schema
 const GenerateSnippetSchema = z.object({
@@ -35,6 +36,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check rate limiting
+    const rateLimitResult = snippetRateLimit.check(userId)
+    if (!rateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(rateLimitResult)
+      return NextResponse.json(
+        createRateLimitResponse(rateLimitResult.resetTime),
+        { status: 429, headers }
+      )
+    }
+
     // Validate request body
     let body
     try {
@@ -43,6 +54,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
         { status: 400 }
+      )
+    }
+
+    // Check payload size before processing (prevent memory issues and excessive API costs)
+    const payloadSize = JSON.stringify(body).length
+    if (payloadSize > 100000) { // 100KB limit
+      return NextResponse.json(
+        { error: 'Calendar data too large. Please reduce the date range or contact support.' },
+        { status: 413 }
       )
     }
 
@@ -59,9 +79,12 @@ export async function POST(request: NextRequest) {
 
     const { weekData, userProfile } = validationResult.data
 
+    // Sanitize calendar data before sending to LLM (remove sensitive information)
+    const sanitizedCalendarData = sanitizeCalendarData(weekData)
+
     // Generate LLM-powered weekly snippet
     const llmResponse = await generateWeeklySnippetWithLLM({
-      calendarData: weekData,
+      calendarData: sanitizedCalendarData,
       userProfile,
       userId
     })
@@ -74,11 +97,65 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error generating snippet from integration:', error)
+    // Enhanced error logging with context
+    const errorContext = {
+      userId,
+      timestamp: new Date().toISOString(),
+      payloadSize: body ? JSON.stringify(body).length : 0,
+      userProfile: validationResult?.data?.userProfile || 'unknown',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+    console.error('Error generating snippet from integration:', errorContext)
+    
     return NextResponse.json(
       { error: 'Failed to generate weekly snippet' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Sanitize calendar data to remove sensitive information before sending to LLM
+ */
+function sanitizeCalendarData(weekData: any) {
+  // Keywords that indicate potentially sensitive content
+  const sensitiveKeywords = [
+    'confidential', 'private', 'salary', 'compensation', 'performance review',
+    'layoffs', 'termination', 'resignation', 'interview', 'candidate',
+    'legal', 'lawsuit', 'compliance', 'audit', 'security incident',
+    'password', 'credentials', 'api key', 'token', 'secret'
+  ]
+
+  const sanitizeText = (text: string): string => {
+    if (!text) return text
+    
+    // Check for sensitive keywords (case insensitive)
+    const lowerText = text.toLowerCase()
+    const hasSensitiveContent = sensitiveKeywords.some(keyword => 
+      lowerText.includes(keyword)
+    )
+    
+    if (hasSensitiveContent) {
+      // Replace with generic description
+      return '[Meeting content filtered for privacy]'
+    }
+    
+    // Remove potential email addresses and phone numbers
+    return text
+      .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[email]')
+      .replace(/\b\d{3}-\d{3}-\d{4}\b/g, '[phone]')
+      .replace(/\b\d{10}\b/g, '[phone]')
+  }
+
+  return {
+    ...weekData,
+    meetingContext: weekData.meetingContext.map(sanitizeText),
+    weeklyContextSummary: sanitizeText(weekData.weeklyContextSummary),
+    keyMeetings: weekData.keyMeetings.map((meeting: any) => ({
+      ...meeting,
+      summary: sanitizeText(meeting.summary || ''),
+      description: sanitizeText(meeting.description || '')
+    }))
   }
 }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { llmProxy } from '../../../../lib/llmproxy'
+import { reflectionRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
 
 // Input validation schema
 const GenerateReflectionSchema = z.object({
@@ -26,6 +27,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check rate limiting
+    const rateLimitResult = reflectionRateLimit.check(userId)
+    if (!rateLimitResult.allowed) {
+      const headers = createRateLimitHeaders(rateLimitResult)
+      return NextResponse.json(
+        createRateLimitResponse(rateLimitResult.resetTime),
+        { status: 429, headers }
+      )
+    }
+
     // Validate request body
     let body
     try {
@@ -34,6 +45,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Invalid JSON in request body' },
         { status: 400 }
+      )
+    }
+
+    // Check payload size before processing
+    const payloadSize = JSON.stringify(body).length
+    if (payloadSize > 50000) { // 50KB limit for reflection drafts
+      return NextResponse.json(
+        { error: 'Reflection data too large. Please shorten the content.' },
+        { status: 413 }
       )
     }
 
@@ -65,7 +85,18 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error generating reflection draft:', error)
+    // Enhanced error logging with context
+    const errorContext = {
+      userId,
+      timestamp: new Date().toISOString(),
+      payloadSize: body ? JSON.stringify(body).length : 0,
+      userProfile: validationResult?.data?.userProfile || 'unknown',
+      weeklySnippetLength: validationResult?.data?.weeklySnippet?.length || 0,
+      bulletsCount: validationResult?.data?.bullets?.length || 0,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }
+    console.error('Error generating reflection draft:', errorContext)
+    
     return NextResponse.json(
       { error: 'Failed to generate reflection draft' },
       { status: 500 }
