@@ -36,7 +36,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://testuser:testpass@db:5432/testdb
-      - NEXTAUTH_SECRET=production-test-secret
+      - NEXTAUTH_SECRET=mock-dev-key-for-local-docker
       - NEXTAUTH_URL=http://localhost:8080
     depends_on:
       - db

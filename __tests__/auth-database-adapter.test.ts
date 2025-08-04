@@ -44,7 +44,7 @@ describe('NextAuth Database Adapter', () => {
     // Reset environment variables
     process.env.NODE_ENV = 'production'
     process.env.NEXTAUTH_URL = 'https://test.example.com'
-    process.env.NEXTAUTH_SECRET = 'test-secret'
+    process.env.NEXTAUTH_SECRET = 'mock-dev-key-for-testing'
   })
 
   afterEach(() => {
