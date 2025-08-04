@@ -134,7 +134,7 @@ cat > oauth-config.json << EOF
   "service_name": "$SERVICE_NAME",
   "service_url": "$SERVICE_URL",
   "nextauth_url": "$SERVICE_URL",
-  "redirect_uris": $(printf '%s\n' "${REDIRECT_URIS[@]}" | jq -R . | jq -s .),
+  "redirect_uris": $(jq --null-input --compact-output '$ARGS.positional' --args "${REDIRECT_URIS[@]}"),
   "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "manual_update_url": "https://console.cloud.google.com/apis/credentials/oauthclient/$OAUTH_CLIENT_ID?project=$PROJECT_ID"
 }

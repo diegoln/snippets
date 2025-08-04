@@ -63,39 +63,18 @@ UPDATE_REQUEST=$(cat <<EOF
 EOF
 )
 
-# Update OAuth client using Google API
-echo "🔄 Updating OAuth client redirect URIs..."
-RESPONSE=$(curl -s -X PUT \
-  "https://iamcredentials.googleapis.com/v1/projects/$PROJECT_ID/serviceAccounts/$OAUTH_CLIENT_ID@$PROJECT_ID.iam.gserviceaccount.com/credentials" \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$UPDATE_REQUEST" 2>&1) || true
+# Note: Google's OAuth2 API doesn't support automated client updates via public APIs
+# This is a known limitation - OAuth client redirect URIs must be updated manually
+echo "📝 Configuring application for OAuth..."
 
-# Check if we need to use the OAuth2 API instead
-if [[ "$RESPONSE" == *"404"* ]] || [[ "$RESPONSE" == *"not found"* ]]; then
-    echo "⚠️  IAM Credentials API not applicable, trying OAuth2 API..."
-    
-    # Try the OAuth2 API endpoint
-    RESPONSE=$(curl -s -X PUT \
-        "https://oauth2.googleapis.com/v1/clients/$OAUTH_CLIENT_ID" \
-        -H "Authorization: Bearer $ACCESS_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d "$UPDATE_REQUEST" 2>&1) || true
-fi
+# Update the NEXTAUTH_URL to match the service URL
+gcloud run services update "$SERVICE_NAME" \
+    --region="$REGION" \
+    --project="$PROJECT_ID" \
+    --update-env-vars="NEXTAUTH_URL=$SERVICE_URL" \
+    --quiet
 
-# If API calls fail, fall back to updating the application configuration
-if [[ "$RESPONSE" == *"error"* ]] || [[ "$RESPONSE" == *"404"* ]]; then
-    echo "⚠️  Direct OAuth client update not supported via API"
-    echo "📝 Updating application configuration instead..."
-    
-    # Update the NEXTAUTH_URL to match the service URL
-    gcloud run services update "$SERVICE_NAME" \
-        --region="$REGION" \
-        --project="$PROJECT_ID" \
-        --update-env-vars="NEXTAUTH_URL=$SERVICE_URL" \
-        --quiet
-    
-    echo "✅ Updated NEXTAUTH_URL to: $SERVICE_URL"
+echo "✅ Updated NEXTAUTH_URL to: $SERVICE_URL"
     
     # Create verification script
     cat > verify-oauth.sh << 'VERIFY_EOF'

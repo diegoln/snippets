@@ -9,7 +9,7 @@ set -e
 PROJECT_ID="${PROJECT_ID:-advanceweekly-prod}"
 SERVICE_NAME="${SERVICE_NAME:-advanceweekly}"
 REGION="${REGION:-us-central1}"
-MAX_WAIT_TIME=300  # 5 minutes
+MAX_WAIT_TIME=180  # 3 minutes
 CHECK_INTERVAL=10  # 10 seconds
 
 # Colors
