@@ -60,11 +60,11 @@ class RateLimiter {
 
   private cleanup() {
     const now = Date.now()
-    for (const [key, entry] of this.store) {
+    this.store.forEach((entry, key) => {
       if (now > entry.resetTime) {
         this.store.delete(key)
       }
-    }
+    })
   }
 
   // For testing - reset all limits

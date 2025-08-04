@@ -18,8 +18,10 @@ const GenerateReflectionSchema = z.object({
  * Generate LLM-powered reflection draft from weekly snippet
  */
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -85,14 +87,10 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    // Enhanced error logging with context
+    // Enhanced error logging with context  
     const errorContext = {
-      userId,
+      userId: userId || 'unknown',
       timestamp: new Date().toISOString(),
-      payloadSize: body ? JSON.stringify(body).length : 0,
-      userProfile: validationResult?.data?.userProfile || 'unknown',
-      weeklySnippetLength: validationResult?.data?.weeklySnippet?.length || 0,
-      bulletsCount: validationResult?.data?.bullets?.length || 0,
       error: error instanceof Error ? error.message : 'Unknown error'
     }
     console.error('Error generating reflection draft:', errorContext)

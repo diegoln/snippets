@@ -27,8 +27,10 @@ const GenerateSnippetSchema = z.object({
  * Generate LLM-powered weekly snippet from integration data
  */
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
-    const userId = await getUserIdFromRequest(request)
+    userId = await getUserIdFromRequest(request)
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -99,10 +101,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     // Enhanced error logging with context
     const errorContext = {
-      userId,
+      userId: userId || 'unknown',
       timestamp: new Date().toISOString(),
-      payloadSize: body ? JSON.stringify(body).length : 0,
-      userProfile: validationResult?.data?.userProfile || 'unknown',
       error: error instanceof Error ? error.message : 'Unknown error'
     }
     console.error('Error generating snippet from integration:', errorContext)
