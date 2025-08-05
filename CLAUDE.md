@@ -81,5 +81,8 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
   * Address all comments and feedback from the review
   * Once the PR is fully approved, merge the changes
 
+## Development Reminders
+- Always check and wait for dev server to be healthy when you run it.
+
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)

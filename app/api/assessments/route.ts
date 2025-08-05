@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { getDevUserIdFromRequest } from '../../../lib/dev-auth'
 import { createUserDataService } from '../../../lib/user-scoped-data'
 import { llmProxy } from '../../../lib/llmproxy'
 import { AssessmentContext } from '../../../types/performance'
@@ -11,7 +12,11 @@ import { buildPerformanceAssessmentPrompt } from './performance-assessment-promp
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -175,7 +180,11 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

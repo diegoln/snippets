@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
 import { ErrorBoundary } from './ErrorBoundary'
+import { CareerGuidelinesStep } from './CareerGuidelinesStep'
 import { getWeekDates } from '../lib/utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
 import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '../constants/user'
+import { useCareerGuidelinesGeneration } from '../hooks/useAsyncOperation'
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
@@ -88,6 +90,11 @@ interface WizardFormData {
   customRole: string
   level: string
   customLevel: string
+  careerGuidelines: {
+    currentLevelPlan: string
+    nextLevelExpectations: string
+    companyLadder?: string
+  } | null
   reflectionContent: string
 }
 
@@ -124,13 +131,28 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
 
+  // Career guidelines generation hook
+  const {
+    generateCareerGuidelines,
+    operation: careerGuidelinesOperation,
+    isCreating: isGeneratingCareerGuidelines,
+    isComplete: isCareerGuidelinesComplete,
+    isError: careerGuidelinesError,
+    progress: careerGuidelinesProgress
+  } = useCareerGuidelinesGeneration()
+
   // Load existing integrations on component mount
   useEffect(() => {
     const loadExistingIntegrations = async () => {
       try {
-        const response = await fetch('/api/integrations')
+        const response = await fetch('/api/integrations', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          }
+        })
         if (response.ok) {
-          const integrations = await response.json()
+          const data = await response.json()
+          const integrations = data.integrations || []
           const existingTypes = new Set<string>(integrations.map((i: any) => i.type as string))
           setConnectedIntegrations(existingTypes)
         }
@@ -172,6 +194,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       customRole: !isKnownRole && role ? role : '',
       level: isKnownLevel ? level : (level ? 'other' : ''),
       customLevel: !isKnownLevel && level ? level : '',
+      careerGuidelines: null,
       reflectionContent: '',
     }
   })
@@ -219,9 +242,9 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       try {
         const { step, data, integrations, bullets } = JSON.parse(savedProgress)
         
-        // Only restore if it's not the final success step (step 3)
+        // Only restore if it's not the final success step (step 4)
         // If user reached success but onboarding wasn't completed, they should start over
-        if (step !== 3) {
+        if (step !== 4) {
           setCurrentStep(step || 0)
           setFormData(prev => ({ ...prev, ...data }))
           setConnectedIntegrations(new Set(integrations || []))
@@ -240,8 +263,8 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
 
   // Save progress to localStorage whenever state changes (debounced)
   useEffect(() => {
-    // Don't save if we're on the success step (step 3) as onboarding is complete
-    if (currentStep !== 3) {
+    // Don't save if we're on the success step (step 4) as onboarding is complete
+    if (currentStep !== 4) {
       saveProgressToLocalStorage(currentStep, formData, connectedIntegrations, integrationBullets)
     }
   }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage])
@@ -254,6 +277,38 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       }
     }
   }, [])
+
+  // Start career guidelines generation when user reaches integration step
+  useEffect(() => {
+    if (currentStep === 1 && formData.role && formData.level && !careerGuidelinesOperation && !isGeneratingCareerGuidelines) {
+      const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
+      const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
+      
+      if (effectiveRole && effectiveLevel) {
+        console.log('Starting career guidelines generation in parallel with integration step')
+        generateCareerGuidelines({
+          role: effectiveRole,
+          level: effectiveLevel,
+          companyLadder: formData.careerGuidelines?.companyLadder || undefined
+        })
+      }
+    }
+  }, [currentStep, formData.role, formData.level, formData.customRole, formData.customLevel, formData.careerGuidelines?.companyLadder, careerGuidelinesOperation, isGeneratingCareerGuidelines, generateCareerGuidelines])
+
+  // Handle career guidelines regeneration
+  const handleCareerGuidelinesRegenerate = useCallback(() => {
+    const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
+    const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
+    
+    if (effectiveRole && effectiveLevel) {
+      console.log('Regenerating career guidelines')
+      generateCareerGuidelines({
+        role: effectiveRole,
+        level: effectiveLevel,
+        companyLadder: formData.careerGuidelines?.companyLadder || undefined
+      })
+    }
+  }, [formData.role, formData.level, formData.customRole, formData.customLevel, formData.careerGuidelines?.companyLadder, generateCareerGuidelines])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -290,7 +345,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Connect to Google Calendar integration and generate LLM-powered snippet
         const response = await fetch('/api/integrations', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
           body: JSON.stringify({ type: 'google_calendar' })
         })
 
@@ -299,7 +357,11 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         }
 
         // Fetch previous week's calendar data with LLM processing
-        const dataResponse = await fetch('/api/integrations?test=true')
+        const dataResponse = await fetch('/api/integrations?test=true', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123'
+          }
+        })
         if (!dataResponse.ok) {
           throw new Error('Failed to fetch calendar data')
         }
@@ -309,7 +371,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Generate LLM-powered weekly snippet from calendar data
         const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
           body: JSON.stringify({
             integrationType: 'google_calendar',
             weekData: calendarData.weekData,
@@ -336,7 +401,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Generate LLM-powered reflection draft from weekly snippet
         const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
           body: JSON.stringify({
             weeklySnippet: snippetData.weeklySnippet,
             bullets: snippetData.bullets,
@@ -415,7 +483,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           await handleApiError(profileResponse, 'Update profile')
         }
         
-        // Success - move to next step
+        // Success - move to next step (career plan)
         setError(null)
         setCurrentStep(1)
       } catch (err) {
@@ -431,13 +499,26 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       return
     }
     
-    if (currentStep === 1 && connectedIntegrations.size === 0) {
-      setError('Please connect at least one integration')
+    if (currentStep === 1) {
+      // Step 1 is integration - validate integration is connected
+      if (connectedIntegrations.size === 0) {
+        setError('Please connect at least one integration')
+        return
+      }
+      setError(null)
+      setCurrentStep(2) // Move to career plan
+      return
+    }
+    
+    if (currentStep === 2) {
+      // Step 2 is career guidelines - optional, can proceed without completion
+      setError(null)
+      setCurrentStep(3) // Move to reflection
       return
     }
     
     setError(null)
-    setCurrentStep(prev => Math.min(prev + 1, 2))
+    setCurrentStep(prev => Math.min(prev + 1, 4))
   }, [currentStep, formData, connectedIntegrations, handleApiError])
 
   const handleBack = useCallback(() => {
@@ -499,7 +580,11 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       }
       
       // Move to success step
-      setCurrentStep(3)
+      setCurrentStep(4)
+      
+      // Preload the dashboard by setting a flag in localStorage
+      // This helps the main page know onboarding is complete without an API call
+      localStorage.setItem('onboarding-just-completed', 'true')
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message)
@@ -512,9 +597,9 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [formData, integrationBullets, handleApiError, onOnboardingComplete])
 
-  // Update reflection content when we reach step 3
+  // Update reflection content when we reach step 3 (reflection step)
   useEffect(() => {
-    if (currentStep === 2 && !formData.reflectionContent) {
+    if (currentStep === 3 && !formData.reflectionContent) {
       const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
       const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
       const allBullets = Object.values(integrationBullets).flat()
@@ -530,16 +615,31 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [currentStep, formData.reflectionContent, formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
+  const handleCareerGuidelinesComplete = useCallback((careerGuidelines: {
+    currentLevelPlan: string
+    nextLevelExpectations: string
+    companyLadder?: string
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      careerGuidelines
+    }))
+  }, [])
+
   const handleGoToDashboard = useCallback(() => {
     // Set loading state immediately for instant feedback
     setLoadingState({ 
       isLoading: true, 
       operation: 'completing-onboarding', 
-      message: 'Taking you to your dashboard...' 
+      message: 'Loading your dashboard...' 
     })
     
-    // Use replace instead of push to avoid back navigation to onboarding
-    // Navigate to root page which will handle proper component rendering
+    // Clear any previous progress and mark as completed
+    localStorage.removeItem('onboarding-progress')
+    localStorage.setItem('onboarding-just-completed', 'true')
+    
+    // Navigate immediately - the main page will use the localStorage flag
+    // to avoid unnecessary API calls
     router.replace('/')
   }, [router])
 
@@ -732,6 +832,26 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       ),
     },
     {
+      title: 'Your Career Guidelines',
+      subtitle: 'We\'ve generated personalized guidelines based on your role and level. You can skip this step and fill it in later.',
+      content: (
+        <CareerGuidelinesStep
+          role={formData.role === 'other' ? formData.customRole : formData.role}
+          level={formData.level === 'other' ? formData.customLevel : formData.level}
+          companyLadder={formData.careerGuidelines?.companyLadder}
+          onComplete={handleCareerGuidelinesComplete}
+          autoGenerate={false}
+          showContinueButton={false}
+          externalOperation={careerGuidelinesOperation}
+          externalIsGenerating={isGeneratingCareerGuidelines}
+          externalIsComplete={isCareerGuidelinesComplete}
+          externalError={careerGuidelinesError}
+          externalProgress={careerGuidelinesProgress}
+          onRegenerate={handleCareerGuidelinesRegenerate}
+        />
+      ),
+    },
+    {
       title: 'Review your first reflection',
       subtitle: `Nice work! ${formData.level ? `Two of these show cross-team work—great for a ${formData.level}-level ${formData.role}.` : ''}`,
       content: (
@@ -908,7 +1028,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 
           {/* Navigation */}
           <div className="flex justify-between items-center">
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={handleBack}
                 disabled={currentStep === 0}
@@ -920,7 +1040,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <div /> // Empty div for spacing
             )}
             
-            {currentStep < 2 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={handleNext}
                 disabled={loadingState.isLoading}
@@ -931,11 +1051,13 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                     <LoadingSpinner size="sm" />
                     <span>{loadingState.message}</span>
                   </div>
+                ) : currentStep === 2 ? (
+                  'Continue (Skip for Now) →'
                 ) : (
                   'Continue →'
                 )}
               </button>
-            ) : currentStep === 2 ? (
+            ) : currentStep === 3 ? (
               <button
                 onClick={handleSave}
                 disabled={loadingState.isLoading}

@@ -108,8 +108,16 @@ export const AuthenticatedApp = (): JSX.Element => {
         
         // Fetch dashboard data in parallel
         const [snippetsResponse, assessmentsResponse] = await Promise.all([
-          fetch('/api/snippets'),
-          fetch('/api/assessments')
+          fetch('/api/snippets', {
+            headers: {
+              'X-Dev-User-Id': 'dev-user-123'
+            }
+          }),
+          fetch('/api/assessments', {
+            headers: {
+              'X-Dev-User-Id': 'dev-user-123'
+            }
+          })
         ])
 
         // Handle snippets response
@@ -170,6 +178,7 @@ export const AuthenticatedApp = (): JSX.Element => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
         },
         body: JSON.stringify({
           id: selectedSnippet.id,
@@ -257,6 +266,7 @@ export const AuthenticatedApp = (): JSX.Element => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
         },
         body: JSON.stringify(sanitizedRequest)
       })
@@ -303,7 +313,10 @@ export const AuthenticatedApp = (): JSX.Element => {
     try {
       const response = await fetch('/api/snippets', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
+        },
         body: JSON.stringify({ id: snippetId })
       })
 
@@ -344,6 +357,7 @@ export const AuthenticatedApp = (): JSX.Element => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
         },
         body: JSON.stringify({
           weekNumber: currentWeek,

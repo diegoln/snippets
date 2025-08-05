@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/auth-utils'
-import { createUserDataService } from '@/lib/user-scoped-data'
+import { getUserIdFromRequest } from '../../../../lib/auth-utils'
+import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
+import { createUserDataService } from '../../../../lib/user-scoped-data'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    // Get authenticated user ID from session (with dev fallback)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -57,8 +61,11 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    // Get authenticated user ID from session (with dev fallback)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

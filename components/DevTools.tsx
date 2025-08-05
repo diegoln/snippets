@@ -1,5 +1,8 @@
 'use client'
 
+import { useEffect } from 'react'
+import { setDevSession } from '../lib/dev-auth'
+
 /**
  * Development Tools Component - Updated 2025-01-01
  * 
@@ -9,6 +12,13 @@
  */
 
 export function DevTools() {
+  // Initialize dev session on component mount
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      setDevSession()
+    }
+  }, [])
+
   if (process.env.NODE_ENV !== 'development') {
     return null
   }
@@ -47,13 +57,19 @@ export function DevTools() {
 
   const resetOnboarding = async () => {
     try {
+      // Ensure dev session is set for authentication
+      setDevSession()
+      
       // Clear onboarding progress from localStorage
       localStorage.removeItem('onboarding-progress')
       
       // Reset onboarding status in database via API
       const response = await fetch('/api/user/onboarding', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
+        },
         credentials: 'same-origin',
       })
       
