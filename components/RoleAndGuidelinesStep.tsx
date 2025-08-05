@@ -98,6 +98,13 @@ export function RoleAndGuidelinesStep({
       return
     }
 
+    // Validate file size (10MB limit)
+    const maxFileSize = 10 * 1024 * 1024 // 10MB in bytes
+    if (file.size > maxFileSize) {
+      setError('File size must be less than 10MB. Please upload a smaller file.')
+      return
+    }
+
     setIsUploading(true)
     setIsLoading(true) // Show same loading state as generate button
     setUploadSuccess(false)
@@ -262,7 +269,13 @@ export function RoleAndGuidelinesStep({
   const sanitizeInput = (input: string): string => {
     return input
       .trim()
-      .replace(/[<>\"'&]/g, '')
+      .replace(/[<>\"'&]/g, (match) => ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '&': '&amp;'
+      }[match] || match))
       .replace(/\s+/g, ' ')
       .substring(0, 100)
   }
