@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Unit Tests for generate-schema.js
  * 
@@ -132,103 +130,152 @@ model Integration {
   }
 ];
 
-// Run tests
-console.log('🧪 Running generate-schema.js unit tests...\n');
-
-let passed = 0;
-let failed = 0;
-
-for (const test of tests) {
-  console.log(`Testing: ${test.name}`);
+// Jest test suite
+describe('generate-schema.js', () => {
+  let testDirCounter = 0;
   
-  let testDir;
-  try {
-    if (test.template) {
-      const { testDir: dir } = createTestTemplate(test.template);
-      testDir = dir;
-    } else {
-      // Create empty test directory for missing template test
-      testDir = path.join(__dirname, 'temp');
-      const scriptsDir = path.join(testDir, 'scripts');
-      if (!fs.existsSync(testDir)) {
-        fs.mkdirSync(testDir, { recursive: true });
-      }
-      if (!fs.existsSync(scriptsDir)) {
-        fs.mkdirSync(scriptsDir, { recursive: true });
-      }
-      
-      // Copy script but don't create template
-      const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
-      const testScript = path.join(scriptsDir, 'generate-schema.js');
-      fs.copyFileSync(originalScript, testScript);
-    }
-    
-    const result = runSchemaGeneration(testDir, test.environment);
-    
-    if (test.shouldFail) {
-      if (result.success) {
-        console.log(`❌ FAIL - Expected failure but test passed`);
-        failed++;
-      } else if (result.error.includes(test.expectedError)) {
-        console.log(`✅ PASS - Failed with expected error`);
-        passed++;
-      } else {
-        console.log(`❌ FAIL - Wrong error message. Expected: "${test.expectedError}", Got: "${result.error}"`);
-        failed++;
-      }
-    } else {
-      if (!result.success) {
-        console.log(`❌ FAIL - ${result.error}`);
-        failed++;
-      } else {
-        // Check generated schema content
-        const schemaPath = path.join(testDir, 'prisma/schema.prisma');
-        if (!fs.existsSync(schemaPath)) {
-          console.log(`❌ FAIL - Schema file not generated`);
-          failed++;
-        } else {
-          const generatedSchema = fs.readFileSync(schemaPath, 'utf8');
-          
-          const hasCorrectProvider = generatedSchema.includes(`provider = "${test.expectedProvider}"`);
-          const hasCorrectMetadata = generatedSchema.includes(`metadata ${test.expectedMetadata}`);
-          const hasNoPlaceholders = !generatedSchema.match(/__[A-Z_]+__/g);
-          
-          if (hasCorrectProvider && hasCorrectMetadata && hasNoPlaceholders) {
-            console.log(`✅ PASS - Schema generated correctly`);
-            passed++;
-          } else {
-            console.log(`❌ FAIL - Schema content incorrect`);
-            if (!hasCorrectProvider) console.log(`  - Expected provider: ${test.expectedProvider}`);
-            if (!hasCorrectMetadata) console.log(`  - Expected metadata: ${test.expectedMetadata}`);
-            if (!hasNoPlaceholders) console.log(`  - Found unreplaced placeholders`);
-            failed++;
-          }
-        }
-      }
-    }
-    
-  } catch (error) {
-    console.log(`❌ FAIL - Test setup error: ${error.message}`);
-    failed++;
-  } finally {
-    if (testDir) {
+  beforeEach(() => {
+    testDirCounter++;
+  });
+  
+  afterEach(() => {
+    // Clean up any test directories
+    const testDir = path.join(__dirname, `temp-${testDirCounter}`);
+    if (fs.existsSync(testDir)) {
       cleanup(testDir);
     }
+  });
+  
+  // Helper function to create unique test directory
+  function createUniqueTestTemplate(content) {
+    const testDir = path.join(__dirname, `temp-${testDirCounter}`);
+    const prismaDir = path.join(testDir, 'prisma');
+    const scriptsDir = path.join(testDir, 'scripts');
+    
+    // Create directory structure
+    if (!fs.existsSync(testDir)) {
+      fs.mkdirSync(testDir, { recursive: true });
+    }
+    if (!fs.existsSync(prismaDir)) {
+      fs.mkdirSync(prismaDir, { recursive: true });
+    }
+    if (!fs.existsSync(scriptsDir)) {
+      fs.mkdirSync(scriptsDir, { recursive: true });
+    }
+    
+    const templatePath = path.join(prismaDir, 'schema.template.prisma');
+    fs.writeFileSync(templatePath, content);
+    
+    // Copy the generate-schema.js script to test directory
+    const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
+    const testScript = path.join(scriptsDir, 'generate-schema.js');
+    fs.copyFileSync(originalScript, testScript);
+    
+    return { testDir, templatePath, scriptPath: testScript };
   }
   
-  console.log('');
+  test('should generate SQLite schema for development environment', () => {
+    const template = `
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
 }
 
-// Summary
-console.log('📊 Test Results:');
-console.log(`✅ Passed: ${passed}`);
-console.log(`❌ Failed: ${failed}`);
-console.log(`📈 Total: ${passed + failed}`);
-
-if (failed > 0) {
-  console.log('\n❌ Some tests failed');
-  process.exit(1);
-} else {
-  console.log('\n✅ All tests passed!');
-  process.exit(0);
+model Integration {
+  metadata __METADATA_TYPE__ @default("{}")
+}`;
+    
+    const { testDir } = createUniqueTestTemplate(template);
+    const result = runSchemaGeneration(testDir, 'development');
+    
+    expect(result.success).toBe(true);
+    
+    const schemaPath = path.join(testDir, 'prisma/schema.prisma');
+    expect(fs.existsSync(schemaPath)).toBe(true);
+    
+    const generatedSchema = fs.readFileSync(schemaPath, 'utf8');
+    expect(generatedSchema).toContain('provider = "sqlite"');
+    expect(generatedSchema).toContain('metadata String');
+    expect(generatedSchema).not.toMatch(/__[A-Z_]+__/g);
+  });
+  
+  test('should generate PostgreSQL schema for production environment', () => {
+    const template = `
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
 }
+
+model Integration {
+  metadata __METADATA_TYPE__ @default("{}")
+}`;
+    
+    const { testDir } = createUniqueTestTemplate(template);
+    const result = runSchemaGeneration(testDir, 'production');
+    
+    expect(result.success).toBe(true);
+    
+    const schemaPath = path.join(testDir, 'prisma/schema.prisma');
+    expect(fs.existsSync(schemaPath)).toBe(true);
+    
+    const generatedSchema = fs.readFileSync(schemaPath, 'utf8');
+    expect(generatedSchema).toContain('provider = "postgresql"');
+    expect(generatedSchema).toContain('metadata Json');
+    expect(generatedSchema).not.toMatch(/__[A-Z_]+__/g);
+  });
+  
+  test('should throw error when template file is missing', () => {
+    const testDir = path.join(__dirname, `temp-${testDirCounter}`);
+    const scriptsDir = path.join(testDir, 'scripts');
+    
+    if (!fs.existsSync(testDir)) {
+      fs.mkdirSync(testDir, { recursive: true });
+    }
+    if (!fs.existsSync(scriptsDir)) {
+      fs.mkdirSync(scriptsDir, { recursive: true });
+    }
+    
+    // Copy script but don't create template
+    const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
+    const testScript = path.join(scriptsDir, 'generate-schema.js');
+    fs.copyFileSync(originalScript, testScript);
+    
+    const result = runSchemaGeneration(testDir, 'development');
+    
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('schema.template.prisma not found');
+  });
+  
+  test('should throw error when required placeholders are missing', () => {
+    const template = `
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}`;
+    
+    const { testDir } = createUniqueTestTemplate(template);
+    const result = runSchemaGeneration(testDir, 'development');
+    
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Missing required placeholders');
+  });
+  
+  test('should throw error when unknown placeholders are found', () => {
+    const template = `
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
+}
+
+model Integration {
+  metadata __METADATA_TYPE__ @default("{}")
+  unknown __UNKNOWN_PLACEHOLDER__
+}`;
+    
+    const { testDir } = createUniqueTestTemplate(template);
+    const result = runSchemaGeneration(testDir, 'development');
+    
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Unreplaced placeholders found');
+  });
+});
