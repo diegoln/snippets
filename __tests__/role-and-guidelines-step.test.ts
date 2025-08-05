@@ -94,8 +94,8 @@ describe('RoleAndGuidelinesStep Logic', () => {
     test('should validate standard role/level combinations', () => {
       // Simulate the isStandardCombo logic
       const isStandardCombo = (role: string, level: string) => {
-        const VALID_ROLES = ['engineering', 'product', 'design', 'marketing', 'sales', 'data', 'operations']
-        const VALID_LEVELS = ['junior', 'mid', 'senior', 'staff', 'principal', 'director']
+        const VALID_ROLES = ['engineering', 'design', 'product', 'data', 'other']
+        const VALID_LEVELS = ['junior', 'mid', 'senior', 'staff', 'principal', 'manager', 'senior-manager', 'director', 'other']
         
         const effectiveRole = role === 'other' ? '' : role
         const effectiveLevel = level === 'other' ? '' : level
@@ -109,6 +109,7 @@ describe('RoleAndGuidelinesStep Logic', () => {
       expect(isStandardCombo('engineering', 'senior')).toBe(true)
       expect(isStandardCombo('product', 'mid')).toBe(true)
       expect(isStandardCombo('design', 'principal')).toBe(true)
+      expect(isStandardCombo('data', 'staff')).toBe(true)
 
       // Test invalid combinations
       expect(isStandardCombo('other', 'senior')).toBe(false)
@@ -121,15 +122,22 @@ describe('RoleAndGuidelinesStep Logic', () => {
       const sanitizeInput = (input: string): string => {
         return input
           .trim()
-          .replace(/[<>"'&]/g, '')
+          .replace(/[<>"'&]/g, (match) => ({
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '&': '&amp;'
+          }[match] || match))
           .replace(/\s+/g, ' ')
           .substring(0, 100)
       }
 
       expect(sanitizeInput('  Solution Architect  ')).toBe('Solution Architect')
-      expect(sanitizeInput('Role<script>alert("xss")</script>')).toBe('Rolescriptalert(xss)/script')
+      expect(sanitizeInput('Role<script>alert("xss")</script>')).toBe('Role&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;')
       expect(sanitizeInput('Role   with   spaces')).toBe('Role with spaces')
       expect(sanitizeInput('A'.repeat(150))).toBe('A'.repeat(100))
+      expect(sanitizeInput('Test & Co "quotes" \'single\' <tag>')).toBe('Test &amp; Co &quot;quotes&quot; &#39;single&#39; &lt;tag&gt;')
     })
 
     test('should determine when guidelines can be generated', () => {
@@ -449,6 +457,32 @@ describe('RoleAndGuidelinesStep Logic', () => {
       // Verify success indicators
       expect(data.currentLevelPlan).toBeTruthy()
       expect(data.nextLevelExpectations).toBeTruthy()
+    })
+
+    test('should validate file size limits', () => {
+      // Simulate file size validation logic
+      const validateFileSize = (fileSize: number) => {
+        const maxFileSize = 10 * 1024 * 1024 // 10MB in bytes
+        if (fileSize > maxFileSize) {
+          return { valid: false, error: 'File size must be less than 10MB. Please upload a smaller file.' }
+        }
+        return { valid: true, error: null }
+      }
+
+      // Test valid file sizes
+      expect(validateFileSize(1024)).toEqual({ valid: true, error: null }) // 1KB
+      expect(validateFileSize(1024 * 1024)).toEqual({ valid: true, error: null }) // 1MB
+      expect(validateFileSize(5 * 1024 * 1024)).toEqual({ valid: true, error: null }) // 5MB
+
+      // Test invalid file sizes
+      expect(validateFileSize(11 * 1024 * 1024)).toEqual({ // 11MB
+        valid: false, 
+        error: 'File size must be less than 10MB. Please upload a smaller file.' 
+      })
+      expect(validateFileSize(50 * 1024 * 1024)).toEqual({ // 50MB
+        valid: false, 
+        error: 'File size must be less than 10MB. Please upload a smaller file.' 
+      })
     })
 
     test('should show loading state during file upload like generate button', () => {
