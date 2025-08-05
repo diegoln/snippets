@@ -158,3 +158,17 @@ model AsyncOperation {
   @@index([status, createdAt])
   @@map("async_operations")
 }
+
+model CareerGuidelineTemplate {
+  id                    String   @id @default(cuid())
+  role                  String   // 'engineering', 'product', 'design', 'data'
+  level                 String   // 'junior', 'mid', 'senior', 'staff', 'principal', etc.
+  currentLevelPlan      String   // Detailed guidelines for current level
+  nextLevelExpectations String   // Expectations for next level
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([role, level], name: "role_level")
+  @@map("career_guideline_templates")
+}

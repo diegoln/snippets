@@ -73,6 +73,70 @@ export function RoleAndGuidelinesStep({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasGeneratedGuidelines, setHasGeneratedGuidelines] = useState(false)
+  
+  // Edit mode state for each textarea
+  const [isEditingCurrentLevel, setIsEditingCurrentLevel] = useState(false)
+  const [isEditingNextLevel, setIsEditingNextLevel] = useState(false)
+
+  // Render markdown content in a more readable format
+  const renderGuidelineContent = (content: string): JSX.Element => {
+    if (!content.trim()) {
+      return <div className="text-gray-500 italic">No content yet</div>
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Rendering content:', content.substring(0, 200) + '...')
+    }
+
+    const lines = content.split('\n')
+    const elements: JSX.Element[] = []
+    let currentKey = 0
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Main category headers (e.g., "* **Impact & Ownership**" or "#### Impact & Ownership")
+      if (line.match(/^\*\s+\*\*(.+?)\*\*\s*$/) || line.match(/^#{1,4}\s+(.+)/)) {
+        const category = line.replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '$1').replace(/^#{1,4}\s+(.+)/, '$1')
+        elements.push(
+          <div key={currentKey++} className="mb-3 mt-4 first:mt-0">
+            <h4 className="font-semibold text-gray-900 text-base mb-2 border-b border-gray-200 pb-1">{category}</h4>
+          </div>
+        )
+      }
+      // Sub-bullets (main descriptions) - handle both * and - bullets
+      else if ((line.match(/^\s*[\*\-]\s+(.+)/) && !line.includes('This looks like:')) || line.match(/^\s{4,}\*\s+(.+)/)) {
+        const description = line.replace(/^\s*[\*\-]\s+(.+)/, '$1').replace(/^\s{4,}\*\s+(.+)/, '$1')
+        elements.push(
+          <div key={currentKey++} className="ml-4 mb-2">
+            <p className="text-gray-700 text-sm leading-relaxed">{description}</p>
+          </div>
+        )
+      }
+      // Handle any other content lines
+      else if (line.trim() !== '' && !line.match(/^\s*$/) && elements.length > 0) {
+        elements.push(
+          <div key={currentKey++} className="mb-2">
+            <p className="text-gray-700 text-sm leading-relaxed">{line.trim()}</p>
+          </div>
+        )
+      }
+    }
+
+    // Fallback: if no elements were parsed, show raw content
+    if (elements.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('No elements parsed, showing raw content')
+      }
+      return (
+        <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+          {content}
+        </div>
+      )
+    }
+
+    return <div className="space-y-1">{elements}</div>
+  }
 
   // Check if current selection is a standard role/level combo
   const isStandardCombo = () => {
@@ -81,11 +145,71 @@ export function RoleAndGuidelinesStep({
     return effectiveRole && effectiveLevel && VALID_ROLES.includes(effectiveRole as any) && VALID_LEVELS.includes(effectiveLevel as any)
   }
 
+  // Get the next level in the progression
+  const getNextLevel = (currentLevel: string): string => {
+    const progression: { [key: string]: string } = {
+      'junior': 'mid',
+      'mid': 'senior',
+      'senior': 'staff',
+      'staff': 'principal',
+      'principal': 'principal', // No next level
+      'manager': 'senior-manager', // Note: using kebab-case to match constants
+      'senior-manager': 'director',
+      'director': 'director' // No next level
+    }
+    
+    return progression[currentLevel] || currentLevel
+  }
+
+  // Get the label for next level as JSX with bold formatting
+  const getNextLevelLabel = (): JSX.Element => {
+    const effectiveLevel = level === 'other' ? customLevel.toLowerCase() : level
+    const effectiveRole = role === 'other' ? customRole : (role ? ROLE_LABELS[role as keyof typeof ROLE_LABELS] : '')
+    
+    if (!effectiveLevel || !effectiveRole) {
+      return <span>Next Level Expectations</span>
+    }
+    
+    // For custom roles/levels, just show "Next Level" without specific name
+    if (role === 'other' || level === 'other') {
+      return <span>Next Level</span>
+    }
+    
+    const nextLevel = getNextLevel(effectiveLevel)
+    
+    // If it's the same level (no progression), show "Advanced [Current Level]"
+    if (nextLevel === effectiveLevel) {
+      const currentLevelLabel = level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
+      return <span>Next Level: <strong>Advanced {currentLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Try to get the standard label for next level
+    const nextLevelLabel = LEVEL_LABELS[nextLevel as keyof typeof LEVEL_LABELS]
+    if (nextLevelLabel) {
+      return <span>Next Level: <strong>{nextLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Fallback for custom levels - capitalize first letter
+    const capitalizedNextLevel = nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)
+    return <span>Next Level: <strong>{capitalizedNextLevel} {effectiveRole}</strong></span>
+  }
+
   // Check if we can generate guidelines
   const canGenerate = () => {
     const effectiveRole = role === 'other' ? customRole.trim() : role
     const effectiveLevel = level === 'other' ? customLevel.trim() : level
     return effectiveRole && effectiveLevel && !hasGeneratedGuidelines && !isUploading
+  }
+
+  // Check if custom fields are properly filled when "other" is selected
+  const validateCustomFields = (): string | null => {
+    if (role === 'other' && !customRole.trim()) {
+      return 'Please enter a custom role'
+    }
+    if (level === 'other' && !customLevel.trim()) {
+      return 'Please enter a custom level'
+    }
+    return null
   }
 
   // Handle file upload and parsing
@@ -154,12 +278,31 @@ export function RoleAndGuidelinesStep({
 
   // Generate or fetch guidelines
   const generateGuidelines = async () => {
-    const effectiveRole = role === 'other' ? customRole : role
-    const effectiveLevel = level === 'other' ? customLevel : level
+    // Validate custom fields first
+    const validationError = validateCustomFields()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const effectiveRole = role === 'other' ? customRole.trim() : role
+    const effectiveLevel = level === 'other' ? customLevel.trim() : level
     
     if (!effectiveRole || !effectiveLevel) {
       setError('Please select both role and level')
       return
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('generateGuidelines called with:', {
+        role,
+        level,
+        customRole,
+        customLevel,
+        effectiveRole,
+        effectiveLevel,
+        isStandard: isStandardCombo()
+      })
     }
 
     setIsLoading(true)
@@ -168,6 +311,9 @@ export function RoleAndGuidelinesStep({
     try {
       // First try to fetch from templates (for standard combos)
       if (isStandardCombo()) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using template API for standard combo')
+        }
         const response = await fetch(
           `/api/career-guidelines/template?role=${encodeURIComponent(effectiveRole)}&level=${encodeURIComponent(effectiveLevel)}`,
           {
@@ -189,6 +335,9 @@ export function RoleAndGuidelinesStep({
       }
       
       // If no template or custom role/level, generate with LLM
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using generation API for custom role/level')
+      }
       const response = await fetch('/api/career-guidelines/generate', {
         method: 'POST',
         headers: {
@@ -207,10 +356,40 @@ export function RoleAndGuidelinesStep({
       }
       
       const data = await response.json()
-      setCurrentLevelPlan(data.currentLevelPlan || '')
-      setNextLevelExpectations(data.nextLevelExpectations || '')
+      
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('API Response data:', {
+          currentLevelPlan: data.currentLevelPlan?.substring(0, 100) + '...',
+          nextLevelExpectations: data.nextLevelExpectations?.substring(0, 100) + '...',
+          hasCurrentPlan: !!data.currentLevelPlan?.trim(),
+          hasNextExpectations: !!data.nextLevelExpectations?.trim()
+        })
+      }
+      
+      // Validate that we actually received content
+      if (!data.currentLevelPlan?.trim() || !data.nextLevelExpectations?.trim()) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Empty guidelines received:', data)
+        }
+        throw new Error('Generated guidelines are empty. Please try again with different role/level values.')
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Setting content:', {
+          currentPlan: data.currentLevelPlan?.length + ' chars',
+          nextExpectations: data.nextLevelExpectations?.length + ' chars'
+        })
+      }
+      
+      setCurrentLevelPlan(data.currentLevelPlan)
+      setNextLevelExpectations(data.nextLevelExpectations)
       setHasGeneratedGuidelines(true)
       setExtractedFromDocument(false)
+      
+      // Force exit edit mode to ensure content is visible
+      setIsEditingCurrentLevel(false)
+      setIsEditingNextLevel(false)
     } catch (err) {
       console.error('Error generating guidelines:', err)
       setError('Failed to generate career guidelines. Please try again.')
@@ -243,6 +422,14 @@ export function RoleAndGuidelinesStep({
   }
 
   const handleContinue = () => {
+    // Force save by exiting edit mode if user is currently editing
+    if (isEditingCurrentLevel) {
+      setIsEditingCurrentLevel(false)
+    }
+    if (isEditingNextLevel) {
+      setIsEditingNextLevel(false)
+    }
+
     const effectiveRole = role === 'other' ? customRole : role
     const effectiveLevel = level === 'other' ? customLevel : level
     
@@ -318,9 +505,17 @@ export function RoleAndGuidelinesStep({
             type="text"
             value={role === 'other' ? customRole : ''}
             onChange={(e) => handleRoleChange('other', sanitizeInput(e.target.value))}
+            onFocus={() => {
+              if (role !== 'other') {
+                handleRoleChange('other', '')
+              }
+            }}
             placeholder="Enter your role (e.g., Solutions Architect)"
-            className="w-full p-3 border border-gray-300 rounded-lg disabled:bg-gray-50"
-            disabled={role !== 'other'}
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              role === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
           />
         </div>
       </div>
@@ -361,9 +556,17 @@ export function RoleAndGuidelinesStep({
             type="text"
             value={level === 'other' ? customLevel : ''}
             onChange={(e) => handleLevelChange('other', sanitizeInput(e.target.value))}
-            placeholder="Enter your level (e.g., Lead, Principal)"
-            className="w-full p-3 border border-gray-300 rounded-lg disabled:bg-gray-50"
-            disabled={level !== 'other'}
+            onFocus={() => {
+              if (level !== 'other') {
+                handleLevelChange('other', '')
+              }
+            }}
+            placeholder="Enter your level (e.g., Lead, Head, VP)"
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              level === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
           />
         </div>
       </div>
@@ -513,28 +716,72 @@ export function RoleAndGuidelinesStep({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Level */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Current Level: {level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]} {role === 'other' ? customRole : ROLE_LABELS[role as keyof typeof ROLE_LABELS]}
-              </label>
-              <textarea
-                value={currentLevelPlan}
-                onChange={(e) => setCurrentLevelPlan(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg text-sm resize-none"
-                rows={10}
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Current Level: <strong>{level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]} {role === 'other' ? customRole : ROLE_LABELS[role as keyof typeof ROLE_LABELS]}</strong>
+                </label>
+                <button
+                  onClick={() => setIsEditingCurrentLevel(!isEditingCurrentLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingCurrentLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingCurrentLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={currentLevelPlan}
+                      onChange={(e) => setCurrentLevelPlan(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter your career guidelines..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(currentLevelPlan)}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Next Level */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Next Level Expectations
-              </label>
-              <textarea
-                value={nextLevelExpectations}
-                onChange={(e) => setNextLevelExpectations(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg text-sm resize-none"
-                rows={10}
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  {getNextLevelLabel()}
+                </label>
+                <button
+                  onClick={() => setIsEditingNextLevel(!isEditingNextLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingNextLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingNextLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={nextLevelExpectations}
+                      onChange={(e) => setNextLevelExpectations(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter next level expectations..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(nextLevelExpectations)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
