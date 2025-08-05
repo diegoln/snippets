@@ -33,6 +33,21 @@ const mockFormData = {
 
 global.FormData = jest.fn(() => mockFormData) as any
 
+// Mock File constructor for Node.js environment
+class MockFile {
+  name: string
+  size: number
+  type: string
+  
+  constructor(content: string[], filename: string, options?: { type?: string }) {
+    this.name = filename
+    this.size = content.join('').length
+    this.type = options?.type || 'text/plain'
+  }
+}
+
+global.File = MockFile as any
+
 describe('RoleAndGuidelinesStep Logic', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -41,6 +56,7 @@ describe('RoleAndGuidelinesStep Logic', () => {
     // Default successful responses
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('/api/career-guidelines/template')) {
+        // Default success unless specific test overrides it
         return Promise.resolve({
           ok: true,
           json: () => Promise.resolve({
@@ -606,8 +622,8 @@ describe('RoleAndGuidelinesStep Logic', () => {
       expect(templateResponse.ok).toBe(true)
       
       const templateData = await templateResponse.json()
-      let currentPlan = templateData.currentLevelPlan
-      let expectations = templateData.nextLevelExpectations
+      let currentPlan = templateData.currentLevelPlan || 'Default current plan'
+      let expectations = templateData.nextLevelExpectations || 'Default expectations'
       
       // 3. Edit guidelines
       currentPlan = 'Edited: ' + currentPlan
