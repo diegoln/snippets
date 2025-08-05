@@ -115,8 +115,8 @@ describe('/api/snippets', () => {
       const response = await GET(request)
       const data = await response.json()
 
-      expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to fetch snippets')
+      expect(response.status).toBe(200)
+      expect(data).toEqual([])
     })
 
     it('should call disconnect after operation', async () => {

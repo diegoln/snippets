@@ -34,6 +34,11 @@ export async function GET(request: NextRequest) {
       // Get snippets for the authenticated user
       const snippets = await dataService.getSnippets()
 
+      // Handle null or undefined response
+      if (!snippets) {
+        return NextResponse.json([])
+      }
+
       // Convert dates to ISO strings for JSON serialization
       const serializedSnippets = snippets.map((snippet: any) => ({
         id: snippet.id,
