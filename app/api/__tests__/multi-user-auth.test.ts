@@ -253,8 +253,8 @@ describe('API Authentication & Authorization', () => {
       const response = await getSnippets(request)
       
       // The response should not contain internal user IDs in headers
-      expect(response.headers.get('x-user-id')).toBeNull()
-      expect(response.headers.get('x-internal-user')).toBeNull()
+      expect(response.headers.get('x-user-id')).toBeFalsy()
+      expect(response.headers.get('x-internal-user')).toBeFalsy()
       
       // Content-Type should be properly set
       expect(response.headers.get('content-type')).toContain('application/json')

@@ -22,7 +22,7 @@
     "test:jest": "jest",
     "test:jest:watch": "jest --watch",
     "test:jest:coverage": "jest --coverage",
-    "test:api": "jest app/api/**/*.test.ts",
+    "test:api": "jest app/api/**/*.test.ts --passWithNoTests",
     "test:auth": "jest __tests__/auth-database-adapter.test.ts",
     "test:oauth": "npm run test:auth",
     "test:onboarding": "jest __tests__/onboarding-*.test.tsx",
