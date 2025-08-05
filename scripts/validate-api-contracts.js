@@ -64,6 +64,7 @@ function extractAPIEndpoints(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8');
   const endpoints = [];
   
+  
   // Pattern to match fetch calls
   const fetchPattern = /fetch\s*\(\s*['"`]([^'"`]+)['"`]/g;
   const matches = content.matchAll(fetchPattern);
@@ -75,23 +76,45 @@ function extractAPIEndpoints(filePath) {
     const method = methodMatch ? methodMatch[1] : 'GET';
     
     // Extract body fields
-    const bodyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][^}]+body:[^}]+{([^}]+)}`));
     const bodyFields = new Set();
     
-    if (bodyMatch) {
-      // Extract fields from JSON.stringify body
-      const bodyContent = bodyMatch[1];
-      const fieldMatches = bodyContent.matchAll(/(\w+):/g);
-      for (const fieldMatch of fieldMatches) {
-        bodyFields.add(fieldMatch[1]);
+    // Look for JSON.stringify(variableName) pattern (handle multiline)
+    const stringifyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*(\\w+)\\s*\\)`, 'm'));
+    
+    if (stringifyMatch) {
+      const variableName = stringifyMatch[1];
+      // Look for the variable definition (handle multiline objects)
+      const variablePattern = new RegExp(`const\\s+${variableName}\\s*=\\s*\\{([\\s\\S]*?)\\}`, 'g');
+      const variableMatch = variablePattern.exec(content);
+      
+      if (variableMatch) {
+        const bodyContent = variableMatch[1];
+        const fieldMatches = bodyContent.matchAll(/(\w+):/g);
+        for (const fieldMatch of fieldMatches) {
+          bodyFields.add(fieldMatch[1]);
+        }
+      }
+    } else {
+      // Fallback to direct object pattern
+      const bodyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][^}]+body:[^}]+{([^}]+)}`));
+      
+      if (bodyMatch) {
+        // Extract fields from JSON.stringify body
+        const bodyContent = bodyMatch[1];
+        const fieldMatches = bodyContent.matchAll(/(\w+):/g);
+        for (const fieldMatch of fieldMatches) {
+          bodyFields.add(fieldMatch[1]);
+        }
       }
     }
     
-    endpoints.push({
+    const endpointData = {
       url,
       method,
       bodyFields: Array.from(bodyFields)
-    });
+    };
+    
+    endpoints.push(endpointData);
   }
   
   return endpoints;

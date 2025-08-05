@@ -1,6 +1,6 @@
-# Automated OAuth Deployment with Fixed Domain
+# OAuth Setup and Deployment
 
-This document explains how the AdvanceWeekly application achieves **fully automated deployments** with **zero manual OAuth configuration** using a fixed custom domain.
+This document explains OAuth setup for the AdvanceWeekly application, covering both the modern automated deployment approach and legacy manual setup when needed.
 
 ## 🎯 Problem Solved
 

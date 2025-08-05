@@ -46,6 +46,9 @@ const jestConfig = {
   testPathIgnorePatterns: [
     '/node_modules/',
     
+    // Test utility/setup files (not actual tests)
+    '/__tests__/setup/',                           // Test setup utilities
+    
     // Empty or placeholder test files that cause Jest to fail
     '/__tests__/demo-server.test.js',              // Empty placeholder file
     '/__tests__/performance.test.ts',              // Empty placeholder file  
