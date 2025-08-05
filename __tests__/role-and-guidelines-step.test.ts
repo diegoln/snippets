@@ -553,6 +553,136 @@ describe('RoleAndGuidelinesStep Logic', () => {
       expect(nextLevelExpectations).toBe('Modified expectations')
     })
 
+    test('should save edits when continue is clicked while in edit mode', () => {
+      // Simulate component state
+      let currentLevelPlan = 'Initial plan content'
+      let nextLevelExpectations = 'Initial expectations content'
+      let isEditingCurrentLevel = true
+      let isEditingNextLevel = true
+      
+      // User makes edits in textarea
+      currentLevelPlan = 'User edited plan content'
+      nextLevelExpectations = 'User edited expectations content'
+      
+      // Simulate handleContinue logic - should exit edit mode to save
+      const handleContinue = () => {
+        if (isEditingCurrentLevel) {
+          isEditingCurrentLevel = false // Force save by exiting edit mode
+        }
+        if (isEditingNextLevel) {
+          isEditingNextLevel = false // Force save by exiting edit mode
+        }
+        
+        return {
+          role: 'engineering',
+          customRole: '',
+          level: 'senior',
+          customLevel: '',
+          careerGuidelines: {
+            currentLevelPlan,
+            nextLevelExpectations,
+            companyLadder: ''
+          }
+        }
+      }
+      
+      // Before continue - user is editing
+      expect(isEditingCurrentLevel).toBe(true)
+      expect(isEditingNextLevel).toBe(true)
+      
+      // Click continue
+      const result = handleContinue()
+      
+      // After continue - edit mode should be disabled (content saved)
+      expect(isEditingCurrentLevel).toBe(false)
+      expect(isEditingNextLevel).toBe(false)
+      
+      // Content should be preserved in completion data
+      expect(result.careerGuidelines.currentLevelPlan).toBe('User edited plan content')
+      expect(result.careerGuidelines.nextLevelExpectations).toBe('User edited expectations content')
+    })
+
+    test('should handle continue when only one field is being edited', () => {
+      // Simulate partial edit state
+      let currentLevelPlan = 'Generated plan'
+      let nextLevelExpectations = 'User is editing this field'
+      let isEditingCurrentLevel = false
+      let isEditingNextLevel = true
+      
+      const handleContinue = () => {
+        if (isEditingCurrentLevel) {
+          isEditingCurrentLevel = false
+        }
+        if (isEditingNextLevel) {
+          isEditingNextLevel = false // Should exit edit mode for this field
+        }
+        
+        return {
+          careerGuidelines: {
+            currentLevelPlan,
+            nextLevelExpectations,
+            companyLadder: ''
+          }
+        }
+      }
+      
+      // Before continue
+      expect(isEditingCurrentLevel).toBe(false)
+      expect(isEditingNextLevel).toBe(true)
+      
+      // Click continue
+      const result = handleContinue()
+      
+      // After continue - both should be in view mode
+      expect(isEditingCurrentLevel).toBe(false)
+      expect(isEditingNextLevel).toBe(false)
+      
+      // Both contents should be preserved
+      expect(result.careerGuidelines.currentLevelPlan).toBe('Generated plan')
+      expect(result.careerGuidelines.nextLevelExpectations).toBe('User is editing this field')
+    })
+
+    test('should work normally when continue is clicked in view mode', () => {
+      // Simulate view mode (not editing)
+      let currentLevelPlan = 'Finalized plan content'
+      let nextLevelExpectations = 'Finalized expectations content'
+      let isEditingCurrentLevel = false
+      let isEditingNextLevel = false
+      
+      const handleContinue = () => {
+        // These should be no-ops when already false
+        if (isEditingCurrentLevel) {
+          isEditingCurrentLevel = false
+        }
+        if (isEditingNextLevel) {
+          isEditingNextLevel = false
+        }
+        
+        return {
+          careerGuidelines: {
+            currentLevelPlan,
+            nextLevelExpectations,
+            companyLadder: ''
+          }
+        }
+      }
+      
+      // Before continue - already in view mode
+      expect(isEditingCurrentLevel).toBe(false)
+      expect(isEditingNextLevel).toBe(false)
+      
+      // Click continue
+      const result = handleContinue()
+      
+      // After continue - still in view mode (no change)
+      expect(isEditingCurrentLevel).toBe(false)
+      expect(isEditingNextLevel).toBe(false)
+      
+      // Content should be preserved
+      expect(result.careerGuidelines.currentLevelPlan).toBe('Finalized plan content')
+      expect(result.careerGuidelines.nextLevelExpectations).toBe('Finalized expectations content')
+    })
+
     test('should validate completion requirements', () => {
       const canContinue = (role: string, customRole: string, level: string, customLevel: string, 
                           currentPlan: string, expectations: string) => {

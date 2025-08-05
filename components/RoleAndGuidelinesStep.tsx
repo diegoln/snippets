@@ -73,12 +73,121 @@ export function RoleAndGuidelinesStep({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasGeneratedGuidelines, setHasGeneratedGuidelines] = useState(false)
+  
+  // Edit mode state for each textarea
+  const [isEditingCurrentLevel, setIsEditingCurrentLevel] = useState(false)
+  const [isEditingNextLevel, setIsEditingNextLevel] = useState(false)
+
+  // Render markdown content in a more readable format
+  const renderGuidelineContent = (content: string): JSX.Element => {
+    if (!content.trim()) {
+      return <div className="text-gray-500 italic">No content yet</div>
+    }
+
+    const lines = content.split('\n')
+    const elements: JSX.Element[] = []
+    let currentKey = 0
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Main category headers (e.g., "* **Impact & Ownership**")
+      if (line.match(/^\*\s+\*\*(.+?)\*\*\s*$/)) {
+        const category = line.replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '$1')
+        elements.push(
+          <div key={currentKey++} className="mb-3 mt-4 first:mt-0">
+            <h4 className="font-semibold text-gray-900 text-base mb-2 border-b border-gray-200 pb-1">{category}</h4>
+          </div>
+        )
+      }
+      // Sub-bullets (main descriptions)
+      else if (line.match(/^\s{4}\*\s+(.+)/) && !line.includes('This looks like:')) {
+        const description = line.replace(/^\s{4}\*\s+(.+)/, '$1')
+        elements.push(
+          <div key={currentKey++} className="ml-4 mb-3">
+            <p className="text-gray-700 text-sm leading-relaxed">{description}</p>
+          </div>
+        )
+      }
+      // Examples with flexible spacing - handle both 8 spaces and other indentations
+      else if (line.match(/^\s{6,}\*\s+.*This looks like:/i)) {
+        const example = line.replace(/^\s{6,}\*\s+.*This looks like:\s*/i, '')
+        elements.push(
+          <div key={currentKey++} className="ml-8 mb-2">
+            <p className="text-gray-600 text-xs leading-relaxed">
+              <span className="font-medium text-blue-600">Example:</span> {example}
+            </p>
+          </div>
+        )
+      }
+      // Handle any other bullet points that might not match the exact pattern
+      else if (line.match(/^\s+\*\s+(.+)/) && line.trim() !== '') {
+        const bulletContent = line.replace(/^\s+\*\s+(.+)/, '$1')
+        const indent = (line.match(/^\s*/)?.[0]?.length || 0) / 4
+        elements.push(
+          <div key={currentKey++} className={`ml-${Math.min(indent * 4, 12)} mb-1`}>
+            <p className="text-gray-600 text-xs leading-relaxed">{bulletContent}</p>
+          </div>
+        )
+      }
+      // Handle empty lines for spacing
+      else if (line.trim() === '' && elements.length > 0) {
+        continue
+      }
+    }
+
+    return <div className="space-y-1">{elements}</div>
+  }
 
   // Check if current selection is a standard role/level combo
   const isStandardCombo = () => {
     const effectiveRole = role === 'other' ? '' : role
     const effectiveLevel = level === 'other' ? '' : level
     return effectiveRole && effectiveLevel && VALID_ROLES.includes(effectiveRole as any) && VALID_LEVELS.includes(effectiveLevel as any)
+  }
+
+  // Get the next level in the progression
+  const getNextLevel = (currentLevel: string): string => {
+    const progression: { [key: string]: string } = {
+      'junior': 'mid',
+      'mid': 'senior',
+      'senior': 'staff',
+      'staff': 'principal',
+      'principal': 'principal', // No next level
+      'manager': 'senior-manager', // Note: using kebab-case to match constants
+      'senior-manager': 'director',
+      'director': 'director' // No next level
+    }
+    
+    return progression[currentLevel] || currentLevel
+  }
+
+  // Get the label for next level as JSX with bold formatting
+  const getNextLevelLabel = (): JSX.Element => {
+    const effectiveLevel = level === 'other' ? customLevel.toLowerCase() : level
+    const effectiveRole = role === 'other' ? customRole : (role ? ROLE_LABELS[role as keyof typeof ROLE_LABELS] : '')
+    
+    if (!effectiveLevel || !effectiveRole) {
+      return <span>Next Level Expectations</span>
+    }
+    
+    const nextLevel = getNextLevel(effectiveLevel)
+    
+    // If it's the same level (no progression), show "Advanced [Current Level]"
+    if (nextLevel === effectiveLevel) {
+      const currentLevelLabel = level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
+      return <span>Advanced <strong>{currentLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Try to get the standard label for next level
+    const nextLevelLabel = LEVEL_LABELS[nextLevel as keyof typeof LEVEL_LABELS]
+    if (nextLevelLabel) {
+      return <span>Next Level: <strong>{nextLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Fallback for custom levels - capitalize first letter
+    const capitalizedNextLevel = nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)
+    return <span>Next Level: <strong>{capitalizedNextLevel} {effectiveRole}</strong></span>
   }
 
   // Check if we can generate guidelines
@@ -243,6 +352,14 @@ export function RoleAndGuidelinesStep({
   }
 
   const handleContinue = () => {
+    // Force save by exiting edit mode if user is currently editing
+    if (isEditingCurrentLevel) {
+      setIsEditingCurrentLevel(false)
+    }
+    if (isEditingNextLevel) {
+      setIsEditingNextLevel(false)
+    }
+
     const effectiveRole = role === 'other' ? customRole : role
     const effectiveLevel = level === 'other' ? customLevel : level
     
@@ -513,28 +630,72 @@ export function RoleAndGuidelinesStep({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Current Level */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Current Level: {level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]} {role === 'other' ? customRole : ROLE_LABELS[role as keyof typeof ROLE_LABELS]}
-              </label>
-              <textarea
-                value={currentLevelPlan}
-                onChange={(e) => setCurrentLevelPlan(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg text-sm resize-none"
-                rows={10}
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Current Level: <strong>{level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]} {role === 'other' ? customRole : ROLE_LABELS[role as keyof typeof ROLE_LABELS]}</strong>
+                </label>
+                <button
+                  onClick={() => setIsEditingCurrentLevel(!isEditingCurrentLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingCurrentLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingCurrentLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={currentLevelPlan}
+                      onChange={(e) => setCurrentLevelPlan(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter your career guidelines..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(currentLevelPlan)}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Next Level */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
-                Next Level Expectations
-              </label>
-              <textarea
-                value={nextLevelExpectations}
-                onChange={(e) => setNextLevelExpectations(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-lg text-sm resize-none"
-                rows={10}
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  {getNextLevelLabel()}
+                </label>
+                <button
+                  onClick={() => setIsEditingNextLevel(!isEditingNextLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingNextLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingNextLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={nextLevelExpectations}
+                      onChange={(e) => setNextLevelExpectations(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter next level expectations..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(nextLevelExpectations)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
