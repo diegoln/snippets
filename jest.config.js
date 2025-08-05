@@ -33,7 +33,7 @@ const jestConfig = {
     '/__tests__/demo-server.test.js',
     '/__tests__/performance.test.ts',
     '/__tests__/snippet-creation-integration.test.js', // Empty test file
-    // Exclude React/JSX tests that need JSDOM environment
+    // Exclude all React/JSX tests that need JSDOM environment
     '/__tests__/.*\\.tsx$',
     '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$',
     '/__tests__/onboarding.*\\.test\\.(ts|tsx)$',
