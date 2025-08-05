@@ -6,6 +6,7 @@
 import { GET, PUT } from '../route'
 import { NextRequest } from 'next/server'
 import { createUserDataService } from '@/lib/user-scoped-data'
+import { createMockUserProfile, testData } from '@/test-utils/mock-factories'
 
 // Mock auth utils first
 jest.mock('@/lib/auth-utils', () => ({
@@ -33,15 +34,8 @@ describe('/api/user/profile', () => {
 
   describe('GET /api/user/profile', () => {
     it('should return user profile successfully', async () => {
-      const mockProfile = {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        jobTitle: 'engineer',
-        seniorityLevel: 'senior',
-        performanceFeedback: null,
-        onboardingCompletedAt: new Date('2025-01-01T10:00:00.000Z')
-      }
+      // Use factory function for consistent mock data
+      const mockProfile = testData.standardUserProfile
 
       mockDataService.getUserProfile.mockResolvedValue(mockProfile)
 

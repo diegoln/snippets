@@ -5,6 +5,7 @@
 
 import { GET, POST, PUT } from '../route'
 import { NextRequest } from 'next/server'
+import { createMockSnippets, createMockSnippet, testData } from '@/test-utils/mock-factories'
 
 // Mock auth utils to provide test user
 jest.mock('@/lib/auth-utils', () => ({
@@ -36,48 +37,8 @@ describe('/api/snippets', () => {
 
   describe('GET /api/snippets', () => {
     it('should return snippets in reverse chronological order (most recent first)', async () => {
-      // Mock snippets data - notice this is already in descending order by date
-      const mockSnippets = [
-        {
-          id: 'snippet-30',
-          weekNumber: 30,
-          year: 2025,
-          startDate: new Date('2025-07-21'),
-          endDate: new Date('2025-07-25'),
-          content: 'Week 30 content',
-          extractedTasks: null,
-          extractedMeetings: null,
-          aiSuggestions: null,
-          createdAt: new Date('2025-07-21T10:00:00Z'),
-          updatedAt: new Date('2025-07-21T10:00:00Z')
-        },
-        {
-          id: 'snippet-29',
-          weekNumber: 29,
-          year: 2025,
-          startDate: new Date('2025-07-14'),
-          endDate: new Date('2025-07-18'),
-          content: 'Week 29 content',
-          extractedTasks: null,
-          extractedMeetings: null,
-          aiSuggestions: null,
-          createdAt: new Date('2025-07-14T10:00:00Z'),
-          updatedAt: new Date('2025-07-14T10:00:00Z')
-        },
-        {
-          id: 'snippet-28',
-          weekNumber: 28,
-          year: 2025,
-          startDate: new Date('2025-07-07'),
-          endDate: new Date('2025-07-11'),
-          content: 'Week 28 content',
-          extractedTasks: null,
-          extractedMeetings: null,
-          aiSuggestions: null,
-          createdAt: new Date('2025-07-07T10:00:00Z'),
-          updatedAt: new Date('2025-07-07T10:00:00Z')
-        }
-      ]
+      // Use factory function for consistent mock data
+      const mockSnippets = testData.snippetsInDescOrder
 
       mockDataService.getSnippets.mockResolvedValue(mockSnippets)
 
@@ -112,9 +73,9 @@ describe('/api/snippets', () => {
     })
 
     it('should return 401 if user not authenticated', async () => {
-      // Mock unauthenticated user
-      const { getUserIdFromRequest } = require('@/lib/auth-utils')
-      getUserIdFromRequest.mockResolvedValueOnce(null)
+      // Import auth utils consistently with ES6 imports
+      const { getUserIdFromRequest } = await import('@/lib/auth-utils')
+      ;(getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>).mockResolvedValueOnce(null)
 
       const request = new NextRequest('http://localhost:3000/api/snippets')
       const response = await GET(request)
@@ -135,6 +96,29 @@ describe('/api/snippets', () => {
       expect(data.error).toBe('Failed to fetch snippets')
     })
 
+    it('should handle network timeout errors', async () => {
+      mockDataService.getSnippets.mockRejectedValue(new Error('Network timeout'))
+
+      const request = new NextRequest('http://localhost:3000/api/snippets')
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Failed to fetch snippets')
+      expect(data.error).not.toContain('timeout')
+    })
+
+    it('should handle malformed service responses', async () => {
+      mockDataService.getSnippets.mockResolvedValue(null)
+
+      const request = new NextRequest('http://localhost:3000/api/snippets')
+      const response = await GET(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Failed to fetch snippets')
+    })
+
     it('should call disconnect after operation', async () => {
       mockDataService.getSnippets.mockResolvedValue([])
 
@@ -145,20 +129,15 @@ describe('/api/snippets', () => {
     })
 
     it('should maintain correct date serialization format', async () => {
+      // Use factory function with specific timestamp dates
       const mockSnippetsWithDates = [
-        {
+        createMockSnippet({
           id: 'snippet-1',
           weekNumber: 30,
-          year: 2025,
           startDate: new Date('2025-07-21T10:30:00.000Z'),
           endDate: new Date('2025-07-25T15:45:00.000Z'),
-          content: 'Test content',
-          extractedTasks: null,
-          extractedMeetings: null,
-          aiSuggestions: null,
-          createdAt: new Date('2025-07-21T10:00:00Z'),
-          updatedAt: new Date('2025-07-21T10:00:00Z')
-        }
+          content: 'Test content'
+        })
       ]
 
       mockDataService.getSnippets.mockResolvedValue(mockSnippetsWithDates)
@@ -398,9 +377,9 @@ describe('/api/snippets', () => {
     })
 
     it('should return 401 if user not authenticated', async () => {
-      // Mock unauthenticated user
-      const { getUserIdFromRequest } = require('@/lib/auth-utils')
-      getUserIdFromRequest.mockResolvedValueOnce(null)
+      // Import auth utils consistently with ES6 imports
+      const { getUserIdFromRequest } = await import('@/lib/auth-utils')
+      ;(getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>).mockResolvedValueOnce(null)
 
       const request = new NextRequest('http://localhost:3000/api/snippets', {
         method: 'POST',
@@ -471,6 +450,25 @@ describe('/api/snippets', () => {
       // End date should be 4 days after start date
       const daysDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
       expect(daysDiff).toBe(4)
+    })
+
+    it('should handle connection pool exhaustion gracefully', async () => {
+      mockDataService.createSnippet.mockRejectedValue(new Error('Connection pool exhausted'))
+
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        method: 'POST',
+        body: JSON.stringify({
+          weekNumber: 30,
+          content: 'Test content'
+        })
+      })
+
+      const response = await POST(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Failed to create snippet')
+      expect(data.error).not.toContain('pool')
     })
   })
 
