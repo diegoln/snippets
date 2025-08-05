@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { getDevUserIdFromRequest } from '@/lib/dev-auth'
 import { createUserDataService } from '@/lib/user-scoped-data'
 import { isWeekInFuture, isValidWeekNumber } from '@/lib/week-utils'
 import { getToken } from 'next-auth/jwt'
@@ -14,7 +15,11 @@ import { PrismaClient } from '@prisma/client'
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -63,7 +68,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user ID from session
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

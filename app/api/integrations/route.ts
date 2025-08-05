@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { getUserIdFromRequest } from '@/lib/auth-utils'
-import { createUserDataService } from '@/lib/user-scoped-data'
-import { GoogleCalendarService } from '@/lib/calendar-integration'
+import { getUserIdFromRequest } from '../../../lib/auth-utils'
+import { getDevUserIdFromRequest } from '../../../lib/dev-auth'
+import { createUserDataService } from '../../../lib/user-scoped-data'
+import { GoogleCalendarService } from '../../../lib/calendar-integration'
 
 // Input validation schemas
 const ConnectIntegrationSchema = z.object({
@@ -18,7 +19,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const isTest = searchParams.get('test') === 'true'
     
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -102,7 +106,10 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -187,7 +194,10 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getUserIdFromRequest(request)
+    let userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

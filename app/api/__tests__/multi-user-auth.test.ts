@@ -9,7 +9,8 @@ import { NextRequest } from 'next/server'
 
 // Mock auth utils first to prevent import issues
 jest.mock('@/lib/auth-utils', () => ({
-  getUserIdFromRequest: jest.fn()
+  getUserIdFromRequest: jest.fn(),
+  getDevUserIdFromRequest: jest.fn()
 }))
 
 // Mock the user data service since that's what the API routes actually use
@@ -21,9 +22,11 @@ jest.mock('@/lib/user-scoped-data', () => ({
 import { GET as getSnippets, POST as createSnippet, PUT as updateSnippet } from '../snippets/route'
 import { GET as getAssessments, POST as createAssessment } from '../assessments/route'
 import { getUserIdFromRequest } from '@/lib/auth-utils'
+import { getDevUserIdFromRequest } from '@/lib/auth-utils'
 import { createUserDataService } from '@/lib/user-scoped-data'
 
 const mockGetUserId = getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>
+const mockGetDevUserId = getDevUserIdFromRequest as jest.MockedFunction<typeof getDevUserIdFromRequest>
 const mockCreateUserDataService = createUserDataService as jest.MockedFunction<typeof createUserDataService>
 
 // Create mock data service
@@ -37,9 +40,15 @@ const mockDataService = {
 }
 
 describe('API Authentication & Authorization', () => {
+  const originalNodeEnv = process.env.NODE_ENV
+
   beforeEach(() => {
     jest.clearAllMocks()
     mockCreateUserDataService.mockReturnValue(mockDataService)
+  })
+
+  afterEach(() => {
+    process.env.NODE_ENV = originalNodeEnv
   })
   
   describe('Snippets API Authentication', () => {
@@ -265,6 +274,55 @@ describe('API Authentication & Authorization', () => {
     })
   })
   
+  describe('Development Auth Fallback', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'development'
+    })
+
+    test('should fall back to dev auth when NextAuth fails', async () => {
+      mockGetUserId.mockResolvedValue(null)
+      mockGetDevUserId.mockResolvedValue('dev-user-123')
+      
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        headers: { 'X-Dev-User-Id': 'dev-user-123' }
+      })
+      const response = await getSnippets(request)
+      
+      expect(response.status).toBe(200)
+      expect(mockGetUserId).toHaveBeenCalledWith(request)
+      expect(mockGetDevUserId).toHaveBeenCalledWith(request)
+    })
+
+    test('should prioritize NextAuth over dev auth', async () => {
+      mockGetUserId.mockResolvedValue('nextauth-user-456')
+      mockGetDevUserId.mockResolvedValue('dev-user-123')
+      
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        headers: { 'X-Dev-User-Id': 'dev-user-123' }
+      })
+      const response = await getSnippets(request)
+      
+      expect(response.status).toBe(200)
+      expect(mockGetUserId).toHaveBeenCalledWith(request)
+      expect(mockGetDevUserId).not.toHaveBeenCalled()
+    })
+
+    test('should not use dev auth in production', async () => {
+      process.env.NODE_ENV = 'production'
+      mockGetUserId.mockResolvedValue(null)
+      mockGetDevUserId.mockResolvedValue('dev-user-123')
+      
+      const request = new NextRequest('http://localhost:3000/api/snippets', {
+        headers: { 'X-Dev-User-Id': 'dev-user-123' }
+      })
+      const response = await getSnippets(request)
+      
+      expect(response.status).toBe(401)
+      expect(mockGetUserId).toHaveBeenCalledWith(request)
+      expect(mockGetDevUserId).not.toHaveBeenCalled()
+    })
+  })
+
   describe('Security Headers and Response Format', () => {
     test('API responses do not leak sensitive information', async () => {
       mockGetUserId.mockResolvedValue('user-123')

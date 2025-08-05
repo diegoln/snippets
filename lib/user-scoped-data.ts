@@ -1,4 +1,9 @@
 import { PrismaClient } from '@prisma/client'
+import { 
+  AsyncOperation, 
+  AsyncOperationType, 
+  AsyncOperationStatus 
+} from '../types/async-operations'
 
 /**
  * User-scoped data service for secure multi-user data access
@@ -24,6 +29,23 @@ export interface AssessmentInput {
   startDate: Date
   endDate: Date
   generatedDraft: string
+}
+
+export interface AsyncOperationInput {
+  operationType: string
+  status: AsyncOperationStatus
+  inputData?: any
+  estimatedDuration?: number
+  metadata?: any
+}
+
+export interface AsyncOperationUpdate {
+  status?: AsyncOperationStatus
+  progress?: number
+  resultData?: any
+  errorMessage?: string
+  startedAt?: Date
+  completedAt?: Date
 }
 
 export interface UserProfile {
@@ -91,7 +113,18 @@ export class UserScopedDataService {
   /**
    * Update user profile information
    */
-  async updateUserProfile(data: Partial<Pick<UserProfile, 'name' | 'jobTitle' | 'seniorityLevel' | 'performanceFeedback' | 'onboardingCompletedAt'>>): Promise<UserProfile> {
+  async updateUserProfile(data: {
+    name?: string
+    jobTitle?: string
+    seniorityLevel?: string
+    performanceFeedback?: string
+    onboardingCompletedAt?: Date | null
+    careerProgressionPlan?: string
+    nextLevelExpectations?: string
+    companyCareerLadder?: string
+    careerPlanGeneratedAt?: Date
+    careerPlanLastUpdated?: Date
+  }): Promise<UserProfile | void> {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id: this.userId },
@@ -491,11 +524,153 @@ export class UserScopedDataService {
   }
 
   /**
+   * Create a new async operation
+   */
+  async createAsyncOperation(input: AsyncOperationInput): Promise<AsyncOperation> {
+    try {
+      const operation = await this.prisma.asyncOperation.create({
+        data: {
+          userId: this.userId,
+          operationType: input.operationType,
+          status: input.status,
+          inputData: JSON.stringify(input.inputData || {}),
+          estimatedDuration: input.estimatedDuration,
+          metadata: JSON.stringify(input.metadata || {})
+        }
+      })
+
+      return {
+        id: operation.id,
+        userId: operation.userId,
+        operationType: operation.operationType as AsyncOperationType,
+        status: operation.status as AsyncOperationStatus,
+        progress: operation.progress,
+        inputData: operation.inputData ? JSON.parse(operation.inputData) : null,
+        resultData: operation.resultData ? JSON.parse(operation.resultData) : null,
+        errorMessage: operation.errorMessage || undefined,
+        createdAt: operation.createdAt,
+        startedAt: operation.startedAt || undefined,
+        completedAt: operation.completedAt || undefined,
+        estimatedDuration: operation.estimatedDuration || undefined,
+        metadata: operation.metadata ? JSON.parse(operation.metadata) : {}
+      }
+    } catch (error) {
+      console.error('Error creating async operation:', error)
+      throw new Error('Failed to create async operation')
+    }
+  }
+
+  /**
+   * Get a specific async operation
+   */
+  async getAsyncOperation(operationId: string): Promise<AsyncOperation | null> {
+    try {
+      const operation = await this.prisma.asyncOperation.findFirst({
+        where: {
+          id: operationId,
+          userId: this.userId
+        }
+      })
+
+      if (!operation) {
+        return null
+      }
+
+      return {
+        id: operation.id,
+        userId: operation.userId,
+        operationType: operation.operationType as AsyncOperationType,
+        status: operation.status as AsyncOperationStatus,
+        progress: operation.progress,
+        inputData: operation.inputData ? JSON.parse(operation.inputData) : null,
+        resultData: operation.resultData ? JSON.parse(operation.resultData) : null,
+        errorMessage: operation.errorMessage || undefined,
+        createdAt: operation.createdAt,
+        startedAt: operation.startedAt || undefined,
+        completedAt: operation.completedAt || undefined,
+        estimatedDuration: operation.estimatedDuration || undefined,
+        metadata: operation.metadata ? JSON.parse(operation.metadata) : {}
+      }
+    } catch (error) {
+      console.error('Error fetching async operation:', error)
+      throw new Error('Failed to fetch async operation')
+    }
+  }
+
+  /**
+   * Get user's async operations with optional filtering
+   */
+  async getAsyncOperations(filters: {
+    operationType?: AsyncOperationType
+    status?: AsyncOperationStatus
+    limit?: number
+  } = {}): Promise<AsyncOperation[]> {
+    try {
+      const operations = await this.prisma.asyncOperation.findMany({
+        where: {
+          userId: this.userId,
+          ...(filters.operationType && { operationType: filters.operationType }),
+          ...(filters.status && { status: filters.status })
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: filters.limit || 10
+      })
+
+      return operations.map(operation => ({
+        id: operation.id,
+        userId: operation.userId,
+        operationType: operation.operationType as AsyncOperationType,
+        status: operation.status as AsyncOperationStatus,
+        progress: operation.progress,
+        inputData: operation.inputData,
+        resultData: operation.resultData,
+        errorMessage: operation.errorMessage || undefined,
+        createdAt: operation.createdAt,
+        startedAt: operation.startedAt || undefined,
+        completedAt: operation.completedAt || undefined,
+        estimatedDuration: operation.estimatedDuration || undefined,
+        metadata: operation.metadata
+      }))
+    } catch (error) {
+      console.error('Error fetching async operations:', error)
+      throw new Error('Failed to fetch async operations')
+    }
+  }
+
+  /**
+   * Update an async operation
+   */
+  async updateAsyncOperation(operationId: string, update: AsyncOperationUpdate): Promise<void> {
+    try {
+      await this.prisma.asyncOperation.update({
+        where: {
+          id: operationId,
+          userId: this.userId
+        },
+        data: {
+          ...(update.status && { status: update.status }),
+          ...(update.progress !== undefined && { progress: update.progress }),
+          ...(update.resultData && { resultData: JSON.stringify(update.resultData) }),
+          ...(update.errorMessage && { errorMessage: update.errorMessage }),
+          ...(update.startedAt && { startedAt: update.startedAt }),
+          ...(update.completedAt && { completedAt: update.completedAt })
+        }
+      })
+    } catch (error) {
+      console.error('Error updating async operation:', error)
+      throw new Error('Failed to update async operation')
+    }
+  }
+
+
+  /**
    * Close database connection
    */
   async disconnect(): Promise<void> {
     if (prisma) {
-      await prisma.$disconnect()
+      await this.prisma.$disconnect()
     }
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserIdFromRequest } from '@/lib/auth-utils'
-import { createUserDataService } from '@/lib/user-scoped-data'
+import { getUserIdFromRequest } from '../../../../lib/auth-utils'
+import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
+import { createUserDataService } from '../../../../lib/user-scoped-data'
 import { getToken } from 'next-auth/jwt'
 import { PrismaClient } from '@prisma/client'
 
@@ -10,8 +11,12 @@ export async function PUT(request: NextRequest) {
   let userId: string | null = null
   
   try {
-    // Get authenticated user ID from session
+    // Get authenticated user ID from session (with dev fallback)
     userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },
@@ -74,6 +79,10 @@ export async function PUT(request: NextRequest) {
         seniorityLevel,
       })
 
+      if (!updatedUser) {
+        throw new Error('Failed to update user profile')
+      }
+
       return NextResponse.json({
         id: updatedUser.id,
         jobTitle: updatedUser.jobTitle,
@@ -101,8 +110,12 @@ export async function GET(request: NextRequest) {
   let userId: string | null = null
   
   try {
-    // Get authenticated user ID from session
+    // Get authenticated user ID from session (with dev fallback)
     userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
+    
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

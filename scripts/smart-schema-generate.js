@@ -120,8 +120,8 @@ function generateSchema() {
   if (isDevelopment) {
     // Development: SQLite configuration
     schemaContent = schemaContent
-      .replace('__DB_PROVIDER__', 'sqlite')
-      .replace('__METADATA_TYPE__', 'String');
+      .replace(/__DB_PROVIDER__/g, 'sqlite')
+      .replace(/__METADATA_TYPE__/g, 'String');
     
     log('📱 Development configuration:');
     log('   - Database: SQLite');
@@ -129,8 +129,8 @@ function generateSchema() {
   } else {
     // Production: PostgreSQL configuration
     schemaContent = schemaContent
-      .replace('__DB_PROVIDER__', 'postgresql')
-      .replace('__METADATA_TYPE__', 'Json');
+      .replace(/__DB_PROVIDER__/g, 'postgresql')
+      .replace(/__METADATA_TYPE__/g, 'Json');
     
     log('🏭 Production configuration:');
     log('   - Database: PostgreSQL');

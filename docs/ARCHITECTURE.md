@@ -85,9 +85,12 @@ User {
   id, name, email, image
   jobTitle, seniorityLevel
   performanceFeedback, careerLadderFile
+  careerProgressionPlan, nextLevelExpectations  -- AI-generated career guidance
+  companyCareerLadder                           -- Optional company context
   integrations[]
   snippets[]
   assessments[]
+  asyncOperations[]
 }
 
 WeeklySnippet {
@@ -117,6 +120,14 @@ PerformanceAssessment {
   id, userId, cycleName
   startDate, endDate
   generatedDraft           -- AI-generated self-assessment
+}
+
+AsyncOperation {
+  id, userId, operationType  -- 'career_plan_generation', 'weekly_analysis', etc.
+  status                     -- 'queued', 'processing', 'completed', 'failed'
+  progress, inputData, resultData
+  createdAt, startedAt, completedAt
+  metadata                   -- Operation-specific data
 }
 ```
 

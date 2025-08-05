@@ -56,8 +56,8 @@ if (missingPlaceholders.length > 0) {
 if (isDevelopment) {
   // Development: SQLite configuration
   schemaContent = schemaContent
-    .replace('__DB_PROVIDER__', 'sqlite')
-    .replace('__METADATA_TYPE__', 'String');
+    .replace(/__DB_PROVIDER__/g, 'sqlite')
+    .replace(/__METADATA_TYPE__/g, 'String');
   
   console.log('📱 Development configuration:');
   console.log('   - Database: SQLite');
@@ -65,8 +65,8 @@ if (isDevelopment) {
 } else {
   // Production: PostgreSQL configuration
   schemaContent = schemaContent
-    .replace('__DB_PROVIDER__', 'postgresql')
-    .replace('__METADATA_TYPE__', 'Json');
+    .replace(/__DB_PROVIDER__/g, 'postgresql')
+    .replace(/__METADATA_TYPE__/g, 'Json');
   
   console.log('🏭 Production configuration:');
   console.log('   - Database: PostgreSQL');
