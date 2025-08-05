@@ -1,29 +1,74 @@
 # AdvanceWeekly
 
-A comprehensive tool to help users create Friday Reflections and Career Check-Ins with intelligent context extraction and career development guidance.
+A Next.js application that helps professionals create Friday Reflections and AI-powered Career Check-Ins with intelligent context extraction from integrated tools.
 
-## Documentation
+**Stack**: Next.js 14, TypeScript, Tailwind CSS, PostgreSQL/Prisma, NextAuth, Google Cloud Platform
 
-- [Development Setup](./docs/DEVELOPMENT.md) - Get started with local development
+## 🚀 Quick Start
+
+```bash
+# Clone and install
+git clone <repository-url>
+cd advanceweekly
+npm install
+
+# Start dev server (auto-generates schema)
+npm run dev
+
+# Open http://localhost:3000
+```
+
+## 🔧 Development Commands
+
+```bash
+npm run dev                 # Start development server
+npm run check:dev          # Quick validation (~5s, includes API tests)
+npm run test               # Run all tests
+npm run build              # Production build
+npm run deploy             # Deploy to production
+```
+
+## 📚 Documentation
+
+### Getting Started
+- [Development Setup](./docs/DEVELOPMENT.md) - Local development environment
 - [Architecture Overview](./docs/ARCHITECTURE.md) - System design and technical details
-- [Testing Guide](./docs/TESTING.md) - Running and writing tests
-- [Deployment Guide](./docs/DEPLOYMENT.md) - Deploy to production
 - [Design System](./docs/DESIGN_SYSTEM.md) - UI/UX guidelines and components
 
-## Features
+### Operations
+- [Testing Guide](./docs/TESTING.md) - Running and writing tests  
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment
+- [OAuth Setup](./docs/OAUTH_SETUP.md) - Authentication configuration
+- [Database Setup](./docs/DATABASE_SETUP.md) - Database configuration
 
-### Automated Context Extraction
-- **Todo List Integration**: Extracts context from integrated todo list applications to identify completed tasks and ongoing projects
-- **Google Calendar Integration**: Analyzes meeting transcriptions to understand key discussions, decisions, and action items from the week
-- **Smart Summary Generation**: Combines multiple data sources to provide comprehensive weekly accomplishments and progress tracking
+## ✨ Features
 
-### Career Development Support
-- **Seniority-Aware Guidance**: Considers the user's current seniority level to provide appropriate suggestions for demonstrating impact
-- **Career Ladder Alignment**: References the company's career ladder to help users highlight progress toward promotion criteria
-- **Feedback Integration**: Incorporates insights from previous feedback cycles to ensure continuous improvement focus
-- **Weekly Impact Tips**: Provides personalized recommendations on how to demonstrate career progress on a weekly basis
+### 📝 Weekly Reflections
+- Create structured Friday Reflections to document accomplishments
+- Smart snippet management with year-aware organization  
+- Markdown support for rich formatting
 
-### Performance Review Preparation
-- **Continuous Documentation**: Builds a comprehensive record of accomplishments throughout the review cycle
-- **Actionable Draft Generation**: At the end of performance review cycles, generates ready-to-use drafts with accumulated evidence of growth and impact
-- **Historical Context**: Maintains long-term visibility into career progression and key achievements
+### 🚀 Career Development
+- AI-powered Career Check-Ins with personalized guidance
+- Seniority-aware suggestions for demonstrating impact
+- Career ladder alignment and promotion readiness tracking
+
+### 🔗 Integration Platform
+- **Google Calendar**: Extract meeting insights and action items
+- **Todo Applications**: Track completed tasks and project progress  
+- **GitHub**: Analyze code contributions and project activity
+- **Extensible Architecture**: Easy to add new integrations
+
+### 🤖 AI-Powered Insights
+- Generate performance review drafts from weekly data
+- Personalized career development recommendations
+- Context-aware reflection suggestions
+
+## 🏗️ Architecture
+
+- **Frontend**: Next.js 14 with TypeScript and Tailwind CSS
+- **Authentication**: NextAuth with Google OAuth
+- **Database**: PostgreSQL (production) / SQLite (development)
+- **AI**: OpenAI API integration with local fallbacks
+- **Infrastructure**: Google Cloud Platform (Cloud Run, Cloud SQL)
+- **Environment Management**: Automatic schema generation for dev/prod
