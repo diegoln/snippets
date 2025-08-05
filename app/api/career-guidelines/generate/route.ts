@@ -50,12 +50,13 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Generate next level expectations
+    // Generate next level expectations with current level as context
     const nextLevel = getNextSeniorityLevel(level)
     const nextLevelPrompt = buildCareerPlanPrompt({ 
       role, 
       level: nextLevel, 
-      companyLadder 
+      companyLadder,
+      currentLevelGuidelines: currentLevelResponse.content.trim()
     })
     
     const nextLevelResponse = await llmProxy.request({
@@ -67,7 +68,8 @@ export async function POST(request: NextRequest) {
         level: nextLevel, 
         companyLadder,
         operationType: 'career_guidelines_generation',
-        targetLevel: 'next'
+        targetLevel: 'next',
+        currentLevelGuidelines: currentLevelResponse.content.trim()
       }
     })
 
