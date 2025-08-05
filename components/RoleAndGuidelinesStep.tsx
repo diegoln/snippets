@@ -84,7 +84,9 @@ export function RoleAndGuidelinesStep({
       return <div className="text-gray-500 italic">No content yet</div>
     }
 
-    console.log('Rendering content:', content.substring(0, 200) + '...')
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Rendering content:', content.substring(0, 200) + '...')
+    }
 
     const lines = content.split('\n')
     const elements: JSX.Element[] = []
@@ -123,7 +125,9 @@ export function RoleAndGuidelinesStep({
 
     // Fallback: if no elements were parsed, show raw content
     if (elements.length === 0) {
-      console.log('No elements parsed, showing raw content')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('No elements parsed, showing raw content')
+      }
       return (
         <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
           {content}
@@ -289,15 +293,17 @@ export function RoleAndGuidelinesStep({
       return
     }
 
-    console.log('generateGuidelines called with:', {
-      role,
-      level,
-      customRole,
-      customLevel,
-      effectiveRole,
-      effectiveLevel,
-      isStandard: isStandardCombo()
-    })
+    if (process.env.NODE_ENV === 'development') {
+      console.log('generateGuidelines called with:', {
+        role,
+        level,
+        customRole,
+        customLevel,
+        effectiveRole,
+        effectiveLevel,
+        isStandard: isStandardCombo()
+      })
+    }
 
     setIsLoading(true)
     setError(null)
@@ -305,7 +311,9 @@ export function RoleAndGuidelinesStep({
     try {
       // First try to fetch from templates (for standard combos)
       if (isStandardCombo()) {
-        console.log('Using template API for standard combo')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using template API for standard combo')
+        }
         const response = await fetch(
           `/api/career-guidelines/template?role=${encodeURIComponent(effectiveRole)}&level=${encodeURIComponent(effectiveLevel)}`,
           {
@@ -327,7 +335,9 @@ export function RoleAndGuidelinesStep({
       }
       
       // If no template or custom role/level, generate with LLM
-      console.log('Using generation API for custom role/level')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using generation API for custom role/level')
+      }
       const response = await fetch('/api/career-guidelines/generate', {
         method: 'POST',
         headers: {
@@ -348,23 +358,29 @@ export function RoleAndGuidelinesStep({
       const data = await response.json()
       
       // Debug logging
-      console.log('API Response data:', {
-        currentLevelPlan: data.currentLevelPlan?.substring(0, 100) + '...',
-        nextLevelExpectations: data.nextLevelExpectations?.substring(0, 100) + '...',
-        hasCurrentPlan: !!data.currentLevelPlan?.trim(),
-        hasNextExpectations: !!data.nextLevelExpectations?.trim()
-      })
+      if (process.env.NODE_ENV === 'development') {
+        console.log('API Response data:', {
+          currentLevelPlan: data.currentLevelPlan?.substring(0, 100) + '...',
+          nextLevelExpectations: data.nextLevelExpectations?.substring(0, 100) + '...',
+          hasCurrentPlan: !!data.currentLevelPlan?.trim(),
+          hasNextExpectations: !!data.nextLevelExpectations?.trim()
+        })
+      }
       
       // Validate that we actually received content
       if (!data.currentLevelPlan?.trim() || !data.nextLevelExpectations?.trim()) {
-        console.error('Empty guidelines received:', data)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Empty guidelines received:', data)
+        }
         throw new Error('Generated guidelines are empty. Please try again with different role/level values.')
       }
       
-      console.log('Setting content:', {
-        currentPlan: data.currentLevelPlan?.length + ' chars',
-        nextExpectations: data.nextLevelExpectations?.length + ' chars'
-      })
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Setting content:', {
+          currentPlan: data.currentLevelPlan?.length + ' chars',
+          nextExpectations: data.nextLevelExpectations?.length + ' chars'
+        })
+      }
       
       setCurrentLevelPlan(data.currentLevelPlan)
       setNextLevelExpectations(data.nextLevelExpectations)
