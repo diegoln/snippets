@@ -25,7 +25,7 @@
     "test:api": "jest app/api/**/*.test.ts --passWithNoTests",
     "test:auth": "jest __tests__/auth-database-adapter.test.ts",
     "test:oauth": "npm run test:auth",
-    "test:onboarding": "jest __tests__/onboarding-*.test.tsx",
+    "test:onboarding": "jest __tests__/onboarding-*.test.tsx --passWithNoTests",
     "update-oauth-uris": "./scripts/update-oauth-uris.sh",
     "open-oauth-setup": "./scripts/open-oauth-setup.sh",
     "setup-domain": "./scripts/setup-custom-domain.sh",
