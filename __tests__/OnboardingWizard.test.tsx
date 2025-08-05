@@ -25,7 +25,7 @@ jest.mock('../components/Logo', () => ({
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>
 
-describe('OnboardingWizard Integration Buttons', () => {
+describe('OnboardingWizard', () => {
   const mockPush = jest.fn()
 
   beforeEach(() => {
@@ -42,12 +42,83 @@ describe('OnboardingWizard Integration Buttons', () => {
     mockPush.mockClear()
   })
 
-  it('should handle multiple integration button clicks correctly', async () => {
+  describe('Step Sequence', () => {
+    it('should follow correct 5-step sequence including career plan', async () => {
+      render(<OnboardingWizard />)
+
+      // Step 0: Role/Level
+      expect(screen.getByText(/tell us about your role/i)).toBeInTheDocument()
+      
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      // Step 1: Career Plan (NEW STEP)
+      await waitFor(() => {
+        expect(screen.getByText(/career progression plan/i)).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText(/continue/i))
+
+      // Step 2: Integrations
+      await waitFor(() => {
+        expect(screen.getByText(/connect an integration/i)).toBeInTheDocument()
+      })
+
+      // Connect an integration to proceed
+      const connectButton = screen.getByRole('button', { name: /connect/i })
+      fireEvent.click(connectButton)
+
+      await waitFor(() => {
+        expect(screen.getByText('✓ Connected')).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText(/continue/i))
+
+      // Step 3: Reflection
+      await waitFor(() => {
+        expect(screen.getByText(/review your first reflection/i)).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText(/continue/i))
+
+      // Step 4: Success
+      await waitFor(() => {
+        expect(screen.getByText(/welcome to advanceweekly/i)).toBeInTheDocument()
+      })
+    })
+
+    it('should not allow skipping career plan step', async () => {
+      render(<OnboardingWizard />)
+
+      // Complete role/level step
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      // Should be on career plan step, not integrations
+      await waitFor(() => {
+        expect(screen.getByText(/career progression plan/i)).toBeInTheDocument()
+        expect(screen.queryByText(/connect an integration/i)).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('Integration Buttons', () => {
+    it('should handle multiple integration button clicks correctly', async () => {
     render(<OnboardingWizard />)
 
-    // Navigate to step 1 (role/level selection)
+    // Navigate to step 0 (role/level selection)
     fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
     fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+    fireEvent.click(screen.getByText(/continue/i))
+
+    // Step 1: Career plan (should appear next)
+    await waitFor(() => {
+      expect(screen.getByText(/career progression plan/i)).toBeInTheDocument()
+    })
+
+    // Complete career plan step
     fireEvent.click(screen.getByText(/continue/i))
 
     // Now we're on step 2 (integrations)
@@ -110,5 +181,6 @@ describe('OnboardingWizard Integration Buttons', () => {
     // Only Jira should show "Connect"
     const jiraConnectButtons = screen.getAllByRole('button', { name: /connect/i })
     expect(jiraConnectButtons).toHaveLength(1)
+    })
   })
 })

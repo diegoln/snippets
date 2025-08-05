@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
+import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
 import { llmProxy } from '../../../../lib/llmproxy'
 import { snippetRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
 import { buildWeeklySnippetPrompt, WeeklySnippetPromptContext } from './weekly-snippet-prompt'
@@ -32,6 +33,9 @@ export async function POST(request: NextRequest) {
   
   try {
     userId = await getUserIdFromRequest(request)
+    if (!userId && process.env.NODE_ENV === 'development') {
+      userId = await getDevUserIdFromRequest(request)
+    }
     if (!userId) {
       return NextResponse.json(
         { error: 'Authentication required' },

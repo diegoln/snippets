@@ -49,13 +49,38 @@ export default function Home() {
   // Fetch user profile when authenticated to determine next step
   useEffect(() => {
     if (status === 'authenticated' && session && !userProfile && !isLoadingProfile) {
+      // Check if onboarding was just completed to skip API call
+      const justCompleted = localStorage.getItem('onboarding-just-completed')
+      if (justCompleted === 'true') {
+        console.log('✅ Onboarding just completed, skipping profile fetch')
+        localStorage.removeItem('onboarding-just-completed')
+        setUserProfile({ onboardingCompleted: true })
+        return
+      }
+      
       setIsLoadingProfile(true)
       setProfileError(false)
       
       console.log('📊 Fetching user profile for onboarding check...')
       
-      fetch('/api/user/profile')
+      // Add timeout to prevent hanging
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => {
+        controller.abort()
+        console.warn('⚠️ Profile fetch timeout, assuming onboarding needed')
+        setUserProfile({ onboardingCompleted: false })
+        setIsLoadingProfile(false)
+      }, 5000) // Reduced to 5 second timeout
+      
+      fetch('/api/user/profile', {
+        signal: controller.signal,
+        cache: 'no-cache', // Ensure we get fresh data
+        headers: {
+          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+        }
+      })
         .then(response => {
+          clearTimeout(timeoutId)
           if (!response.ok) {
             throw new Error(`Profile fetch failed: ${response.status}`)
           }
@@ -66,8 +91,15 @@ export default function Home() {
           setUserProfile(data)
         })
         .catch(error => {
-          console.error('❌ Failed to fetch user profile:', error)
-          setProfileError(true)
+          clearTimeout(timeoutId)
+          if (error.name === 'AbortError') {
+            console.warn('⚠️ Profile fetch was aborted due to timeout')
+            // Assume onboarding is needed if we can't verify
+            setUserProfile({ onboardingCompleted: false })
+          } else {
+            console.error('❌ Failed to fetch user profile:', error)
+            setProfileError(true)
+          }
         })
         .finally(() => {
           setIsLoadingProfile(false)

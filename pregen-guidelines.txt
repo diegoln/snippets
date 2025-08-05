@@ -1,0 +1,589 @@
+### **Software Engineering**
+
+#### **Junior**
+* **Impact & Ownership**
+    * Completes small, well-defined tasks with guidance from more senior members of the team.
+        * ***This looks like:*** Successfully delivering a bug fix or a small feature improvement within a single sprint.
+        * ***This looks like:*** Taking ownership of the testing and verification for a specific piece of code you've written.
+* **Craft & Expertise**
+    * Writes clear, functional code, following the team's coding guidelines and standards.
+        * ***This looks like:*** Submitting a pull request that passes automated checks and adheres to the style guide with minimal revisions needed.
+        * ***This looks like:*** Actively learning the primary programming language and frameworks used by the team.
+* **Communication & Collaboration**
+    * Asks clear questions and actively seeks help after an initial attempt to solve a problem.
+        * ***This looks like:*** Posting a well-formed question on the team's Slack channel, explaining what you've already tried.
+        * ***This looks like:*** Pairing with a senior engineer to work through a challenging part of the codebase.
+* **Strategic Focus**
+    * Focuses on understanding the requirements for their immediate tasks.
+        * ***This looks like:*** Reading the full user story or ticket and asking clarifying questions before starting to code.
+        * ***This looks like:*** Explaining to your mentor how the specific feature you're building benefits the user.
+
+#### **Mid-Level**
+* **Impact & Ownership**
+    * Independently delivers medium-sized features, from technical design to implementation and release.
+        * ***This looks like:*** Owning a feature that takes several weeks to build and requires coordination with a designer.
+        * ***This looks like:*** Being the primary on-call person responsible for the services you've built.
+* **Craft & Expertise**
+    * Designs and implements solutions for moderately complex problems.
+        * ***This looks like:*** Writing a short technical design document for a new component before building it.
+        * ***This looks like:*** Refactoring a piece of legacy code to improve its readability and performance.
+* **Communication & Collaboration**
+    * Provides thoughtful, detailed feedback in code reviews for their peers.
+        * ***This looks like:*** Leaving constructive comments on a teammate's pull request that help them improve their code.
+        * ***This looks like:*** Actively participating in sprint planning meetings, helping to estimate tasks and identify dependencies.
+* **Strategic Focus**
+    * Understands the team's short-to-medium-term goals.
+        * ***This looks like:*** Explaining how the feature you're currently building contributes to the team's quarterly OKRs.
+        * ***This looks like:*** Making technical decisions that consider future needs, not just the immediate requirement.
+
+#### **Senior**
+* **Impact & Ownership**
+    * Leads and delivers large, complex projects end-to-end, often involving multiple system components.
+        * ***This looks like:*** Owning the technical execution for a major product initiative that is a headline item on the company roadmap.
+        * ***This looks like:*** Being accountable for the operational health, uptime, and performance of a critical service.
+* **Craft & Expertise**
+    * Designs scalable and maintainable systems to solve ambiguous business problems.
+        * ***This looks like:*** Writing a comprehensive technical design document for a new microservice that is reviewed by Staff+ engineers.
+        * ***This looks like:*** Leading a "post-mortem" or incident review, identifying root causes and creating actionable follow-up tasks.
+* **Communication & Collaboration**
+    * Mentors junior and mid-level engineers, helping them grow technically.
+        * ***This looks like:*** Holding regular 1-on-1 mentorship meetings with a more junior engineer on the team.
+        * ***This looks like:*** Leading a technical brown-bag session or workshop to share knowledge with the broader team.
+* **Strategic Focus**
+    * Anticipates technical and product problems and proactively proposes solutions.
+        * ***This looks like:*** Identifying a scaling bottleneck in the current system and writing a proposal to address it before it becomes a major issue.
+        * ***This looks like:*** Working with your Product Manager to influence the team's roadmap based on technical opportunities or constraints.
+
+#### **Staff**
+* **Impact & Ownership**
+    * Leads the technical direction and execution of initiatives that span multiple teams or the entire organization.
+        * ***This looks like:*** Designing and driving the adoption of a new platform or service that will be used by several other teams.
+        * ***This looks like:*** Solving a deep, ambiguous technical problem (e.g., "reduce our cloud spend by 20%") that requires coordination across multiple parts of the business.
+* **Craft & Expertise**
+    * Is recognized as a deep expert in a critical domain, influencing company-wide technical strategy.
+        * ***This looks like:*** Creating the go-to guide or "best practices" document for a critical technology used at the company.
+        * ***This looks like:*** Being the person who other senior engineers seek out for advice on the hardest problems in your domain.
+* **Communication & Collaboration**
+    * Builds consensus between teams with conflicting requirements to drive important technical decisions.
+        * ***This looks like:*** Facilitating a meeting between three different engineering teams to agree on a shared API contract.
+        * ***This looks like:*** Writing a clear, persuasive document that explains a major architectural change and its benefits to both engineering and product leadership.
+* **Strategic Focus**
+    * Identifies and articulates the long-term evolution of the company's architecture and systems.
+        * ***This looks like:*** Creating a 2-year technical vision for your domain.
+        * ***This looks like:*** Evaluating emerging technologies and making a recommendation on whether the company should invest in them.
+
+#### **Principal**
+* **Impact & Ownership**
+    * Defines the long-term technical direction for the entire company or a major business unit.
+        * ***This looks like:*** Creating the technical strategy that enables a new line of business for the company.
+        * ***This looks like:*** Making a critical "build vs. buy" decision on a core piece of the company's technology platform.
+* **Craft & Expertise**
+    * Has industry-leading, externally recognized knowledge in multiple technical domains.
+        * ***This looks like:*** Giving a talk at a major tech conference about a novel solution your company has built.
+        * ***This looks like:*** Publishing a blog post or whitepaper that influences how other companies in the industry approach a problem.
+* **Communication & Collaboration**
+    * Mentors senior and staff engineers, cultivating the next generation of technical leaders.
+        * ***This looks like:*** Creating a formal mentorship program or technical career ladder for the engineering organization.
+        * ***This looks like:*** Advising directors and VPs on technical strategy and organizational design.
+* **Strategic Focus**
+    * Connects emerging technology trends to the company's long-term strategic goals.
+        * ***This looks like:*** Presenting to the executive team on how a new technology (e.g., a new AI model) could transform the business.
+        * ***This looks like:*** Participating in the company's annual strategic planning process as a key technical voice.
+
+#### **Manager**
+* **Impact & Ownership**
+    * Is accountable for the execution and delivery of their team's projects, ensuring timelines and quality standards are met.
+        * ***This looks like:*** Successfully shipping the team's planned features for a quarter with a high-quality bar.
+        * ***This looks like:*** Effectively managing the team's on-call rotation and response to incidents.
+* **Craft & Expertise**
+    * Manages team performance by providing continuous feedback, conducting reviews, and supporting career development.
+        * ***This looks like:*** Holding effective weekly 1-on-1s with every person on your team.
+        * ***This looks like:*** Writing thoughtful, fair, and well-documented performance reviews.
+* **Communication & Collaboration**
+    * Facilitates effective communication within the team and with other teams and stakeholders.
+        * ***This looks like:*** Running efficient sprint planning and retrospective meetings.
+        * ***This looks like:*** Providing clear status updates to leadership on your team's progress and risks.
+* **Strategic Focus**
+    * Aligns the team's priorities with the organization's goals.
+        * ***This looks like:*** Working with the PM to create a team roadmap that clearly connects to company OKRs.
+        * ***This looks like:*** Making difficult trade-off decisions to ensure the team is focused on the most impactful work.
+
+#### **Sr. Manager**
+* **Impact & Ownership**
+    * Manages multiple engineering teams or a critical functional area, often by managing other managers.
+        * ***This looks like:*** Being accountable for the successful delivery of a major company initiative that involves 3-4 teams.
+        * ***This looks like:*** Owning the budget and headcount planning for your entire group.
+* **Craft & Expertise**
+    * Develops and mentors other engineering managers, helping them become effective leaders.
+        * ***This looks like:*** Running a weekly "manager's sync" meeting to align the managers who report to you.
+        * ***This looks like:*** Reviewing and giving feedback on performance reviews written by the managers on your team.
+* **Communication & Collaboration**
+    * Communicates strategy and vision to multiple teams, ensuring alignment across their organization.
+        * ***This looks like:*** Presenting your group's quarterly strategy and results at a departmental all-hands meeting.
+        * ***This looks like:*** Resolving conflicts or dependencies between the teams within your group.
+* **Strategic Focus**
+    * Defines and executes the technical and product strategy for a multi-team area.
+        * ***This looks like:*** Creating a hiring plan for your group for the next 12 months.
+        * ***This looks like:*** Identifying and addressing systemic issues (e.g., process bottlenecks, tech debt) that affect all the teams in your group.
+
+#### **Director**
+* **Impact & Ownership**
+    * Is responsible for the health, strategy, and execution of an entire engineering department or business unit.
+        * ***This looks like:*** Owning a key result on the company's annual plan related to engineering performance.
+        * ***This looks like:*** Being accountable for the entire engineering budget for your department.
+* **Craft & Expertise**
+    * Leads and develops an organization of senior managers and managers.
+        * ***This looks like:*** Designing the organizational structure of your department to align with company goals.
+        * ***This looks like:*** Implementing department-wide programs for career development, performance management, and technical excellence.
+* **Communication & Collaboration**
+    * Collaborates with other directors (Product, Design) to set and execute the overall product strategy.
+        * ***This looks like:*** Participating in a weekly "Product Leadership" meeting to align on strategy and resource allocation.
+        * ***This looks like:*** Presenting your department's strategy and results to the executive team or the board.
+* **Strategic Focus**
+    * Develops the long-term strategic plan for the engineering organization, including technology, people, and budget.
+        * ***This looks like:*** Creating the 3-year technical vision for your part of the organization.
+        * ***This looks like:*** Making key strategic decisions, such as whether to migrate to a new cloud provider or adopt a new primary programming language.
+
+---
+
+### **Product Management**
+
+#### **Junior**
+* **Impact & Ownership**
+    * Manages a backlog of well-defined features for a specific product area.
+        * ***This looks like:*** Ensuring the engineering team has a clear, prioritized list of user stories for the next sprint.
+        * ***This looks like:*** Triaging new bugs and feature requests for your product area.
+* **Craft & Expertise**
+    * Writes clear, concise product specifications (user stories, requirements) for the engineering team.
+        * ***This looks like:*** Writing a user story with clear acceptance criteria that an engineer can build from.
+        * ***This looks like:*** Using analytics tools to pull basic data on feature usage.
+* **Communication & Collaboration**
+    * Works closely with engineers and designers to ensure requirements are understood.
+        * ***This looks like:*** Attending daily stand-ups and answering clarifying questions from the engineering team.
+        * ***This looks like:*** Providing feedback on design mockups to ensure they meet the feature's goals.
+* **Strategic Focus**
+    * Focuses on understanding the user and the problems their assigned features solve.
+        * ***This looks like:*** Participating in user interviews as a note-taker.
+        * ***This looks like:*** Reading through customer support tickets to understand user pain points.
+
+#### **Mid-Level**
+* **Impact & Ownership**
+    * Owns the roadmap and backlog for a product area or a medium-sized product.
+        * ***This looks like:*** Creating a roadmap for your product for the next two quarters.
+        * ***This looks like:*** Defining the key success metrics (KPIs) for a new feature and reporting on its performance after launch.
+* **Craft & Expertise**
+    * Independently conducts market and user research to identify and validate problems.
+        * ***This looks like:*** Conducting a user interview yourself to explore a new problem space.
+        * ***This looks like:*** Doing a competitive analysis to understand how other products solve a similar problem.
+* **Communication & Collaboration**
+    * Communicates the "why" behind features to the development team and stakeholders.
+        * ***This looks like:*** Leading a feature kickoff meeting where you explain the user problem and business goals.
+        * ***This looks like:*** Writing an internal blog post to announce a feature launch to the rest of the company.
+* **Strategic Focus**
+    * Develops a short-to-medium-term vision for their product area.
+        * ***This looks like:*** Creating a pitch document for a new feature or product improvement.
+        * ***This looks like:*** Explaining how your team's work contributes to the company's overall product strategy.
+
+#### **Senior**
+* **Impact & Ownership**
+    * Owns a strategic, ambiguous, or high-impact product area.
+        * ***This looks like:*** Leading the product development for a V1 of a brand new product.
+        * ***This looks like:*** Being accountable for a key company metric, like "user activation rate" or "retention."
+* **Craft & Expertise**
+    * Defines the strategy for their product area, not just the roadmap.
+        * ***This looks like:*** Writing a 1-year product strategy document for your domain.
+        * ***This looks like:*** Creating a detailed pricing and packaging proposal for a new product line.
+* **Communication & Collaboration**
+    * Influences and aligns senior stakeholders and cross-functional teams around their strategy.
+        * ***This looks like:*** Presenting your product strategy to a Director or VP-level audience and getting their buy-in.
+        * ***This looks like:*** Mentoring a more junior PM on the team.
+* **Strategic Focus**
+    * Directly connects their product strategy to the company's strategic objectives.
+        * ***This looks like:*** Articulating in your strategy document how your work will contribute to the company's revenue or growth goals.
+        * ***This looks like:*** Saying "no" to a feature request because it does not align with your strategic goals.
+
+#### **Staff**
+* **Impact & Ownership**
+    * Leads product initiatives that span multiple products or teams, solving complex, system-level problems.
+        * ***This looks like:*** Defining the strategy for a horizontal platform (like "search" or "identity") that serves multiple products.
+        * ***This looks like:*** Leading a company-wide initiative, such as "improving accessibility" or "GDPR compliance."
+* **Craft & Expertise**
+    * Is a recognized expert in a strategic area (e.g., platform, growth, monetization).
+        * ***This looks like:*** Creating a new product development framework or process that gets adopted by the entire product organization.
+        * ***This looks like:*** Being the go-to person for advice on a complex topic like A/B testing methodology or internationalization.
+* **Communication & Collaboration**
+    * Communicates and defends product strategy to executive leadership.
+        * ***This looks like:*** Creating and presenting the business case for a major new investment to the C-suite.
+        * ***This looks like:*** Working with business development to create a strategy for third-party integrations.
+* **Strategic Focus**
+    * Identifies new market opportunities or strategic threats the company must address.
+        * ***This looks like:*** Writing a document that analyzes a new competitor and proposes a strategic response.
+        * ***This looks like:*** Pitching a new product line that could open up a new market for the company.
+
+#### **Principal**
+* **Impact & Ownership**
+    * Is accountable for the success of a portfolio of products or one of the company's core business strategies.
+        * ***This looks like:*** Owning the strategy for an entire business unit, such as "SMB Products" or "Enterprise Platform."
+        * ***This looks like:*** Leading the turnaround of a struggling product line.
+* **Craft & Expertise**
+    * Innovates on the company's product management practices, raising the craft for the entire function.
+        * ***This looks like:*** Creating and implementing a new career ladder for the product management team.
+        * ***This looks like:*** Acting as the "bar-raiser" for PM hiring, ensuring a high standard for new hires.
+* **Communication & Collaboration**
+    * Influences company direction at the executive and board level.
+        * ***This looks like:*** Presenting the product strategy and roadmap to the company's Board of Directors.
+        * ***This looks like:*** Mentoring Senior and Staff PMs to grow into future product leaders.
+* **Strategic Focus**
+    * Defines the company's long-term (3-5 year) product strategy.
+        * ***This looks like:*** Leading the product side of a major M&A (mergers and acquisitions) diligence process.
+        * ***This looks like:*** Writing the central "product vision" document that guides the entire company for the next several years.
+
+#### **Manager**
+* **Impact & Ownership**
+    * Is accountable for the business outcomes and roadmap of their entire product group.
+        * ***This looks like:*** Ensuring the PMs on your team are shipping impactful products and hitting their goals.
+        * ***This looks like:*** Reporting on the collective progress and results of your group's roadmap to leadership.
+* **Craft & Expertise**
+    * Recruits, hires, and develops product managers, ensuring team growth and effectiveness.
+        * ***This looks like:*** Holding effective weekly 1-on-1s with your PMs to unblock them and support their career growth.
+        * ***This looks like:*** Giving clear, constructive feedback on your team's strategy documents and PRDs.
+* **Communication & Collaboration**
+    * Represents their product area to leadership, communicating strategy, progress, and results.
+        * ***This looks like:*** Defending your team's roadmap and resource needs during a quarterly planning process.
+        * ***This looks like:*** Facilitating collaboration between the PMs on your team to ensure a cohesive user experience.
+* **Strategic Focus**
+    * Defines the strategy for their product area, aligning it with company objectives.
+        * ***This looks like:*** Creating a strategic theme for your group for the next six months.
+        * ***This looks like:*** Making resource allocation trade-offs between the different product areas your team covers.
+
+#### **Sr. Manager**
+* **Impact & Ownership**
+    * Is responsible for a major business unit or a significant product portfolio.
+        * ***This looks like:*** Owning a P&L (profit and loss) for a business unit.
+        * ***This looks like:*** Leading a product organization of 10+ PMs, including other managers.
+* **Craft & Expertise**
+    * Defines and cultivates the culture of the product organization.
+        * ***This looks like:*** Running a weekly "PM Leadership" meeting to align the managers and leads in your group.
+        * ***This looks like:*** Creating standardized processes for things like roadmap reviews and product strategy documents across your organization.
+* **Communication & Collaboration**
+    * Communicates the product vision and strategy to the entire company.
+        * ***This looks like:*** Speaking at a company all-hands about the future of your product area.
+        * ***This looks like:*** Working with your Director/VP to set the goals and headcount plan for your organization.
+* **Strategic Focus**
+    * Defines the mid-to-long-term product strategy for their area.
+        * ***This looks like:*** Creating the 18-month strategy for your product portfolio.
+        * ***This looks like:*** Making key hiring decisions for senior roles within your organization.
+
+#### **Director**
+* **Impact & Ownership**
+    * Is responsible for the company's entire product function, strategy, and execution.
+        * ***This looks like:*** Being a member of the company's executive team.
+        * ***This looks like:*** Owning the overall product budget and resource allocation for the entire company.
+* **Craft & Expertise**
+    * Builds and leads the entire product organization, including structure, culture, and leadership development.
+        * ***This looks like:*** Designing the organizational structure of the product team (e.g., how teams are grouped).
+        * ***This looks like:*** Being the ultimate hiring manager and decision-maker for all product roles.
+* **Communication & Collaboration**
+    * Communicates product strategy to the board, investors, and the market.
+        * ***This looks like:*** Speaking at industry conferences as a representative of the company.
+        * ***This looks like:*** Working with the CEO and other executives to define the overall company strategy.
+* **Strategic Focus**
+    * Sets the overall product strategy that will drive the company's growth for years to come.
+        * ***This looks like:*** Deciding whether to enter a new market or sunset an existing product line.
+        * ***This looks like:*** Leading the product vision for the company's long-term future (e.g., the 5-year plan).
+
+---
+
+### **Design**
+
+#### **Junior**
+* **Impact & Ownership**
+    * Produces design deliverables (wireframes, mockups) for well-defined features under supervision.
+        * ***This looks like:*** Creating multiple visual design options for a single screen based on an existing wireframe.
+        * ***This looks like:*** Taking a final design and creating all the necessary production assets for the engineering team.
+* **Craft & Expertise**
+    * Demonstrates a foundational understanding of design principles (typography, color, layout).
+        * ***This looks like:*** Applying the company's design system components correctly and consistently.
+        * ***This looks like:*** Using Figma (or other design tools) efficiently to create clean, well-organized files.
+* **Communication & Collaboration**
+    * Clearly presents their work to their immediate team and receives feedback constructively.
+        * ***This looks like:*** Walking through your design decisions for a specific component in a team critique session.
+        * ***This looks like:*** Asking clarifying questions when receiving feedback, rather than getting defensive.
+* **Strategic Focus**
+    * Focuses on solving the user problem for the specific task at hand.
+        * ***This looks like:*** Reviewing the user story and acceptance criteria before starting a design.
+        * ***This looks like:*** Participating as an observer in a usability test session.
+
+#### **Mid-Level**
+* **Impact & Ownership**
+    * Independently designs solutions for moderately complex problems, from exploration to final delivery.
+        * ***This looks like:*** Owning the end-to-end design for a new feature, including wireframes, mockups, and prototypes.
+        * ***This looks like:*** Being the sole designer assigned to an engineering squad.
+* **Craft & Expertise**
+    * Applies a solid working knowledge of interaction design, visual design, and user research.
+        * ***This looks like:*** Creating an interactive prototype to test a new user flow.
+        * ***This looks like:*** Proposing a new component or pattern to be added to the design system.
+* **Communication & Collaboration**
+    * Articulates the rationale behind their design decisions, linking them to user needs and business goals.
+        * ***This looks like:*** Presenting your design work in a feature kickoff, explaining how it solves the user's problem.
+        * ***This looks like:*** Collaborating with an engineer to find a simpler technical solution that still achieves the design goal.
+* **Strategic Focus**
+    * Understands how the features they work on contribute to the overall user journey.
+        * ***This looks like:*** Creating a user journey map for your product area.
+        * ***This looks like:*** Participating in user research sessions and using the insights to inform your designs.
+
+#### **Senior**
+* **Impact & Ownership**
+    * Leads the design for large, strategic, and often ambiguous projects.
+        * ***This looks like:*** Owning the design for a major product overhaul or a new V1 product.
+        * ***This looks like:*** Being the design owner for a core part of the product experience, like "onboarding" or "checkout."
+* **Craft & Expertise**
+    * Demonstrates mastery of multiple facets of design (e.g., research, interaction, visual).
+        * ***This looks like:*** Planning and leading a series of user research interviews to define a new problem space.
+        * ***This looks like:*** Leading a design sprint to tackle a complex problem.
+* **Communication & Collaboration**
+    * Mentors junior and mid-level designers.
+        * ***This looks like:*** Being a dedicated mentor to another designer and meeting with them regularly.
+        * ***This looks like:*** Leading design critiques and providing feedback that helps other designers level up.
+* **Strategic Focus**
+    * Connects design strategy to product strategy and company objectives.
+        * ***This looks like:*** Working with your PM to define the long-term vision for your product area's user experience.
+        * ***This looks like:*** Creating a set of design principles for your team.
+
+#### **Staff**
+* **Impact & Ownership**
+    * Leads the design direction for initiatives that span multiple teams or platforms.
+        * ***This looks like:*** Owning the strategy and roadmap for the company's entire design system.
+        * ***This looks like:*** Solving a systemic UX problem, like redesigning the app's core navigation model.
+* **Craft & Expertise**
+    * Is a recognized expert in a critical area of design (e.g., accessibility, systems design) that elevates the entire team.
+        * ***This looks like:*** Running an accessibility audit of the entire product and creating a plan to address the issues.
+        * ***This looks like:*** Being the go-to person for solving the most complex interaction design problems.
+* **Communication & Collaboration**
+    * Facilitates workshops and strategy sessions with cross-functional groups to solve complex problems.
+        * ***This looks like:*** Leading a workshop with product and engineering leaders to map out a future-state user journey.
+        * ***This looks like:*** Presenting a new design vision to senior leadership to get buy-in for a major initiative.
+* **Strategic Focus**
+    * Defines design principles and a long-term vision for the company's user experience.
+        * ***This looks like:*** Writing the document that defines the company's UX vision for the next 2-3 years.
+        * ***This looks like:*** Working with product leadership to identify how design can unlock new business opportunities.
+
+#### **Principal**
+* **Impact & Ownership**
+    * Shapes the customer experience across the entire journey and all company touchpoints.
+        * ***This looks like:*** Redesigning the end-to-end customer experience, from marketing website to in-app onboarding to support interactions.
+        * ***This looks like:*** Creating a design innovation that becomes a core part of the company's brand and competitive advantage.
+* **Craft & Expertise**
+    * Sets the bar for design excellence across the organization.
+        * ***This looks like:*** Creating the career ladder and review process for the entire design organization.
+        * ***This looks like:*** Speaking at a major design conference about the company's design philosophy.
+* **Communication & Collaboration**
+    * Represents design at the highest levels of the company and in the external design community.
+        * ***This looks like:*** Mentoring senior and staff designers to become future leaders.
+        * ***This looks like:*** Advising VPs and C-level executives on how design can drive business strategy.
+* **Strategic Focus**
+    * Connects trends in design, technology, and customer behavior to the company's long-term strategy.
+        * ***This looks like:*** Presenting to the executive team about how a shift in user behavior should change the company's product strategy.
+        * ***This looks like:*** Using design thinking to help shape the overall vision and strategy for the company.
+
+#### **Manager**
+* **Impact & Ownership**
+    * Is accountable for the design outcomes and quality of the user experience delivered by their team.
+        * ***This looks like:*** Ensuring your team ships high-quality design work on time for all their projects.
+        * ***This looks like:*** Being responsible for the overall design consistency and usability of your product area.
+* **Craft & Expertise**
+    * Builds and leads a team of designers, managing their performance, development, and well-being.
+        * ***This looks like:*** Holding effective weekly 1-on-1s with every designer on your team.
+        * ***This looks like:*** Creating growth plans for your direct reports and advocating for their promotions.
+* **Communication & Collaboration**
+    * Represents the design team in cross-functional forums, advocating for user-centered design.
+        * ***This looks like:*** Attending product roadmap reviews to ensure design is involved early in the process.
+        * ***This looks like:*** Providing clear direction and feedback to your team during design critiques.
+* **Strategic Focus**
+    * Aligns the design team's priorities with product roadmaps and business goals.
+        * ***This looks like:*** Allocating designers to the most important projects during quarterly planning.
+        * ***This looks like:*** Making a case for hiring another designer on your team based on the product roadmap.
+
+#### **Sr. Manager**
+* **Impact & Ownership**
+    * Manages multiple design teams or a complex, high-impact area of the user experience.
+        * ***This looks like:*** Owning the design organization for a whole business unit.
+        * ***This looks like:*** Being accountable for cross-cutting design initiatives like the design system or user research platform.
+* **Craft & Expertise**
+    * Manages and develops other design managers or lead-level designers.
+        * ***This looks like:*** Running a weekly sync with the design leads/managers who report to you.
+        * ***This looks like:*** Standardizing the design process and rituals across multiple teams.
+* **Communication & Collaboration**
+    * Communicates their area's design strategy to senior leadership.
+        * ***This looks like:*** Presenting the quarterly results and plans for your entire design group.
+        * ***This looks like:*** Working with your peers in product and engineering leadership to resolve high-level strategic conflicts.
+* **Strategic Focus**
+    * Defines the mid-to-long-term design vision and strategy for their area.
+        * ***This looks like:*** Creating the hiring plan and budget for your design group.
+        * ***This looks like:*** Identifying future skills gaps in the team and creating a plan to fill them.
+
+#### **Director**
+* **Impact & Ownership**
+    * Is responsible for the entire design function within a business unit or the whole company.
+        * ***This looks like:*** Setting the annual goals (OKRs) for the entire design organization.
+        * ***This looks like:*** Being the executive sponsor for a major customer experience initiative.
+* **Craft & Expertise**
+    * Builds and leads the design organization, including its culture, structure, and leadership development.
+        * ***This looks like:*** Designing the organizational structure of the design team.
+        * ***This looks like:*** Being the ultimate decision-maker on senior design hires and promotions.
+* **Communication & Collaboration**
+    * Serves as the lead advocate for design on the leadership team.
+        * ***This looks like:*** Collaborating with the VP of Product and VP of Engineering to define company strategy.
+        * ***This looks like:*** Presenting the value and ROI of design to the executive team and board.
+* **Strategic Focus**
+    * Sets the company's long-term design strategy.
+        * ***This looks like:*** Ensuring design has a strategic seat at the table during the company's annual planning process.
+        * ***This looks like:*** Weaving a culture of design thinking into the entire company.
+
+---
+
+### **Data**
+
+#### **Junior**
+* **Impact & Ownership**
+    * Answers data requests and performs analysis with guidance to answer well-defined business questions.
+        * ***This looks like:*** Writing a SQL query to pull the number of users who performed a specific action last week.
+        * ***This looks like:*** Taking an existing dashboard and updating it with the latest data.
+* **Craft & Expertise**
+    * Demonstrates proficiency in query tools (e.g., SQL) and data visualization.
+        * ***This looks like:*** Creating a simple, clear chart in Tableau or Looker to answer a stakeholder's question.
+        * ***This looks like:*** Learning to use the company's data warehouse and understanding the main data tables.
+* **Communication & Collaboration**
+    * Clearly communicates findings to immediate stakeholders.
+        * ***This looks like:*** Posting a chart and a one-sentence summary of the finding in a team Slack channel.
+        * ***This looks like:*** Working with another data analyst to get your query reviewed for accuracy.
+* **Strategic Focus**
+    * Focuses on accurately answering the questions they are asked.
+        * ***This looks like:*** Asking clarifying questions to make sure you fully understand the data request before you start.
+        * ***This looks like:*** Learning what the key business metrics for your team mean.
+
+#### **Mid-Level**
+* **Impact & Ownership**
+    * Independently conducts exploratory analysis to uncover insights and opportunities.
+        * ***This looks like:*** Digging into user behavior data to understand why a feature's usage is declining.
+        * ***This looks like:*** Owning the analysis for a new feature launch, from defining metrics to post-launch reporting.
+* **Craft & Expertise**
+    * Designs and analyzes experiments (A/B tests) to measure the impact of product changes.
+        * ***This looks like:*** Setting up an A/B test, calculating the statistical significance of the results, and making a launch recommendation.
+        * ***This looks like:*** Building a new, automated dashboard to track the performance of a key product area.
+* **Communication & Collaboration**
+    * Translates complex insights into actionable narratives and recommendations for non-technical stakeholders.
+        * ***This looks like:*** Presenting your findings from an analysis in a team meeting with PMs and designers.
+        * ***This looks like:*** Writing a short summary document that explains the key takeaways from your analysis.
+* **Strategic Focus**
+    * Formulates their own research questions that are relevant to team priorities.
+        * ***This looks like:*** Proposing a new analysis based on a question you have about user behavior.
+        * ***This looks like:*** Working with your PM to define the instrumentation and data needed for an upcoming feature.
+
+#### **Senior**
+* **Impact & Ownership**
+    * Leads complex, ambiguous data projects that influence strategic decisions.
+        * ***This looks like:*** Conducting a deep-dive analysis to understand the key drivers of user churn and presenting a set of recommendations to leadership.
+        * ***This looks like:*** Owning the measurement framework and goal-setting for a major company OKR.
+* **Craft & Expertise**
+    * Is an expert in an advanced methodology (e.g., causal inference, predictive modeling) and applies it to drive business value.
+        * ***This looks like:*** Building a simple predictive model to identify users who are at risk of churning.
+        * ***This looks like:*** Designing a complex experiment with multiple variants to test a major change to the product.
+* **Communication & Collaboration**
+    * Influences and aligns senior stakeholders with data-driven recommendations.
+        * ***This looks like:*** Presenting your findings to a Director-level audience and successfully convincing them to change their strategy.
+        * ***This looks like:*** Mentoring more junior analysts on the team and reviewing their work.
+* **Strategic Focus**
+    * Anticipates future business questions and proactively initiates research to answer them.
+        * ***This looks like:*** Starting an analysis of a new market trend before anyone asks for it.
+        * ***This looks like:*** Identifying a major gap in the company's data and working with data engineering to fix it.
+
+#### **Staff**
+* **Impact & Ownership**
+    * Leads the strategy and execution for solving the company's most challenging and highest-impact data problems.
+        * ***This looks like:*** Developing the core algorithm that powers a key feature of the product (e.g., a recommendation engine).
+        * ***This looks like:*** Creating a new customer segmentation model that is adopted by both the product and marketing organizations.
+* **Craft & Expertise**
+    * Shapes the technical and methodological direction for data science in the organization.
+        * ***This looks like:*** Creating the official company guide on how to run and interpret A/B tests.
+        * ***This looks like:*** Being the go-to expert for the most complex statistical or machine learning problems.
+* **Communication & Collaboration**
+    * Communicates complex data strategy and insights to executive leadership in a way that drives action.
+        * ***This looks like:*** Working with the CFO to build the company's financial forecast model.
+        * ***This looks like:*** Presenting to the C-suite on why the company needs to invest in a new data platform.
+* **Strategic Focus**
+    * Identifies how data science can create new product lines or business models.
+        * ***This looks like:*** Writing a strategy document that outlines how the company can use its data as a competitive advantage.
+        * ***This looks like:*** Proposing a new data-powered product feature that could generate revenue.
+
+#### **Principal**
+* **Impact & Ownership**
+    * Defines the long-term data and AI strategy for the entire company.
+        * ***This looks like:*** Making the key decision on what machine learning platforms the company will standardize on.
+        * ***This looks like:*** Owning the scientific vision for how the company will leverage AI in its products.
+* **Craft & Expertise**
+    * Is a world-class, externally recognized expert in one or more data/AI fields.
+        * ***This looks like:*** Publishing research in a top-tier academic journal or conference.
+        * ***This looks like:*** Being invited to give keynote speeches at major industry events.
+* **Communication & Collaboration**
+    * Mentors senior and staff scientists, cultivating the company's top technical talent.
+        * ***This looks like:*** Advising VPs and C-level executives on the strategic implications of new developments in AI.
+        * ***This looks like:*** Building relationships with academic labs to bring cutting-edge research into the company.
+* **Strategic Focus**
+    * Connects cutting-edge advances in AI research to the company's long-term strategy.
+        * ***This looks like:*** Writing the company's 5-year vision for data and AI.
+        * ***This looks like:*** Influencing the company's M&A strategy by identifying potential data-focused acquisition targets.
+
+#### **Manager**
+* **Impact & Ownership**
+    * Is accountable for the impact and deliverables of their team of data scientists/analysts.
+        * ***This looks like:*** Ensuring your team provides timely, accurate analysis that informs key product decisions.
+        * ***This looks like:*** Owning the delivery of the team's planned projects for the quarter.
+* **Craft & Expertise**
+    * Ensures the methodological rigor and quality of the team's work.
+        * ***This looks like:*** Establishing a peer review process for analysis and code within your team.
+        * ***This looks like:*** Holding effective weekly 1-on-1s and providing actionable career advice to your reports.
+* **Communication & Collaboration**
+    * Acts as the bridge between their team and business stakeholders, translating business needs into data projects.
+        * ***This looks like:*** Running a project intake and prioritization process for your team.
+        * ***This looks like:*** Summarizing your team's findings and presenting them in key stakeholder meetings.
+* **Strategic Focus**
+    * Defines the project roadmap for the team, aligning it with company priorities.
+        * ***This looks like:*** Working with stakeholders to create a quarterly roadmap of analytical projects.
+        * ***This looks like:*** Making a case to hire another analyst based on the growing demand for data insights.
+
+#### **Sr. Manager**
+* **Impact & Ownership**
+    * Manages multiple data teams or a complex data function (e.g., experimentation platform, marketing modeling).
+        * ***This looks like:*** Being responsible for the data science and analytics function for an entire business unit.
+        * ***This looks like:*** Owning the strategy and roadmap for the company's central data platform.
+* **Craft & Expertise**
+    * Manages and develops other managers or technical leads in the data org.
+        * ***This looks like:*** Running a weekly sync for the data science leads/managers in your group.
+        * ***This looks like:*** Creating a unified career ladder and performance review process for your part of the data org.
+* **Communication & Collaboration**
+    * Communicates their data organization's strategy to senior leadership.
+        * ***This looks like:*** Presenting your group's strategy and impact at a quarterly business review.
+        * ***This looks like:*** Working with engineering leadership to advocate for investments in data infrastructure.
+* **Strategic Focus**
+    * Defines the mid-term vision and strategy for their data organization.
+        * ***This looks like:*** Creating the 18-month charter and headcount plan for your group.
+        * ***This looks like:*** Making key decisions about which tools and platforms your teams will standardize on.
+
+#### **Director**
+* **Impact & Ownership**
+    * Is responsible for the entire data science function at the company, from strategy to execution and impact.
+        * ***This looks like:*** Setting the annual OKRs for the entire data organization.
+        * ***This looks like:*** Being the executive owner for data governance and privacy across the company.
+* **Craft & Expertise**
+    * Builds and leads the entire data organization, including its culture, structure, and leadership development.
+        * ***This looks like:*** Designing the operating model for how a centralized data team works with decentralized business units.
+        * ***This looks like:*** Being the ultimate hiring manager for senior data roles.
+* **Communication & Collaboration**
+    * Is the lead advocate for data literacy and data-driven decision making on the leadership team.
+        * ***This looks like:*** Establishing a company-wide program to help everyone make better data-informed decisions.
+        * ***This looks like:*** Presenting to the board on how the company's data assets are creating value.
+* **Strategic Focus**
+    * Sets the company's long-term data and AI strategy.
+        * ***This looks like:*** Making the case for a multi-million dollar investment in a new data platform.
+        * ***This looks like:*** Defining how the company will use AI to build a competitive moat over the next 5 years.

@@ -23,11 +23,19 @@ model User {
   performanceFeedback String?
   onboardingCompletedAt DateTime?
   
+  // Career Progression Plan
+  careerProgressionPlan    String?   // Generated plan for current level
+  nextLevelExpectations    String?   // Expectations for next level  
+  companyCareerLadder      String?   // Optional company-provided ladder
+  careerPlanGeneratedAt    DateTime? // Track when plan was created
+  careerPlanLastUpdated    DateTime? // Track manual edits
+  
   accounts        Account[]
   sessions        Session[]
   snippets           WeeklySnippet[]
   integrations       Integration[]
   performanceAssessments PerformanceAssessment[]
+  asyncOperations      AsyncOperation[]
   @@map("users")
 }
 
@@ -127,4 +135,26 @@ model Integration {
   
   @@unique([userId, type])
   @@map("integrations")
+}
+
+model AsyncOperation {
+  id                String    @id @default(cuid())
+  userId            String
+  operationType     String    // 'career_plan_generation', 'weekly_analysis', etc.
+  status            String    // 'queued', 'processing', 'completed', 'failed'
+  progress          Int       @default(0) // 0-100
+  inputData         String?
+  resultData        String?
+  errorMessage      String?
+  createdAt         DateTime  @default(now())
+  startedAt         DateTime?
+  completedAt       DateTime?
+  estimatedDuration Int?      // seconds
+  metadata          String      @default("{}")
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, operationType, status])
+  @@index([status, createdAt])
+  @@map("async_operations")
 }
