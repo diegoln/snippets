@@ -70,6 +70,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [showSettings, setShowSettings] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'snippets' | 'performance'>('snippets')
+  const isCareerCheckInsEnabled = process.env.NEXT_PUBLIC_ENABLE_CAREER_CHECKINS === 'true'
   const [assessments, dispatch] = useReducer(assessmentReducer, [])
   const [currentPage, setCurrentPage] = useState<number>(0)
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
@@ -516,20 +517,22 @@ export const AuthenticatedApp = (): JSX.Element => {
               >
 Weekly Reflections
               </button>
-              <button
-                onClick={() => setActiveTab('performance')}
-                className={`py-3 px-2 md:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-advance min-w-fit focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 ${
-                  activeTab === 'performance'
-                    ? 'border-accent-500 text-primary-600'
-                    : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
-                }`}
-                role="tab"
-                aria-selected={activeTab === 'performance'}
-                aria-controls="performance-panel"
-                id="performance-tab"
-              >
-                Career Check-In Drafts
-              </button>
+              {isCareerCheckInsEnabled && (
+                <button
+                  onClick={() => setActiveTab('performance')}
+                  className={`py-3 px-2 md:px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-advance min-w-fit focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2 ${
+                    activeTab === 'performance'
+                      ? 'border-accent-500 text-primary-600'
+                      : 'border-transparent text-secondary hover:text-primary-600 hover:border-neutral-600/30'
+                  }`}
+                  role="tab"
+                  aria-selected={activeTab === 'performance'}
+                  aria-controls="performance-panel"
+                  id="performance-tab"
+                >
+                  Career Check-In Drafts
+                </button>
+              )}
             </div>
           </div>
         </nav>
@@ -682,7 +685,7 @@ Weekly Reflections
             )}
           </main>
         </div>
-        ) : (
+        ) : isCareerCheckInsEnabled ? (
           <ErrorBoundary
             fallback={
               <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -697,6 +700,10 @@ Weekly Reflections
               onDeleteAssessment={handleDeleteAssessment}
             />
           </ErrorBoundary>
+        ) : (
+          <div className="bg-white rounded-lg shadow-md p-6 text-center">
+            <p className="text-gray-500">Career check-ins are currently disabled.</p>
+          </div>
         )}
         </div>
 
