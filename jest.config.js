@@ -18,26 +18,18 @@ const jestConfig = {
   // Setup files to run after tests
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   
-  // Test file patterns - include all tests but exclude problematic ones
+  // Test file patterns
   testMatch: [
-    '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/lib/__tests__/**/*.{js,jsx,ts,tsx}',
-    '<rootDir>/app/api/**/*.test.{js,jsx,ts,tsx}',
-    '<rootDir>/app/api/**/__tests__/**/*.{js,jsx,ts,tsx}'
+    '<rootDir>/__tests__/**/*.{js,ts}',
+    '<rootDir>/lib/__tests__/**/*.{js,ts}',
+    '<rootDir>/app/api/**/*.test.{js,ts}',
+    '<rootDir>/app/api/**/__tests__/**/*.{js,ts}'
   ],
 
-  // Exclude only truly problematic test files (empty or requiring special setup)
+  // Exclude problematic test files
   testPathIgnorePatterns: [
     '/node_modules/',
-    '/__tests__/demo-server.test.js',
-    '/__tests__/performance.test.ts',
-    '/__tests__/snippet-creation-integration.test.js', // Empty test file
-    '/__tests__/integration-reset-onboarding-e2e.test.ts', // E2E test requiring running server
-    '/components/.*\\.(test|spec)\\.(js|jsx|ts|tsx)$', // Component tests need JSDOM
-    // Exclude all React/JSX tests that need JSDOM environment
-    '/__tests__/.*\\.tsx$',
-    '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$',
-    '/__tests__/onboarding.*\\.test\\.(ts|tsx)$'
+    '/__tests__/integration-reset-onboarding-e2e.test.ts'
   ],
   
   // Module paths and aliases

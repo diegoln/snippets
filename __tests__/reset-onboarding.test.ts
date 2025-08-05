@@ -24,12 +24,12 @@ describe('Reset Onboarding Functionality', () => {
 
   beforeEach(() => {
     // Reset all mocks
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     
     // Mock data service
     mockDataService = {
-      updateUserProfile: vi.fn(),
-      disconnect: vi.fn()
+      updateUserProfile: jest.fn(),
+      disconnect: jest.fn()
     }
     
     mockCreateUserDataService.mockReturnValue(mockDataService)
@@ -44,7 +44,7 @@ describe('Reset Onboarding Functionality', () => {
   })
 
   afterEach(() => {
-    vi.resetAllMocks()
+    jest.resetAllMocks()
   })
 
   describe('Authentication', () => {
@@ -216,7 +216,7 @@ describe('DevTools Reset Integration', () => {
   
   it('should work with DevTools resetOnboarding function', async () => {
     // Mock the global fetch for testing DevTools integration
-    const mockFetch = vi.fn()
+    const mockFetch = jest.fn()
     global.fetch = mockFetch
     
     mockFetch.mockResolvedValue({
@@ -244,7 +244,7 @@ describe('DevTools Reset Integration', () => {
   })
 
   it('should handle API errors in DevTools', async () => {
-    const mockFetch = vi.fn()
+    const mockFetch = jest.fn()
     global.fetch = mockFetch
     
     mockFetch.mockResolvedValue({
@@ -273,10 +273,10 @@ describe('User Profile Update Integration', () => {
     // This test ensures that if we have career plan data, it gets handled properly
     mockGetUserIdFromRequest.mockResolvedValue('test-user-123')
     
-    const mockUpdateProfile = vi.fn().mockResolvedValue(undefined)
+    const mockUpdateProfile = jest.fn().mockResolvedValue(undefined)
     const testDataService = {
       updateUserProfile: mockUpdateProfile,
-      disconnect: vi.fn()
+      disconnect: jest.fn()
     }
     mockCreateUserDataService.mockReturnValue(testDataService)
 
