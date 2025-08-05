@@ -552,7 +552,7 @@ export class UserScopedDataService {
         startedAt: operation.startedAt || undefined,
         completedAt: operation.completedAt || undefined,
         estimatedDuration: operation.estimatedDuration || undefined,
-        metadata: operation.metadata ? JSON.parse(operation.metadata) : {}
+        metadata: operation.metadata ? JSON.parse(operation.metadata as string) : {}
       }
     } catch (error) {
       console.error('Error creating async operation:', error)
@@ -589,7 +589,7 @@ export class UserScopedDataService {
         startedAt: operation.startedAt || undefined,
         completedAt: operation.completedAt || undefined,
         estimatedDuration: operation.estimatedDuration || undefined,
-        metadata: operation.metadata ? JSON.parse(operation.metadata) : {}
+        metadata: operation.metadata ? JSON.parse(operation.metadata as string) : {}
       }
     } catch (error) {
       console.error('Error fetching async operation:', error)
