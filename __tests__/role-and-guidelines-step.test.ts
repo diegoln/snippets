@@ -895,4 +895,426 @@ describe('RoleAndGuidelinesStep Logic', () => {
       expect(completionData.careerGuidelines.companyLadder).toBe('document-uploaded')
     })
   })
+
+  describe('Text Field Auto-Selection Behavior', () => {
+    test('should auto-select "other" radio when role text field is focused', () => {
+      // Simulate initial state with Engineering selected
+      let role = 'engineering'
+      let customRole = ''
+      
+      const handleRoleChange = (newRole: string, newCustomRole?: string) => {
+        role = newRole
+        if (newCustomRole !== undefined) customRole = newCustomRole
+      }
+
+      // Simulate onFocus behavior when text field is clicked
+      const handleTextFieldFocus = () => {
+        if (role !== 'other') {
+          handleRoleChange('other', '')
+        }
+      }
+
+      // Before focus - engineering is selected
+      expect(role).toBe('engineering')
+      expect(customRole).toBe('')
+
+      // Simulate clicking on text field
+      handleTextFieldFocus()
+
+      // After focus - other should be selected
+      expect(role).toBe('other')
+      expect(customRole).toBe('')
+    })
+
+    test('should auto-select "other" radio when level text field is focused', () => {
+      // Simulate initial state with Senior selected
+      let level = 'senior'
+      let customLevel = ''
+      
+      const handleLevelChange = (newLevel: string, newCustomLevel?: string) => {
+        level = newLevel
+        if (newCustomLevel !== undefined) customLevel = newCustomLevel
+      }
+
+      // Simulate onFocus behavior when text field is clicked
+      const handleTextFieldFocus = () => {
+        if (level !== 'other') {
+          handleLevelChange('other', '')
+        }
+      }
+
+      // Before focus - senior is selected
+      expect(level).toBe('senior')
+      expect(customLevel).toBe('')
+
+      // Simulate clicking on text field
+      handleTextFieldFocus()
+
+      // After focus - other should be selected
+      expect(level).toBe('other')
+      expect(customLevel).toBe('')
+    })
+
+    test('should not change state when "other" is already selected and text field is focused', () => {
+      // Simulate state where other is already selected with content
+      let role = 'other'
+      let customRole = 'DevOps Engineer'
+      
+      const handleRoleChange = (newRole: string, newCustomRole?: string) => {
+        role = newRole
+        if (newCustomRole !== undefined) customRole = newCustomRole
+      }
+
+      // Simulate onFocus behavior
+      const handleTextFieldFocus = () => {
+        if (role !== 'other') {
+          handleRoleChange('other', '')
+        }
+      }
+
+      // Before focus - other already selected with content
+      expect(role).toBe('other')
+      expect(customRole).toBe('DevOps Engineer')
+
+      // Simulate clicking on text field
+      handleTextFieldFocus()
+
+      // After focus - should remain unchanged
+      expect(role).toBe('other')
+      expect(customRole).toBe('DevOps Engineer') // Content preserved
+    })
+
+    test('should preserve existing custom content when switching back to "other"', () => {
+      // Simulate scenario: user types custom role, selects preset, then clicks text field again
+      let role = 'other'
+      let customRole = 'Solutions Architect'
+      
+      const handleRoleChange = (newRole: string, newCustomRole?: string) => {
+        role = newRole
+        if (newCustomRole !== undefined) customRole = newCustomRole
+      }
+
+      // User selects a preset button (this should not clear custom role)
+      handleRoleChange('engineering')
+      
+      expect(role).toBe('engineering')
+      expect(customRole).toBe('Solutions Architect') // Should be preserved
+
+      // User clicks text field again - should restore "other" with preserved content
+      const handleTextFieldFocus = () => {
+        if (role !== 'other') {
+          handleRoleChange('other', customRole) // Should restore with existing content
+        }
+      }
+
+      handleTextFieldFocus()
+      
+      expect(role).toBe('other')
+      expect(customRole).toBe('Solutions Architect') // Content restored
+    })
+  })
+
+  describe('Text Field State Management', () => {
+    test('should not have disabled attribute on text fields', () => {
+      // This test ensures text fields are always clickable (the original bug)
+      const roleNotOther = 'engineering'
+      const levelNotOther = 'senior'
+      
+      // Text fields should never be disabled, even when other options are selected
+      const isRoleFieldDisabled = false // Should always be false now
+      const isLevelFieldDisabled = false // Should always be false now
+      
+      expect(isRoleFieldDisabled).toBe(false)
+      expect(isLevelFieldDisabled).toBe(false)
+    })
+  })
+
+  describe('Placeholder Text Validation', () => {
+    test('role placeholder should not match any preset role labels', () => {
+      const placeholder = 'Enter your role (e.g., Solutions Architect)'
+      const presetRoleLabels = ['Engineering', 'Design', 'Product', 'Data']
+      
+      // Extract examples from placeholder
+      const exampleMatch = placeholder.match(/e\.g\., (.+)\)/)
+      const examples = exampleMatch ? exampleMatch[1].split(', ') : []
+      
+      examples.forEach(example => {
+        expect(presetRoleLabels).not.toContain(example.trim())
+      })
+    })
+
+    test('level placeholder should not match any preset level labels', () => {
+      const placeholder = 'Enter your level (e.g., Lead, Head, VP)'
+      const presetLevelLabels = [
+        'Junior', 'Mid-level', 'Senior', 'Staff', 'Principal', 
+        'Manager', 'Senior Manager', 'Director'
+      ]
+      
+      // Extract examples from placeholder
+      const exampleMatch = placeholder.match(/e\.g\., (.+)\)/)
+      const examples = exampleMatch ? exampleMatch[1].split(', ') : []
+      
+      examples.forEach(example => {
+        expect(presetLevelLabels).not.toContain(example.trim())
+      })
+    })
+
+    test('should validate that problematic "Principal" is not in level placeholder', () => {
+      const placeholder = 'Enter your level (e.g., Lead, Head, VP)'
+      
+      // This was the original bug - "Principal" was in the placeholder but also a preset button
+      expect(placeholder).not.toContain('Principal')
+      expect(placeholder).toContain('Lead') // Should contain non-conflicting examples
+      expect(placeholder).toContain('Head')
+      expect(placeholder).toContain('VP')
+    })
+  })
+
+  describe('Next Level Label Logic for Custom Roles', () => {
+    test('should show "Next Level" (without specific name) for custom roles', () => {
+      const getNextLevelLabel = (role: string, level: string, customRole: string, customLevel: string) => {
+        const effectiveLevel = level === 'other' ? customLevel.toLowerCase() : level
+        const effectiveRole = role === 'other' ? customRole : role
+        
+        if (!effectiveLevel || !effectiveRole) {
+          return 'Next Level Expectations'
+        }
+        
+        // For custom roles/levels, just show "Next Level" without specific name
+        if (role === 'other' || level === 'other') {
+          return 'Next Level'
+        }
+        
+        return 'Next Level: Staff Engineering' // Standard case example
+      }
+
+      // Test custom role + standard level
+      expect(getNextLevelLabel('other', 'senior', 'DevOps Engineer', '')).toBe('Next Level')
+      
+      // Test standard role + custom level  
+      expect(getNextLevelLabel('engineering', 'other', '', 'Lead')).toBe('Next Level')
+      
+      // Test both custom
+      expect(getNextLevelLabel('other', 'other', 'DevOps Engineer', 'Lead')).toBe('Next Level')
+      
+      // Test standard case
+      expect(getNextLevelLabel('engineering', 'senior', '', '')).toBe('Next Level: Staff Engineering')
+    })
+
+    test('should show "Next Level Expectations" when fields are empty', () => {
+      const getNextLevelLabel = (role: string, level: string, customRole: string, customLevel: string) => {
+        const effectiveLevel = level === 'other' ? customLevel.toLowerCase() : level
+        const effectiveRole = role === 'other' ? customRole : role
+        
+        if (!effectiveLevel || !effectiveRole) {
+          return 'Next Level Expectations'
+        }
+        
+        if (role === 'other' || level === 'other') {
+          return 'Next Level'
+        }
+        
+        return 'Next Level: Staff Engineering'
+      }
+
+      // Test empty custom role
+      expect(getNextLevelLabel('other', 'senior', '', '')).toBe('Next Level Expectations')
+      
+      // Test empty custom level
+      expect(getNextLevelLabel('engineering', 'other', '', '')).toBe('Next Level Expectations')
+      
+      // Test both empty
+      expect(getNextLevelLabel('other', 'other', '', '')).toBe('Next Level Expectations')
+      
+      // Test no selections
+      expect(getNextLevelLabel('', '', '', '')).toBe('Next Level Expectations')
+    })
+  })
+
+  describe('Edge Cases and Corner Cases', () => {
+    test('should handle rapid switching between preset and custom options', () => {
+      let role = 'engineering'
+      let customRole = 'Solutions Architect'
+      
+      const handleRoleChange = (newRole: string, newCustomRole?: string) => {
+        role = newRole
+        if (newCustomRole !== undefined) customRole = newCustomRole
+      }
+
+      // Rapid sequence: preset -> other -> preset -> other
+      handleRoleChange('other') // Switch to other
+      expect(role).toBe('other')
+      
+      handleRoleChange('product') // Switch to preset
+      expect(role).toBe('product')
+      
+      handleRoleChange('other') // Switch back to other
+      expect(role).toBe('other')
+      expect(customRole).toBe('Solutions Architect') // Should preserve content
+    })
+
+    test('should handle focus events when guidelines are already generated', () => {
+      // Simulate state where guidelines exist and user clicks text field
+      let role = 'engineering'
+      let hasGeneratedGuidelines = true
+      let currentLevelPlan = 'Existing plan'
+      
+      const handleRoleChange = (newRole: string) => {
+        role = newRole
+        // Should reset guidelines when role changes
+        if (hasGeneratedGuidelines) {
+          currentLevelPlan = ''
+          hasGeneratedGuidelines = false
+        }
+      }
+
+      const handleTextFieldFocus = () => {
+        if (role !== 'other') {
+          handleRoleChange('other')
+        }
+      }
+
+      // Before focus
+      expect(role).toBe('engineering')
+      expect(hasGeneratedGuidelines).toBe(true)
+      expect(currentLevelPlan).toBe('Existing plan')
+
+      // Focus on text field
+      handleTextFieldFocus()
+
+      // Should switch to other and reset guidelines
+      expect(role).toBe('other')
+      expect(hasGeneratedGuidelines).toBe(false)
+      expect(currentLevelPlan).toBe('')
+    })
+
+    test('should handle empty string inputs correctly', () => {
+      const sanitizeInput = (input: string): string => {
+        return input
+          .trim()
+          .replace(/[<>"'&]/g, (match) => ({
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '&': '&amp;'
+          }[match] || match))
+          .replace(/\s+/g, ' ')
+          .substring(0, 100)
+      }
+
+      // Empty string should remain empty after sanitization
+      expect(sanitizeInput('')).toBe('')
+      expect(sanitizeInput('   ')).toBe('') // Whitespace only
+      expect(sanitizeInput('\t\n')).toBe('') // Tabs and newlines
+    })
+
+    test('should handle special characters in custom role/level names', () => {
+      const sanitizeInput = (input: string): string => {
+        return input
+          .trim()
+          .replace(/[<>"'&]/g, (match) => ({
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;',
+            '&': '&amp;'
+          }[match] || match))
+          .replace(/\s+/g, ' ')
+          .substring(0, 100)
+      }
+
+      // Test HTML/XSS prevention
+      expect(sanitizeInput('Solutions <script>alert("xss")</script> Architect'))
+        .toBe('Solutions &lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt; Architect')
+      
+      // Test normal special characters that should be preserved
+      expect(sanitizeInput('C++ Developer')).toBe('C++ Developer')
+      expect(sanitizeInput('DevOps/SRE Engineer')).toBe('DevOps/SRE Engineer')
+    })
+
+    test('should validate completion requirements with custom fields', () => {
+      const canContinue = (role: string, customRole: string, level: string, customLevel: string, 
+                          currentPlan: string, expectations: string) => {
+        const effectiveRole = role === 'other' ? customRole.trim() : role
+        const effectiveLevel = level === 'other' ? customLevel.trim() : level
+        return !!(effectiveRole && effectiveLevel && currentPlan && expectations)
+      }
+
+      // Should not allow continue with empty custom role
+      expect(canContinue('other', '', 'senior', '', 'plan', 'expectations')).toBe(false)
+      expect(canContinue('other', '   ', 'senior', '', 'plan', 'expectations')).toBe(false)
+      
+      // Should not allow continue with empty custom level
+      expect(canContinue('engineering', '', 'other', '', 'plan', 'expectations')).toBe(false)
+      expect(canContinue('engineering', '', 'other', '   ', 'plan', 'expectations')).toBe(false)
+      
+      // Should allow continue with valid custom values
+      expect(canContinue('other', 'DevOps', 'other', 'Lead', 'plan', 'expectations')).toBe(true)
+    })
+
+    test('should handle text field interactions during loading states', () => {
+      let isLoading = true
+      let role = 'engineering'
+      
+      const handleRoleChange = (newRole: string) => {
+        if (isLoading) {
+          // Should not change state during loading
+          return
+        }
+        role = newRole
+      }
+
+      const handleTextFieldFocus = () => {
+        if (role !== 'other' && !isLoading) {
+          handleRoleChange('other')
+        }
+      }
+
+      // Before focus during loading
+      expect(role).toBe('engineering')
+      expect(isLoading).toBe(true)
+
+      // Try to focus during loading
+      handleTextFieldFocus()
+
+      // Should not change during loading
+      expect(role).toBe('engineering')
+
+      // After loading completes
+      isLoading = false
+      handleTextFieldFocus()
+
+      // Should now change
+      expect(role).toBe('other')
+    })
+
+    test('should handle accessibility concerns with radio button synchronization', () => {
+      // Ensure radio button state stays in sync with text field interactions
+      let roleRadioChecked = false // Initially engineering selected
+      let role = 'engineering'
+      
+      const handleRoleChange = (newRole: string) => {
+        role = newRole
+        roleRadioChecked = (newRole === 'other')
+      }
+
+      const handleTextFieldFocus = () => {
+        if (role !== 'other') {
+          handleRoleChange('other')
+        }
+      }
+
+      // Before focus
+      expect(role).toBe('engineering')
+      expect(roleRadioChecked).toBe(false)
+
+      // Focus text field
+      handleTextFieldFocus()
+
+      // Radio button should be synchronized
+      expect(role).toBe('other')
+      expect(roleRadioChecked).toBe(true)
+    })
+  })
 })

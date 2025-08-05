@@ -84,6 +84,8 @@ export function RoleAndGuidelinesStep({
       return <div className="text-gray-500 italic">No content yet</div>
     }
 
+    console.log('Rendering content:', content.substring(0, 200) + '...')
+
     const lines = content.split('\n')
     const elements: JSX.Element[] = []
     let currentKey = 0
@@ -91,49 +93,42 @@ export function RoleAndGuidelinesStep({
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Main category headers (e.g., "* **Impact & Ownership**")
-      if (line.match(/^\*\s+\*\*(.+?)\*\*\s*$/)) {
-        const category = line.replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '$1')
+      // Main category headers (e.g., "* **Impact & Ownership**" or "#### Impact & Ownership")
+      if (line.match(/^\*\s+\*\*(.+?)\*\*\s*$/) || line.match(/^#{1,4}\s+(.+)/)) {
+        const category = line.replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '$1').replace(/^#{1,4}\s+(.+)/, '$1')
         elements.push(
           <div key={currentKey++} className="mb-3 mt-4 first:mt-0">
             <h4 className="font-semibold text-gray-900 text-base mb-2 border-b border-gray-200 pb-1">{category}</h4>
           </div>
         )
       }
-      // Sub-bullets (main descriptions)
-      else if (line.match(/^\s{4}\*\s+(.+)/) && !line.includes('This looks like:')) {
-        const description = line.replace(/^\s{4}\*\s+(.+)/, '$1')
+      // Sub-bullets (main descriptions) - handle both * and - bullets
+      else if ((line.match(/^\s*[\*\-]\s+(.+)/) && !line.includes('This looks like:')) || line.match(/^\s{4,}\*\s+(.+)/)) {
+        const description = line.replace(/^\s*[\*\-]\s+(.+)/, '$1').replace(/^\s{4,}\*\s+(.+)/, '$1')
         elements.push(
-          <div key={currentKey++} className="ml-4 mb-3">
+          <div key={currentKey++} className="ml-4 mb-2">
             <p className="text-gray-700 text-sm leading-relaxed">{description}</p>
           </div>
         )
       }
-      // Examples with flexible spacing - handle both 8 spaces and other indentations
-      else if (line.match(/^\s{6,}\*\s+.*This looks like:/i)) {
-        const example = line.replace(/^\s{6,}\*\s+.*This looks like:\s*/i, '')
+      // Handle any other content lines
+      else if (line.trim() !== '' && !line.match(/^\s*$/) && elements.length > 0) {
         elements.push(
-          <div key={currentKey++} className="ml-8 mb-2">
-            <p className="text-gray-600 text-xs leading-relaxed">
-              <span className="font-medium text-blue-600">Example:</span> {example}
-            </p>
+          <div key={currentKey++} className="mb-2">
+            <p className="text-gray-700 text-sm leading-relaxed">{line.trim()}</p>
           </div>
         )
       }
-      // Handle any other bullet points that might not match the exact pattern
-      else if (line.match(/^\s+\*\s+(.+)/) && line.trim() !== '') {
-        const bulletContent = line.replace(/^\s+\*\s+(.+)/, '$1')
-        const indent = (line.match(/^\s*/)?.[0]?.length || 0) / 4
-        elements.push(
-          <div key={currentKey++} className={`ml-${Math.min(indent * 4, 12)} mb-1`}>
-            <p className="text-gray-600 text-xs leading-relaxed">{bulletContent}</p>
-          </div>
-        )
-      }
-      // Handle empty lines for spacing
-      else if (line.trim() === '' && elements.length > 0) {
-        continue
-      }
+    }
+
+    // Fallback: if no elements were parsed, show raw content
+    if (elements.length === 0) {
+      console.log('No elements parsed, showing raw content')
+      return (
+        <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+          {content}
+        </div>
+      )
     }
 
     return <div className="space-y-1">{elements}</div>
@@ -171,12 +166,17 @@ export function RoleAndGuidelinesStep({
       return <span>Next Level Expectations</span>
     }
     
+    // For custom roles/levels, just show "Next Level" without specific name
+    if (role === 'other' || level === 'other') {
+      return <span>Next Level</span>
+    }
+    
     const nextLevel = getNextLevel(effectiveLevel)
     
     // If it's the same level (no progression), show "Advanced [Current Level]"
     if (nextLevel === effectiveLevel) {
       const currentLevelLabel = level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
-      return <span>Advanced <strong>{currentLevelLabel} {effectiveRole}</strong></span>
+      return <span>Next Level: <strong>Advanced {currentLevelLabel} {effectiveRole}</strong></span>
     }
     
     // Try to get the standard label for next level
@@ -195,6 +195,17 @@ export function RoleAndGuidelinesStep({
     const effectiveRole = role === 'other' ? customRole.trim() : role
     const effectiveLevel = level === 'other' ? customLevel.trim() : level
     return effectiveRole && effectiveLevel && !hasGeneratedGuidelines && !isUploading
+  }
+
+  // Check if custom fields are properly filled when "other" is selected
+  const validateCustomFields = (): string | null => {
+    if (role === 'other' && !customRole.trim()) {
+      return 'Please enter a custom role'
+    }
+    if (level === 'other' && !customLevel.trim()) {
+      return 'Please enter a custom level'
+    }
+    return null
   }
 
   // Handle file upload and parsing
@@ -263,13 +274,30 @@ export function RoleAndGuidelinesStep({
 
   // Generate or fetch guidelines
   const generateGuidelines = async () => {
-    const effectiveRole = role === 'other' ? customRole : role
-    const effectiveLevel = level === 'other' ? customLevel : level
+    // Validate custom fields first
+    const validationError = validateCustomFields()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const effectiveRole = role === 'other' ? customRole.trim() : role
+    const effectiveLevel = level === 'other' ? customLevel.trim() : level
     
     if (!effectiveRole || !effectiveLevel) {
       setError('Please select both role and level')
       return
     }
+
+    console.log('generateGuidelines called with:', {
+      role,
+      level,
+      customRole,
+      customLevel,
+      effectiveRole,
+      effectiveLevel,
+      isStandard: isStandardCombo()
+    })
 
     setIsLoading(true)
     setError(null)
@@ -277,6 +305,7 @@ export function RoleAndGuidelinesStep({
     try {
       // First try to fetch from templates (for standard combos)
       if (isStandardCombo()) {
+        console.log('Using template API for standard combo')
         const response = await fetch(
           `/api/career-guidelines/template?role=${encodeURIComponent(effectiveRole)}&level=${encodeURIComponent(effectiveLevel)}`,
           {
@@ -298,6 +327,7 @@ export function RoleAndGuidelinesStep({
       }
       
       // If no template or custom role/level, generate with LLM
+      console.log('Using generation API for custom role/level')
       const response = await fetch('/api/career-guidelines/generate', {
         method: 'POST',
         headers: {
@@ -316,10 +346,34 @@ export function RoleAndGuidelinesStep({
       }
       
       const data = await response.json()
-      setCurrentLevelPlan(data.currentLevelPlan || '')
-      setNextLevelExpectations(data.nextLevelExpectations || '')
+      
+      // Debug logging
+      console.log('API Response data:', {
+        currentLevelPlan: data.currentLevelPlan?.substring(0, 100) + '...',
+        nextLevelExpectations: data.nextLevelExpectations?.substring(0, 100) + '...',
+        hasCurrentPlan: !!data.currentLevelPlan?.trim(),
+        hasNextExpectations: !!data.nextLevelExpectations?.trim()
+      })
+      
+      // Validate that we actually received content
+      if (!data.currentLevelPlan?.trim() || !data.nextLevelExpectations?.trim()) {
+        console.error('Empty guidelines received:', data)
+        throw new Error('Generated guidelines are empty. Please try again with different role/level values.')
+      }
+      
+      console.log('Setting content:', {
+        currentPlan: data.currentLevelPlan?.length + ' chars',
+        nextExpectations: data.nextLevelExpectations?.length + ' chars'
+      })
+      
+      setCurrentLevelPlan(data.currentLevelPlan)
+      setNextLevelExpectations(data.nextLevelExpectations)
       setHasGeneratedGuidelines(true)
       setExtractedFromDocument(false)
+      
+      // Force exit edit mode to ensure content is visible
+      setIsEditingCurrentLevel(false)
+      setIsEditingNextLevel(false)
     } catch (err) {
       console.error('Error generating guidelines:', err)
       setError('Failed to generate career guidelines. Please try again.')
@@ -435,9 +489,17 @@ export function RoleAndGuidelinesStep({
             type="text"
             value={role === 'other' ? customRole : ''}
             onChange={(e) => handleRoleChange('other', sanitizeInput(e.target.value))}
+            onFocus={() => {
+              if (role !== 'other') {
+                handleRoleChange('other', '')
+              }
+            }}
             placeholder="Enter your role (e.g., Solutions Architect)"
-            className="w-full p-3 border border-gray-300 rounded-lg disabled:bg-gray-50"
-            disabled={role !== 'other'}
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              role === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
           />
         </div>
       </div>
@@ -478,9 +540,17 @@ export function RoleAndGuidelinesStep({
             type="text"
             value={level === 'other' ? customLevel : ''}
             onChange={(e) => handleLevelChange('other', sanitizeInput(e.target.value))}
-            placeholder="Enter your level (e.g., Lead, Principal)"
-            className="w-full p-3 border border-gray-300 rounded-lg disabled:bg-gray-50"
-            disabled={level !== 'other'}
+            onFocus={() => {
+              if (level !== 'other') {
+                handleLevelChange('other', '')
+              }
+            }}
+            placeholder="Enter your level (e.g., Lead, Head, VP)"
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              level === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
           />
         </div>
       </div>
