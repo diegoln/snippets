@@ -36,9 +36,7 @@ const jestConfig = {
     // Exclude all React/JSX tests that need JSDOM environment
     '/__tests__/.*\\.tsx$',
     '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$',
-    '/__tests__/onboarding.*\\.test\\.(ts|tsx)$',
-    // Exclude duplicate profile test file (keep the one in __tests__ directory)
-    'app/api/user/profile/route.test.ts'
+    '/__tests__/onboarding.*\\.test\\.(ts|tsx)$'
   ],
   
   // Module paths and aliases

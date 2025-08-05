@@ -73,17 +73,34 @@ export function createMockUserDataService() {
   }
 }
 
+// Define proper interface for mock request to avoid 'as any'
+interface MockNextRequest extends Request {
+  json(): Promise<any>
+  nextUrl: {
+    pathname: string
+    searchParams: URLSearchParams
+  }
+}
+
 // Export test utilities
 export const testUtils = {
-  createMockRequest: (url: string, options: RequestInit = {}) => {
-    return new Request(url, {
+  createMockRequest: (url: string, options: RequestInit = {}): MockNextRequest => {
+    const request = new Request(url, {
       method: 'GET',
       headers: {
         'content-type': 'application/json',
         ...options.headers
       },
       ...options
-    }) as any // Type assertion for NextRequest compatibility
+    })
+
+    // Extend the request with NextRequest-specific properties
+    return Object.assign(request, {
+      nextUrl: {
+        pathname: new URL(url).pathname,
+        searchParams: new URL(url).searchParams
+      }
+    }) as MockNextRequest
   },
   
   mockAuthenticatedUser: (userId: string = 'test-user-123') => {
