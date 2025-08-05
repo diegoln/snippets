@@ -8,9 +8,14 @@ import { DELETE } from '@/app/api/user/onboarding/route'
 import { getUserIdFromRequest } from '@/lib/auth-utils'
 import { createUserDataService } from '@/lib/user-scoped-data'
 
-// Mock dependencies
-jest.mock('@/lib/auth-utils')
-jest.mock('@/lib/user-scoped-data')
+// Mock dependencies with explicit module paths
+jest.mock('../lib/auth-utils', () => ({
+  getUserIdFromRequest: jest.fn(),
+}))
+
+jest.mock('../lib/user-scoped-data', () => ({
+  createUserDataService: jest.fn(),
+}))
 
 const mockGetUserIdFromRequest = getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>
 const mockCreateUserDataService = createUserDataService as jest.MockedFunction<typeof createUserDataService>
