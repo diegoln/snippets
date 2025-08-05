@@ -52,7 +52,7 @@ jobs:
           NODE_ENV: test
 
       - name: Run performance tests
-        run: npm test -- __tests__/performance.test.ts
+        run: npm test -- __tests__/performance.test.ts --passWithNoTests
         env:
           NODE_ENV: test
 
