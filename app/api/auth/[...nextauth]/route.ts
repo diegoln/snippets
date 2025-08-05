@@ -1,20 +1,11 @@
 import NextAuth from 'next-auth'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
-import { PrismaClient } from '@prisma/client'
+import { createSafeAdapter } from '../../../../lib/auth-adapter'
 import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 
-// Singleton pattern for PrismaClient to prevent multiple connections in serverless
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-const prisma = globalForPrisma.prisma ?? new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Conditional logging utility
 const isDev = process.env.NODE_ENV === 'development'
@@ -72,9 +63,10 @@ const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }
       return url
     }
     
-    // Default redirect for new OAuth sign-ins in production
-    // TODO: Check if user has completed onboarding to differentiate new vs returning users
-    return `${correctBaseUrl}/onboarding-wizard`
+    // For production OAuth sign-ins, redirect existing users to dashboard, new users to onboarding
+    // Note: This is a simplified approach - in a real app you'd check user profile completion
+    // For now, let returning users go to the main app instead of forcing onboarding
+    return correctBaseUrl
   }
   
   // Development uses our custom flow
@@ -178,8 +170,15 @@ authLog('NODE_ENV:', process.env.NODE_ENV);
 authLog('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
 authLog('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'Set' : 'Not set');
 
+const safeAdapter = createSafeAdapter()
+
+// Log adapter and session strategy for debugging
+authLog('Database adapter available:', !!safeAdapter)
+authLog('Session strategy:', (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database')
+
 const handler = NextAuth({
-  adapter: process.env.NODE_ENV === 'development' ? undefined : PrismaAdapter(prisma),
+  // Use safe adapter that handles database connection failures gracefully
+  adapter: safeAdapter,
   providers,
   debug: isDebugEnabled, // Only enable when explicitly requested
   callbacks: {
@@ -189,7 +188,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    strategy: process.env.NODE_ENV === 'development' ? 'jwt' : 'database',
+    // Use JWT sessions in development or if no adapter available
+    strategy: (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database',
   },
   events: {
     async signIn(message) {

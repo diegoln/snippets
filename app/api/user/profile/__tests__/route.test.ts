@@ -6,15 +6,16 @@
 import { GET, PUT } from '../route'
 import { NextRequest } from 'next/server'
 import { createUserDataService } from '@/lib/user-scoped-data'
+import { createMockUserProfile, testData } from '@/test-utils/mock-factories'
+
+// Mock auth utils first
+jest.mock('@/lib/auth-utils', () => ({
+  getUserIdFromRequest: jest.fn().mockResolvedValue('user-123')
+}))
 
 // Mock the user data service
 jest.mock('@/lib/user-scoped-data')
 const mockCreateUserDataService = createUserDataService as jest.MockedFunction<typeof createUserDataService>
-
-// Mock auth utils
-jest.mock('@/lib/auth-utils', () => ({
-  getUserIdFromRequest: jest.fn().mockResolvedValue('user-123')
-}))
 
 describe('/api/user/profile', () => {
   let mockDataService: any
@@ -33,15 +34,8 @@ describe('/api/user/profile', () => {
 
   describe('GET /api/user/profile', () => {
     it('should return user profile successfully', async () => {
-      const mockProfile = {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        jobTitle: 'engineer',
-        seniorityLevel: 'senior',
-        performanceFeedback: null,
-        onboardingCompletedAt: new Date('2025-01-01T10:00:00.000Z')
-      }
+      // Use factory function for consistent mock data
+      const mockProfile = testData.standardUserProfile
 
       mockDataService.getUserProfile.mockResolvedValue(mockProfile)
 
@@ -56,7 +50,7 @@ describe('/api/user/profile', () => {
         name: 'Test User',
         jobTitle: 'engineer',
         seniorityLevel: 'senior',
-        performanceFeedback: null,
+        onboardingCompleted: true,
         onboardingCompletedAt: '2025-01-01T10:00:00.000Z'
       })
       expect(mockDataService.disconnect).toHaveBeenCalled()
@@ -70,7 +64,7 @@ describe('/api/user/profile', () => {
       const data = await response.json()
 
       expect(response.status).toBe(404)
-      expect(data.error).toBe('Profile not found')
+      expect(data.error).toBe('User profile not found')
     })
 
     it('should handle database errors gracefully', async () => {
@@ -115,15 +109,15 @@ describe('/api/user/profile', () => {
         jobTitle: 'engineer',
         seniorityLevel: 'senior'
       })
+      expect(data.id).toBe('user-123')
       expect(data.jobTitle).toBe('engineer')
       expect(data.seniorityLevel).toBe('senior')
     })
 
-    it('should reject invalid role with 400 error', async () => {
+    it('should return 400 if jobTitle is missing', async () => {
       const request = new NextRequest('http://localhost:3000/api/user/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          jobTitle: 'invalid-role',
           seniorityLevel: 'senior'
         })
       })
@@ -132,16 +126,15 @@ describe('/api/user/profile', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Invalid job title. Must be one of: engineer, designer, product, data')
+      expect(data.error).toBe('Job title and seniority level are required')
       expect(mockDataService.updateUserProfile).not.toHaveBeenCalled()
     })
 
-    it('should reject invalid level with 400 error', async () => {
+    it('should return 400 if seniorityLevel is missing', async () => {
       const request = new NextRequest('http://localhost:3000/api/user/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          jobTitle: 'engineer',
-          seniorityLevel: 'invalid-level'
+          jobTitle: 'engineer'
         })
       })
 
@@ -149,17 +142,17 @@ describe('/api/user/profile', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Invalid seniority level. Must be one of: junior, mid, senior, staff, principal')
+      expect(data.error).toBe('Job title and seniority level are required')
       expect(mockDataService.updateUserProfile).not.toHaveBeenCalled()
     })
 
-    it('should update only provided fields', async () => {
+    it('should accept custom job titles and seniority levels', async () => {
       const updatedProfile = {
         id: 'user-123',
         email: 'test@example.com',
-        name: 'Updated Name',
-        jobTitle: 'engineer',
-        seniorityLevel: 'senior',
+        name: 'Test User',
+        jobTitle: 'Custom Role',
+        seniorityLevel: 'Principal Architect',
         performanceFeedback: null,
         onboardingCompletedAt: null
       }
@@ -169,7 +162,8 @@ describe('/api/user/profile', () => {
       const request = new NextRequest('http://localhost:3000/api/user/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name: 'Updated Name'
+          jobTitle: 'Custom Role',
+          seniorityLevel: 'Principal Architect'
         })
       })
 
@@ -178,9 +172,11 @@ describe('/api/user/profile', () => {
 
       expect(response.status).toBe(200)
       expect(mockDataService.updateUserProfile).toHaveBeenCalledWith({
-        name: 'Updated Name'
+        jobTitle: 'Custom Role',
+        seniorityLevel: 'Principal Architect'
       })
-      expect(data.name).toBe('Updated Name')
+      expect(data.jobTitle).toBe('Custom Role')
+      expect(data.seniorityLevel).toBe('Principal Architect')
     })
 
     it('should handle database errors gracefully', async () => {
@@ -189,7 +185,8 @@ describe('/api/user/profile', () => {
       const request = new NextRequest('http://localhost:3000/api/user/profile', {
         method: 'PUT',
         body: JSON.stringify({
-          name: 'Test Name'
+          jobTitle: 'engineer',
+          seniorityLevel: 'senior'
         })
       })
 
@@ -213,62 +210,5 @@ describe('/api/user/profile', () => {
       expect(data.error).toBe('Failed to update profile')
     })
 
-    it('should validate all role enum values', async () => {
-      const validRoles = ['engineer', 'designer', 'product', 'data']
-      
-      for (const role of validRoles) {
-        const updatedProfile = {
-          id: 'user-123',
-          email: 'test@example.com',
-          name: 'Test User',
-          jobTitle: role,
-          seniorityLevel: 'senior',
-          performanceFeedback: null,
-          onboardingCompletedAt: null
-        }
-
-        mockDataService.updateUserProfile.mockResolvedValue(updatedProfile)
-
-        const request = new NextRequest('http://localhost:3000/api/user/profile', {
-          method: 'PUT',
-          body: JSON.stringify({
-            jobTitle: role,
-            seniorityLevel: 'senior'
-          })
-        })
-
-        const response = await PUT(request)
-        expect(response.status).toBe(200)
-      }
-    })
-
-    it('should validate all level enum values', async () => {
-      const validLevels = ['junior', 'mid', 'senior', 'staff', 'principal']
-      
-      for (const level of validLevels) {
-        const updatedProfile = {
-          id: 'user-123',
-          email: 'test@example.com',
-          name: 'Test User',
-          jobTitle: 'engineer',
-          seniorityLevel: level,
-          performanceFeedback: null,
-          onboardingCompletedAt: null
-        }
-
-        mockDataService.updateUserProfile.mockResolvedValue(updatedProfile)
-
-        const request = new NextRequest('http://localhost:3000/api/user/profile', {
-          method: 'PUT',
-          body: JSON.stringify({
-            jobTitle: 'engineer',
-            seniorityLevel: level
-          })
-        })
-
-        const response = await PUT(request)
-        expect(response.status).toBe(200)
-      }
-    })
   })
 })

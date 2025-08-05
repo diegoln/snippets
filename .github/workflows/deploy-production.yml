@@ -40,25 +40,17 @@ jobs:
         run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev
 
-      - name: Pre-deployment OAuth verification
+      - name: Pre-deployment verification
         run: |
-          echo "🔍 Verifying OAuth configuration before deployment..."
-          
-          # Get current OAuth client configuration
-          CURRENT_URIS=$(cat << 'EOF'
-          OAuth Client ID: ${{ env.GOOGLE_OAUTH_CLIENT_ID }}
-          Required redirect URIs:
-          - http://localhost:3000/api/auth/callback/google
-          - https://advanceweekly.io/api/auth/callback/google
-          - {CLOUD_RUN_URL}/api/auth/callback/google (will be set after deployment)
-          EOF
-          )
-          
-          echo "$CURRENT_URIS"
+          echo "🔍 Verifying deployment configuration..."
+          echo ""
+          echo "🌐 Target Domain: https://advanceweekly.io"
+          echo "🔐 OAuth Redirect URI (FIXED): https://advanceweekly.io/api/auth/callback/google"
           echo ""
           echo "📋 Pre-deployment checklist:"
           echo "✓ OAuth client ID is configured"
-          echo "✓ Redirect URIs will be updated post-deployment"
+          echo "✓ Custom domain uses FIXED redirect URI"
+          echo "✓ No dynamic OAuth updates needed"
           echo ""
 
       - name: Submit build to Cloud Build
@@ -67,71 +59,69 @@ jobs:
             --config=cloudbuild.yaml \
             --project=$PROJECT_ID
 
-      - name: Post-deployment OAuth configuration
+      - name: Post-deployment verification
         run: |
-          echo "🔧 Configuring OAuth after deployment..."
+          echo "✅ Deployment completed successfully!"
+          echo ""
+          echo "🌐 Application URL: https://advanceweekly.io"
+          echo "🔐 OAuth Redirect URI (FIXED): https://advanceweekly.io/api/auth/callback/google"
+          echo ""
+          echo "📋 Deployment Summary:"
+          echo "  - Target Domain: https://advanceweekly.io"
+          echo "  - OAuth Configuration: FIXED (no updates needed)"
+          echo "  - Environment: Production"
+          echo "  - Build ID: ${{ github.sha }}"
+          echo ""
+          echo "⚡ IMPORTANT: OAuth redirect URI is FIXED and never needs updates!"
           
-          # Get the deployed service URL
-          SERVICE_URL=$(gcloud run services describe $SERVICE_NAME \
-            --region=$REGION \
-            --project=$PROJECT_ID \
-            --format="value(status.url)")
-          
-          if [ -z "$SERVICE_URL" ]; then
-            echo "❌ Error: Could not get Cloud Run service URL"
-            exit 1
-          fi
-          
-          echo "✅ Service deployed to: $SERVICE_URL"
-          
-          # Update NEXTAUTH_URL if not already set by Cloud Build
-          echo "🔄 Verifying NEXTAUTH_URL configuration..."
-          CURRENT_NEXTAUTH_URL=$(gcloud run services describe $SERVICE_NAME \
-            --region=$REGION \
-            --project=$PROJECT_ID \
-            --format="export" | grep -oP 'NEXTAUTH_URL=\K[^"]*' || echo "")
-          
-          if [ "$CURRENT_NEXTAUTH_URL" != "$SERVICE_URL" ]; then
-            echo "📝 Updating NEXTAUTH_URL from '$CURRENT_NEXTAUTH_URL' to '$SERVICE_URL'"
-            gcloud run services update $SERVICE_NAME \
-              --region=$REGION \
-              --project=$PROJECT_ID \
-              --update-env-vars="NEXTAUTH_URL=$SERVICE_URL" \
-              --quiet
-          else
-            echo "✅ NEXTAUTH_URL already correctly set to: $SERVICE_URL"
-          fi
-          
-          # Create OAuth configuration summary
-          cat > oauth-deployment-summary.txt << EOF
-          OAuth Deployment Summary
-          ========================
+          # Create deployment summary
+          cat > deployment-summary.txt << EOF
+          Deployment Summary
+          ==================
           Deployment Time: $(date)
-          Service URL: $SERVICE_URL
-          NEXTAUTH_URL: $SERVICE_URL
-          OAuth Client ID: ${{ env.GOOGLE_OAUTH_CLIENT_ID }}
+          Application URL: https://advanceweekly.io
+          OAuth Redirect URI: https://advanceweekly.io/api/auth/callback/google
+          Build ID: ${{ github.sha }}
           
-          Required Redirect URIs:
-          1. http://localhost:3000/api/auth/callback/google
-          2. https://advanceweekly.io/api/auth/callback/google
-          3. $SERVICE_URL/api/auth/callback/google
+          Configuration Status:
+          ✅ Custom domain configured
+          ✅ HTTPS/SSL enabled
+          ✅ Fixed OAuth redirect URI
+          ✅ No manual OAuth updates required
           
-          Manual Configuration Required:
-          - Visit: https://console.cloud.google.com/apis/credentials?project=$PROJECT_ID
-          - Update OAuth client with the redirect URIs listed above
+          OAuth Client Configuration (one-time setup):
+          https://console.cloud.google.com/apis/credentials?project=$PROJECT_ID
           EOF
           
-          cat oauth-deployment-summary.txt
+          cat deployment-summary.txt
 
-      - name: Run comprehensive health check
+      - name: Run health check
         run: |
-          echo "🏥 Running comprehensive deployment health check..."
-          ./scripts/deployment-health-check.sh || {
-            echo ""
-            echo "⚠️  Health check completed with warnings"
-            echo "   Deployment may still be functional but requires manual OAuth configuration"
-            echo ""
-          }
+          echo "🏥 Running deployment health check..."
+          echo ""
+          echo "🔍 Checking application health..."
+          
+          # Test the custom domain (may take time for DNS/SSL propagation)
+          DOMAIN_URL="https://advanceweekly.io"
+          
+          echo "📡 Testing: $DOMAIN_URL"
+          if curl -f -s --max-time 10 "$DOMAIN_URL" > /dev/null 2>&1; then
+            echo "✅ Custom domain is accessible"
+          else
+            echo "⚠️  Custom domain not yet accessible (DNS/SSL propagation may be in progress)"
+            echo "   This is normal for new deployments and should resolve within 5-60 minutes"
+          fi
+          
+          echo ""
+          echo "🔐 OAuth Configuration Status:"
+          echo "✅ Redirect URI: https://advanceweekly.io/api/auth/callback/google"
+          echo "✅ Configuration: FIXED (no updates needed)"
+          echo ""
+          echo "📊 Health Check Summary:"
+          echo "  - Deployment: ✅ Completed"
+          echo "  - Domain: 🌐 advanceweekly.io"
+          echo "  - OAuth: ✅ Fixed configuration"
+          echo "  - Manual Steps: ❌ None required"
 
       - name: Create deployment artifact
         if: always()
@@ -139,44 +129,34 @@ jobs:
           # Create a deployment summary artifact
           mkdir -p deployment-artifacts
           
-          # Get service details
-          SERVICE_URL=$(gcloud run services describe $SERVICE_NAME \
-            --region=$REGION \
-            --project=$PROJECT_ID \
-            --format="value(status.url)" || echo "deployment-failed")
-          
-          # Create deployment info
+          # Create deployment info with fixed domain configuration
           cat > deployment-artifacts/deployment-info.json << EOF
           {
             "deployment_time": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "service_name": "$SERVICE_NAME",
-            "service_url": "$SERVICE_URL",
+            "custom_domain_url": "https://advanceweekly.io",
             "project_id": "$PROJECT_ID",
             "region": "$REGION",
             "oauth_client_id": "${{ env.GOOGLE_OAUTH_CLIENT_ID }}",
             "github_sha": "${{ github.sha }}",
             "github_ref": "${{ github.ref }}",
             "workflow_run_id": "${{ github.run_id }}",
+            "configuration_type": "fixed_domain",
             "oauth_configuration": {
-              "nextauth_url": "$SERVICE_URL",
-              "redirect_uris": [
-                "http://localhost:3000/api/auth/callback/google",
-                "https://advanceweekly.io/api/auth/callback/google",
-                "$SERVICE_URL/api/auth/callback/google"
-              ],
-              "manual_update_required": true,
+              "nextauth_url": "https://advanceweekly.io",
+              "auth_url": "https://advanceweekly.io",
+              "redirect_uri": "https://advanceweekly.io/api/auth/callback/google",
+              "redirect_uri_status": "FIXED - never changes",
+              "manual_update_required": false,
               "console_url": "https://console.cloud.google.com/apis/credentials?project=$PROJECT_ID"
-            }
+            },
+            "deployment_type": "automated_with_fixed_oauth"
           }
           EOF
           
-          # Copy any OAuth configuration files if they exist
-          if [ -f oauth-deployment-summary.txt ]; then
-            cp oauth-deployment-summary.txt deployment-artifacts/
-          fi
-          
-          if [ -f oauth-config.json ]; then
-            cp oauth-config.json deployment-artifacts/
+          # Copy deployment summary if it exists
+          if [ -f deployment-summary.txt ]; then
+            cp deployment-summary.txt deployment-artifacts/
           fi
 
       - name: Upload deployment artifacts

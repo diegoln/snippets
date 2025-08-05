@@ -141,7 +141,7 @@ steps:
       - '--timeout'
       - '300'
       - '--set-env-vars'
-      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1'
+      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly.io,AUTH_URL=https://advanceweekly.io'
       - '--set-secrets'
       - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
       - '--add-cloudsql-instances'
@@ -151,63 +151,26 @@ steps:
     waitFor: ['push-build-id', 'push-latest']
     timeout: 300s  # 5 minutes for deployment
 
-  # Step 6: Set NEXTAUTH_URL dynamically based on Cloud Run URL
+  # Step 6: Deployment verification with fixed domain
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'set-nextauth-url'
+    id: 'verify-deployment'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Get the deployed service URL
-        SERVICE_URL=$(gcloud run services describe advanceweekly \
-          --region=us-central1 \
-          --project=$PROJECT_ID \
-          --format="value(status.url)")
-        
-        echo "🔧 Setting NEXTAUTH_URL to: $${SERVICE_URL}"
-        
-        # Update the service with the correct NEXTAUTH_URL
-        gcloud run services update advanceweekly \
-          --region=us-central1 \
-          --project=$PROJECT_ID \
-          --update-env-vars="NEXTAUTH_URL=$${SERVICE_URL}" \
-          --quiet
-        
-        echo "✅ NEXTAUTH_URL updated successfully"
+        echo "✅ Deployment completed successfully!"
+        echo ""
+        echo "🌐 Application URL: https://advanceweekly.io"
+        echo "🔐 OAuth Redirect URI (FIXED): https://advanceweekly.io/api/auth/callback/google"
+        echo ""
+        echo "📋 Next steps:"
+        echo "1. Ensure DNS points to the load balancer IP"
+        echo "2. Verify OAuth client has the redirect URI configured"
+        echo "3. Test authentication flow"
+        echo ""
+        echo "⚡ IMPORTANT: OAuth redirect URI is FIXED and never needs updates!"
     waitFor: ['deploy-cloud-run']
-    timeout: 60s
-    
-  # Step 7: Run OAuth manager for comprehensive configuration
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'oauth-manager'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        # Install jq for JSON processing
-        apt-get update && apt-get install -y jq
-        
-        # Export required environment variables
-        export GOOGLE_CLIENT_ID=$(gcloud secrets versions access latest --secret=google-client-id --project=$PROJECT_ID)
-        export PROJECT_ID=$PROJECT_ID
-        export SERVICE_NAME=advanceweekly
-        export REGION=us-central1
-        
-        # Run the OAuth manager
-        chmod +x scripts/oauth-manager.sh
-        ./scripts/oauth-manager.sh || {
-          echo "⚠️  OAuth manager completed with warnings"
-          echo "Manual configuration may be required in Google Cloud Console"
-        }
-        
-        # Display the configuration summary
-        if [ -f oauth-config.json ]; then
-          echo ""
-          echo "📋 OAuth Configuration:"
-          cat oauth-config.json | jq .
-        fi
-    waitFor: ['set-nextauth-url']
-    timeout: 120s
+    timeout: 30s
 
 # Images to store in Artifact Registry
 images:

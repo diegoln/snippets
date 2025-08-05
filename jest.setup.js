@@ -7,6 +7,93 @@
 
 require('@testing-library/jest-dom')
 
+// Browser API Mocks for Node.js Test Environment - MUST COME FIRST
+// Since we're using Node environment to avoid JSDOM issues, we need to provide browser mocks
+
+// Create comprehensive window and document mocks
+const createMockDocument = () => ({
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  createElement: jest.fn(() => ({
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+    style: {},
+    setAttribute: jest.fn(),
+    getAttribute: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn()
+  })),
+  body: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn(),
+    style: {}
+  },
+  head: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    appendChild: jest.fn(),
+    removeChild: jest.fn()
+  },
+  documentElement: {
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    style: {}
+  },
+  querySelector: jest.fn(),
+  querySelectorAll: jest.fn(() => []),
+  getElementById: jest.fn(),
+  getElementsByTagName: jest.fn(() => []),
+  createTextNode: jest.fn(() => ({ textContent: '' }))
+});
+
+const createMockWindow = () => ({
+  document: createMockDocument(),
+  navigator: { 
+    userAgent: 'test',
+    language: 'en-US',
+    languages: ['en-US', 'en']
+  },
+  location: { 
+    href: 'http://localhost',
+    origin: 'http://localhost',
+    pathname: '/',
+    search: '',
+    hash: ''
+  },
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  localStorage: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn()
+  },
+  sessionStorage: {
+    getItem: jest.fn(),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+    clear: jest.fn()
+  },
+  getComputedStyle: jest.fn(() => ({})),
+  requestAnimationFrame: jest.fn(cb => setTimeout(cb, 0)),
+  cancelAnimationFrame: jest.fn(),
+  scrollTo: jest.fn(),
+  alert: jest.fn(),
+  confirm: jest.fn(() => true),
+  prompt: jest.fn()
+});
+
+// Set up global window and document FIRST
+global.window = createMockWindow();
+global.document = global.window.document;
+global.navigator = global.window.navigator;
+global.location = global.window.location;
+
 // Mock Next.js router
 jest.mock('next/router', () => ({
   useRouter() {
@@ -59,14 +146,67 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }))
 
-// Fix JSDOM window.document.addEventListener issue
-if (typeof window !== 'undefined' && window.document) {
-  if (!window.document.addEventListener) {
-    window.document.addEventListener = jest.fn()
-    window.document.removeEventListener = jest.fn()
-    window.document.dispatchEvent = jest.fn()
+
+// Mock Web APIs for Next.js API route testing
+const { TextEncoder, TextDecoder } = require('util')
+
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
+
+// Mock Request and Response for Next.js API route tests
+// Using a simple mock that matches Next.js NextRequest interface
+global.Request = class MockRequest {
+  constructor(url, init = {}) {
+    // Define url as a getter property to match NextRequest behavior
+    Object.defineProperty(this, 'url', {
+      value: url,
+      writable: false,
+      enumerable: true,
+      configurable: false
+    })
+    
+    this.method = init.method || 'GET'
+    this.headers = new Map(Object.entries(init.headers || {}))
+    this.body = init.body
+  }
+  
+  async json() {
+    if (this.body) {
+      return JSON.parse(this.body)
+    }
+    return {}
   }
 }
+
+global.Response = class MockResponse {
+  constructor(body, init = {}) {
+    this.body = body
+    this.status = init.status || 200
+    this.headers = new Map(Object.entries(init.headers || {}))
+  }
+  
+  async json() {
+    if (typeof this.body === 'string') {
+      return JSON.parse(this.body)
+    }
+    return this.body
+  }
+  
+  // Static method to create JSON responses (NextResponse.json compatibility)
+  static json(data, init = {}) {
+    const body = JSON.stringify(data)
+    return new MockResponse(body, {
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...init.headers
+      }
+    })
+  }
+}
+
+// Mock fetch for API tests
+global.fetch = jest.fn()
 
 // Mock console methods to avoid noise in tests
 const originalError = console.error

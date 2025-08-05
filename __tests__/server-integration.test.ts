@@ -30,7 +30,7 @@ const mockPrisma = {
     groupBy: jest.fn(),
     findMany: jest.fn()
   },
-  performanceAssessment: {
+  careerCheckIn: {
     count: jest.fn()
   }
 }
@@ -39,6 +39,17 @@ describe('Server Integration Tests', () => {
   beforeAll(async () => {
     // Use test database
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:password@localhost:5432/snippets_test_db?schema=public'
+    
+    // Set required environment variables for tests
+    process.env.NEXTAUTH_URL = 'http://localhost:8080'
+    process.env.NEXTAUTH_SECRET = 'test-secret-for-jest-testing'
+    process.env.LLM_PROVIDER = 'ollama'
+    process.env.OLLAMA_API_URL = 'http://localhost:11434'
+    process.env.OLLAMA_MODEL = 'smollm2:1.7b'
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id'
+    process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret'
+    process.env.TODOIST_CLIENT_ID = 'test-todoist-client-id'
+    process.env.TODOIST_CLIENT_SECRET = 'test-todoist-client-secret'
   })
 
   afterAll(async () => {
@@ -81,13 +92,13 @@ describe('Server Integration Tests', () => {
       expect(tableExists).toBeDefined()
     })
 
-    it('should have performance assessments table available', async () => {
+    it('should have career check-ins table available', async () => {
       mockPrisma.$queryRaw.mockResolvedValue([{ exists: true }])
       const tableExists = await mockPrisma.$queryRaw`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public' 
-          AND table_name = 'PerformanceAssessment'
+          AND table_name = 'CareerCheckIn'
         )
       `
       expect(tableExists).toBeDefined()
@@ -182,7 +193,7 @@ describe('Server Integration Tests', () => {
       expect(data.length).toBeGreaterThan(0)
     })
 
-    it('should return performance assessments from /api/assessments', async () => {
+    it('should return career check-ins from /api/assessments', async () => {
       const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -204,7 +215,9 @@ describe('Server Integration Tests', () => {
 
     it('should have development environment configured', () => {
       const nodeEnv = process.env.NODE_ENV
-      expect(nodeEnv).toBe('development')
+      // In tests, NODE_ENV should be 'test', but we verify it's not production
+      expect(nodeEnv).toBe('test')
+      expect(nodeEnv).not.toBe('production')
     })
 
     it('should have proper NEXTAUTH_SECRET configured', () => {
@@ -278,14 +291,14 @@ describe('Server Integration Tests', () => {
     it('should validate seed script execution', async () => {
       // Check that we have the expected amount of seeded data
       mockPrisma.snippet.count.mockResolvedValue(26)
-      mockPrisma.performanceAssessment.count.mockResolvedValue(0)
+      mockPrisma.careerCheckIn.count.mockResolvedValue(0)
       const totalSnippets = await mockPrisma.snippet.count()
-      const totalAssessments = await mockPrisma.performanceAssessment.count()
+      const totalAssessments = await mockPrisma.careerCheckIn.count()
       
       // Should have substantial test data (seed script creates 26 weeks)
       expect(totalSnippets).toBeGreaterThanOrEqual(20)
       
-      // Performance assessments may start empty (that's expected)
+      // Career check-ins may start empty (that's expected)
       expect(totalAssessments).toBeGreaterThanOrEqual(0)
     })
 
