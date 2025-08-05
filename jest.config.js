@@ -23,8 +23,7 @@ const jestConfig = {
     '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/lib/__tests__/**/*.{js,jsx,ts,tsx}',
     '<rootDir>/app/api/**/*.test.{js,jsx,ts,tsx}',
-    '<rootDir>/app/api/**/__tests__/**/*.{js,jsx,ts,tsx}',
-    '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}'
+    '<rootDir>/app/api/**/__tests__/**/*.{js,jsx,ts,tsx}'
   ],
 
   // Exclude only truly problematic test files (empty or requiring special setup)
@@ -33,6 +32,8 @@ const jestConfig = {
     '/__tests__/demo-server.test.js',
     '/__tests__/performance.test.ts',
     '/__tests__/snippet-creation-integration.test.js', // Empty test file
+    '/__tests__/integration-reset-onboarding-e2e.test.ts', // E2E test requiring running server
+    '/components/.*\\.(test|spec)\\.(js|jsx|ts|tsx)$', // Component tests need JSDOM
     // Exclude all React/JSX tests that need JSDOM environment
     '/__tests__/.*\\.tsx$',
     '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$',

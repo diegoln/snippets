@@ -9,7 +9,11 @@ import { NextRequest } from 'next/server'
 
 // Mock auth utils first to prevent import issues
 jest.mock('@/lib/auth-utils', () => ({
-  getUserIdFromRequest: jest.fn(),
+  getUserIdFromRequest: jest.fn()
+}))
+
+// Mock dev auth utils
+jest.mock('@/lib/dev-auth', () => ({
   getDevUserIdFromRequest: jest.fn()
 }))
 
@@ -22,7 +26,7 @@ jest.mock('@/lib/user-scoped-data', () => ({
 import { GET as getSnippets, POST as createSnippet, PUT as updateSnippet } from '../snippets/route'
 import { GET as getAssessments, POST as createAssessment } from '../assessments/route'
 import { getUserIdFromRequest } from '@/lib/auth-utils'
-import { getDevUserIdFromRequest } from '@/lib/auth-utils'
+import { getDevUserIdFromRequest } from '@/lib/dev-auth'
 import { createUserDataService } from '@/lib/user-scoped-data'
 
 const mockGetUserId = getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>
@@ -268,15 +272,17 @@ describe('API Authentication & Authorization', () => {
       
       const response = await createSnippet(request)
       
-      expect(response.status).toBe(500)
+      expect(response.status).toBe(400)
       const data = await response.json()
-      expect(data.error).toBe('Failed to create snippet')
+      expect(data.error).toBe('Invalid JSON in request body')
     })
   })
   
   describe('Development Auth Fallback', () => {
     beforeEach(() => {
       process.env.NODE_ENV = 'development'
+      // Ensure mock data service returns expected data for successful auth
+      mockDataService.getSnippets.mockResolvedValue([])
     })
 
     test('should fall back to dev auth when NextAuth fails', async () => {

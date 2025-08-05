@@ -172,7 +172,14 @@ global.Request = class MockRequest {
   
   async json() {
     if (this.body) {
-      return JSON.parse(this.body)
+      if (typeof this.body === 'string') {
+        try {
+          return JSON.parse(this.body)
+        } catch (error) {
+          throw new SyntaxError(`Unexpected token in JSON at position 0`)
+        }
+      }
+      return this.body
     }
     return {}
   }
