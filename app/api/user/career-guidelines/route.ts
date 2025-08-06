@@ -6,9 +6,9 @@ import { createUserDataService } from '../../../../lib/user-scoped-data'
 
 // Input validation schema
 const CareerGuidelinesSchema = z.object({
-  currentLevelPlan: z.string().min(1, 'Current level plan is required'),
-  nextLevelExpectations: z.string().min(1, 'Next level expectations is required'),
-  companyCareerLadder: z.string().optional()
+  currentLevelPlan: z.string().min(1, 'Current level plan is required').max(2000, 'Plan too long'),
+  nextLevelExpectations: z.string().min(1, 'Next level expectations is required').max(2000, 'Expectations too long'),
+  companyCareerLadder: z.string().max(1000, 'Career ladder description too long').optional()
 })
 
 /**
@@ -54,20 +54,23 @@ export async function PUT(request: NextRequest) {
 
     try {
       // Update user's career guidelines
-      const updatedUser = await dataService.updateUserProfile({
+      await dataService.updateUserProfile({
         careerProgressionPlan: currentLevelPlan,
         nextLevelExpectations: nextLevelExpectations,
-        companyCareerLadder: companyCareerLadder || null,
+        companyCareerLadder: companyCareerLadder || undefined,
         careerPlanGeneratedAt: new Date(),
         careerPlanLastUpdated: new Date()
       })
 
+      // Get updated user data
+      const updatedUser = await dataService.getUserProfile()
+      
       return NextResponse.json({
         success: true,
         careerGuidelines: {
-          currentLevelPlan: updatedUser.careerProgressionPlan,
-          nextLevelExpectations: updatedUser.nextLevelExpectations,
-          companyCareerLadder: updatedUser.companyCareerLadder
+          currentLevelPlan: updatedUser?.careerProgressionPlan || null,
+          nextLevelExpectations: updatedUser?.nextLevelExpectations || null,
+          companyCareerLadder: updatedUser?.companyCareerLadder || null
         }
       })
     } finally {
@@ -101,7 +104,7 @@ export async function GET(request: NextRequest) {
     const dataService = createUserDataService(userId)
 
     try {
-      const user = await dataService.getUser()
+      const user = await dataService.getUserProfile()
       
       return NextResponse.json({
         careerGuidelines: {

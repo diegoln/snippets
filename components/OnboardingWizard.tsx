@@ -13,6 +13,9 @@ import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
+const DEV_USER_ID = 'dev-user-123' // Development authentication user ID
+const REFLECTION_GENERATION_TIMEOUT = 30000 // 30 seconds timeout for reflection generation
+const INPUT_MAX_LENGTH = 100 // Maximum length for role/level inputs
 
 // Enhanced input sanitization for role/level values
 const sanitizeRoleInput = (input: string): string => {
@@ -20,7 +23,7 @@ const sanitizeRoleInput = (input: string): string => {
     .trim()
     .replace(/[<>\"'&]/g, '') // Remove potential XSS characters
     .replace(/\s+/g, ' ') // Normalize whitespace
-    .substring(0, 100) // Reasonable length limit
+    .substring(0, INPUT_MAX_LENGTH) // Reasonable length limit
 }
 
 const validateRoleInput = (input: string): boolean => {
@@ -99,7 +102,7 @@ interface WizardFormData {
 
 interface LoadingState {
   isLoading: boolean
-  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding'
+  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding' | 'generating-reflection' | 'loading-integration-data'
   message?: string
 }
 
@@ -136,7 +139,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       try {
         const response = await fetch('/api/integrations', {
           headers: {
-            'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+            'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
           }
         })
         if (response.ok) {
@@ -304,7 +307,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({ type: 'google_calendar' })
         })
@@ -316,7 +319,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Fetch previous week's calendar data with LLM processing
         const dataResponse = await fetch('/api/integrations?test=true', {
           headers: {
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           }
         })
         if (!dataResponse.ok) {
@@ -330,7 +333,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({
             integrationType: 'google_calendar',
@@ -360,7 +363,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({
             weeklySnippet: snippetData.weeklySnippet,
@@ -450,18 +453,23 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       const year = new Date().getFullYear()
       const { startDate, endDate } = getWeekDates(currentWeek, year)
       
+      // Prepare snippet data for API call
+      const defaultContent = `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` : ''}`
+      
+      const snippetData = {
+        weekNumber: currentWeek,
+        year: year,
+        content: formData.reflectionContent || defaultContent,
+      }
+
       const response = await fetch('/api/snippets', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
-        body: JSON.stringify({
-          weekNumber: currentWeek,
-          year: year,
-          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` : ''}`,
-        }),
+        body: JSON.stringify(snippetData),
       })
       
       if (!response.ok) {
@@ -476,7 +484,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
@@ -533,7 +541,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               method: 'POST',
               headers: { 
                 'Content-Type': 'application/json',
-                'X-Dev-User-Id': 'dev-user-123'
+                'X-Dev-User-Id': DEV_USER_ID
               },
               body: JSON.stringify({
                 weeklySnippet: snippetContent,
@@ -600,7 +608,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           // Fetch calendar data (same as connectIntegration does)
           const dataResponse = await fetch('/api/integrations?test=true', {
             headers: {
-              'X-Dev-User-Id': 'dev-user-123'
+              'X-Dev-User-Id': DEV_USER_ID
             }
           })
           if (!dataResponse.ok) {
@@ -616,7 +624,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'X-Dev-User-Id': 'dev-user-123'
+              'X-Dev-User-Id': DEV_USER_ID
             },
             body: JSON.stringify({
               integrationType: 'google_calendar',
@@ -689,7 +697,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
         body: JSON.stringify({
@@ -708,7 +716,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           credentials: 'same-origin',
           body: JSON.stringify({

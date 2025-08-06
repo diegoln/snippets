@@ -56,6 +56,11 @@ export interface UserProfile {
   seniorityLevel: string | null
   performanceFeedback: string | null
   onboardingCompletedAt: Date | null
+  careerProgressionPlan: string | null
+  nextLevelExpectations: string | null
+  companyCareerLadder: string | null
+  careerPlanGeneratedAt: Date | null
+  careerPlanLastUpdated: Date | null
 }
 
 /**
@@ -99,7 +104,12 @@ export class UserScopedDataService {
           jobTitle: true,
           seniorityLevel: true,
           performanceFeedback: true,
-          onboardingCompletedAt: true
+          onboardingCompletedAt: true,
+          careerProgressionPlan: true,
+          nextLevelExpectations: true,
+          companyCareerLadder: true,
+          careerPlanGeneratedAt: true,
+          careerPlanLastUpdated: true
         }
       })
 
@@ -136,7 +146,12 @@ export class UserScopedDataService {
           jobTitle: true,
           seniorityLevel: true,
           performanceFeedback: true,
-          onboardingCompletedAt: true
+          onboardingCompletedAt: true,
+          careerProgressionPlan: true,
+          nextLevelExpectations: true,
+          companyCareerLadder: true,
+          careerPlanGeneratedAt: true,
+          careerPlanLastUpdated: true
         }
       })
 
