@@ -101,48 +101,48 @@ export function DevTools() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 border border-gray-200 z-50">
+    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '200px' }}>
       <p className="text-xs font-semibold text-gray-600 mb-2">Dev Tools</p>
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
           <button
             onClick={clearSession}
-            className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+            className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
             title="Clear all sessions and logout"
           >
             Clear All
           </button>
           <button
             onClick={viewSession}
-            className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
             title="View current session data"
           >
-            View Session
+            Session
           </button>
         </div>
         <div className="flex gap-2">
           <button
             onClick={resetOnboarding}
-            className="px-3 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex-1"
+            className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex-1"
             title="Reset onboarding for current user"
           >
-            Reset Onboarding
+            Reset
           </button>
           <button
             onClick={goToOnboarding}
-            className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 flex-1"
+            className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 flex-1"
             title="Go to onboarding wizard"
           >
-            Go to Onboarding
+            Onboarding
           </button>
         </div>
         <div className="flex gap-2">
           <button
             onClick={goToDashboard}
-            className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 w-full"
+            className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 w-full"
             title="Go to dashboard"
           >
-            Go to Dashboard
+            Dashboard
           </button>
         </div>
       </div>
