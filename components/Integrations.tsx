@@ -8,6 +8,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { getAuthHeaders, getAuthHeadersWith } from '../lib/auth-headers'
 
 interface Integration {
   id: string
@@ -59,9 +60,7 @@ export const Integrations = (): JSX.Element => {
         const response = await fetch('/api/integrations', {
           credentials: 'include', // Include cookies for auth
           signal: abortController.signal,
-          headers: process.env.NODE_ENV === 'development' ? {
-            'X-Dev-User-Id': 'dev-user-123'
-          } : {}
+          headers: getAuthHeaders()
         })
         
         if (timeoutId) {
@@ -127,10 +126,7 @@ export const Integrations = (): JSX.Element => {
       const response = await fetch('/api/integrations', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(process.env.NODE_ENV === 'development' ? { 'X-Dev-User-Id': 'dev-user-123' } : {})
-        },
+        headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
           type: 'google_calendar'
         })
@@ -140,9 +136,7 @@ export const Integrations = (): JSX.Element => {
         // Refresh integrations list
         const refreshResponse = await fetch('/api/integrations', {
           credentials: 'include',
-          headers: process.env.NODE_ENV === 'development' ? {
-            'X-Dev-User-Id': 'dev-user-123'
-          } : {}
+          headers: getAuthHeaders()
         })
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json()
@@ -151,12 +145,11 @@ export const Integrations = (): JSX.Element => {
       } else {
         const errorData = await response.json()
         console.error('Failed to connect calendar:', errorData.error)
-        // In a real app, show user-friendly error message
-        alert(`Failed to connect calendar: ${errorData.error}`)
+        setError(`Failed to connect calendar: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error connecting calendar:', error)
-      alert('Failed to connect calendar. Please try again.')
+      setError('Failed to connect calendar. Please check your connection and try again.')
     } finally {
       setIsConnecting(false)
     }
@@ -186,9 +179,7 @@ export const Integrations = (): JSX.Element => {
       const response = await fetch(`/api/integrations?id=${calendarIntegration.id}`, {
         method: 'DELETE',
         credentials: 'include',
-        headers: process.env.NODE_ENV === 'development' ? {
-          'X-Dev-User-Id': 'dev-user-123'
-        } : {}
+        headers: getAuthHeaders()
       })
 
       if (response.ok) {
@@ -197,11 +188,11 @@ export const Integrations = (): JSX.Element => {
       } else {
         const errorData = await response.json()
         console.error('Failed to disconnect calendar:', errorData.error)
-        alert(`Failed to disconnect calendar: ${errorData.error}`)
+        setError(`Failed to disconnect calendar: ${errorData.error}`)
       }
     } catch (error) {
       console.error('Error disconnecting calendar:', error)
-      alert('Failed to disconnect calendar. Please try again.')
+      setError('Failed to disconnect calendar. Please check your connection and try again.')
     } finally {
       setIsConnecting(false)
     }

@@ -10,6 +10,7 @@ import { RoleAndGuidelinesStep } from './RoleAndGuidelinesStep'
 import { getWeekDates } from '../lib/utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
 import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '../constants/user'
+import { getAuthHeaders, getAuthHeadersWith } from '../lib/auth-headers'
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
@@ -135,9 +136,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
     const loadExistingIntegrations = async () => {
       try {
         const response = await fetch('/api/integrations', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
-          }
+          headers: getAuthHeaders()
         })
         if (response.ok) {
           const data = await response.json()
@@ -293,34 +292,37 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
   }, [formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
   // Disconnect integration
-  const disconnectIntegration = useCallback(async (integrationType: string) => {
-    if (!confirm(`Are you sure you want to disconnect ${INTEGRATIONS.find(i => i.id === integrationType)?.name}? Your data from this source will no longer be collected for future reflections.`)) {
+  const disconnectIntegration = useCallback(async (integrationType: string, integrationId?: string) => {
+    const integrationName = INTEGRATIONS.find(i => i.id === integrationType)?.name || integrationType
+    if (!confirm(`Are you sure you want to disconnect ${integrationName}? Your data from this source will no longer be collected for future reflections.`)) {
       return
     }
 
     try {
-      // Find the integration ID from the connected integrations
-      const integrations = await fetch('/api/integrations', {
-        headers: process.env.NODE_ENV === 'development' ? {
-          'X-Dev-User-Id': 'dev-user-123'
-        } : {}
-      }).then(r => r.json())
+      let targetIntegrationId = integrationId
+      
+      // If no integration ID provided, fetch it (for backward compatibility)
+      if (!targetIntegrationId) {
+        const integrations = await fetch('/api/integrations', {
+          headers: getAuthHeaders()
+        }).then(r => r.json())
 
-      const integration = integrations.integrations?.find((i: any) => i.type === integrationType)
-      if (!integration) {
-        throw new Error('Integration not found')
+        const integration = integrations.integrations?.find((i: any) => i.type === integrationType)
+        if (!integration) {
+          throw new Error('Integration not found')
+        }
+        targetIntegrationId = integration.id
       }
 
       // Delete the integration
-      const response = await fetch(`/api/integrations?id=${integration.id}`, {
+      const response = await fetch(`/api/integrations?id=${targetIntegrationId}`, {
         method: 'DELETE',
-        headers: process.env.NODE_ENV === 'development' ? {
-          'X-Dev-User-Id': 'dev-user-123'
-        } : {}
+        headers: getAuthHeaders()
       })
 
       if (!response.ok) {
-        throw new Error('Failed to disconnect integration')
+        const errorData = await response.json().catch(() => ({ error: 'Failed to disconnect integration' }))
+        throw new Error(errorData.error || 'Failed to disconnect integration')
       }
 
       // Update UI
@@ -351,10 +353,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Connect to Google Calendar integration and generate LLM-powered snippet
         const response = await fetch('/api/integrations', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
-          },
+          headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ type: 'google_calendar' })
         })
 
@@ -364,9 +363,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 
         // Fetch previous week's calendar data with LLM processing
         const dataResponse = await fetch('/api/integrations?test=true', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
+          headers: getAuthHeaders()
         })
         if (!dataResponse.ok) {
           throw new Error('Failed to fetch calendar data')
@@ -377,10 +374,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Generate LLM-powered weekly snippet from calendar data
         const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
-          },
+          headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             integrationType: 'google_calendar',
             weekData: calendarData.weekData,
@@ -407,10 +401,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Generate LLM-powered reflection draft from weekly snippet
         const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
-          },
+          headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({
             weeklySnippet: snippetData.weeklySnippet,
             bullets: snippetData.bullets,
@@ -501,10 +492,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       
       const response = await fetch('/api/snippets', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
-        },
+        headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           weekNumber: currentWeek,
@@ -523,10 +511,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       // Mark onboarding as complete
       const onboardingResponse = await fetch('/api/user/onboarding', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
-        },
+        headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
       })
@@ -611,10 +596,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       // Save profile
       const profileResponse = await fetch('/api/user/profile', {
         method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
-        },
+        headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify({
           jobTitle: effectiveRole,
@@ -630,10 +612,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       if (data.careerGuidelines.currentLevelPlan && data.careerGuidelines.nextLevelExpectations) {
         const guidelinesResponse = await fetch('/api/user/career-guidelines', {
           method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
-          },
+          headers: getAuthHeadersWith({ 'Content-Type': 'application/json' }),
           credentials: 'same-origin',
           body: JSON.stringify({
             currentLevelPlan: data.careerGuidelines.currentLevelPlan,
