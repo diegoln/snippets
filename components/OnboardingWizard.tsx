@@ -292,6 +292,55 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 `
   }, [formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
+  // Disconnect integration
+  const disconnectIntegration = useCallback(async (integrationType: string) => {
+    if (!confirm(`Are you sure you want to disconnect ${INTEGRATIONS.find(i => i.id === integrationType)?.name}? Your data from this source will no longer be collected for future reflections.`)) {
+      return
+    }
+
+    try {
+      // Find the integration ID from the connected integrations
+      const integrations = await fetch('/api/integrations', {
+        headers: process.env.NODE_ENV === 'development' ? {
+          'X-Dev-User-Id': 'dev-user-123'
+        } : {}
+      }).then(r => r.json())
+
+      const integration = integrations.integrations?.find((i: any) => i.type === integrationType)
+      if (!integration) {
+        throw new Error('Integration not found')
+      }
+
+      // Delete the integration
+      const response = await fetch(`/api/integrations?id=${integration.id}`, {
+        method: 'DELETE',
+        headers: process.env.NODE_ENV === 'development' ? {
+          'X-Dev-User-Id': 'dev-user-123'
+        } : {}
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect integration')
+      }
+
+      // Update UI
+      setConnectedIntegrations(prev => {
+        const updated = new Set(prev)
+        updated.delete(integrationType)
+        return updated
+      })
+      setIntegrationBullets(prev => {
+        const updated = { ...prev }
+        delete updated[integrationType]
+        return updated
+      })
+
+    } catch (err) {
+      console.error('Integration disconnection failed:', err)
+      setError(err instanceof Error ? err.message : 'Failed to disconnect integration. Please try again.')
+    }
+  }, [])
+
   // Real integration connection with LLM-powered snippet generation
   const connectIntegration = useCallback(async (integrationType: string) => {
     setIsConnecting(integrationType)
@@ -698,27 +747,34 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <p className="text-sm text-gray-600 mb-4">
                 {integration.description}
               </p>
-              <button
-                onClick={() => {
-                  if (!connectedIntegrations.has(integration.id)) {
-                    connectIntegration(integration.id)
-                  }
-                }}
-                disabled={isConnecting !== null}
-                className={`w-full py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                  connectedIntegrations.has(integration.id)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-{isConnecting === integration.id ? (
-                  <LoadingSpinner size="sm" />
-                ) : connectedIntegrations.has(integration.id) ? (
-                  '✓ Connected'  
-                ) : (
-                  'Connect'
-                )}
-              </button>
+              {connectedIntegrations.has(integration.id) ? (
+                <div className="space-y-2">
+                  <button
+                    disabled
+                    className="w-full py-2 px-4 rounded-md text-sm font-medium bg-green-600 text-white"
+                  >
+                    ✓ Connected
+                  </button>
+                  <button
+                    onClick={() => disconnectIntegration(integration.id)}
+                    className="w-full py-1 px-3 rounded-md text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => connectIntegration(integration.id)}
+                  disabled={isConnecting !== null}
+                  className="w-full py-2 px-4 rounded-md text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isConnecting === integration.id ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    'Connect'
+                  )}
+                </button>
+              )}
             </div>
           ))}
         </div>

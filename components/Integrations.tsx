@@ -58,7 +58,10 @@ export const Integrations = (): JSX.Element => {
       try {
         const response = await fetch('/api/integrations', {
           credentials: 'include', // Include cookies for auth
-          signal: abortController.signal
+          signal: abortController.signal,
+          headers: process.env.NODE_ENV === 'development' ? {
+            'X-Dev-User-Id': 'dev-user-123'
+          } : {}
         })
         
         if (timeoutId) {
@@ -123,8 +126,10 @@ export const Integrations = (): JSX.Element => {
     try {
       const response = await fetch('/api/integrations', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          ...(process.env.NODE_ENV === 'development' ? { 'X-Dev-User-Id': 'dev-user-123' } : {})
         },
         body: JSON.stringify({
           type: 'google_calendar'
@@ -133,7 +138,12 @@ export const Integrations = (): JSX.Element => {
 
       if (response.ok) {
         // Refresh integrations list
-        const refreshResponse = await fetch('/api/integrations')
+        const refreshResponse = await fetch('/api/integrations', {
+          credentials: 'include',
+          headers: process.env.NODE_ENV === 'development' ? {
+            'X-Dev-User-Id': 'dev-user-123'
+          } : {}
+        })
         if (refreshResponse.ok) {
           const refreshData = await refreshResponse.json()
           setIntegrations(refreshData.integrations || [])
@@ -157,6 +167,44 @@ export const Integrations = (): JSX.Element => {
     setError(null)
     // Trigger re-fetch by updating a dependency
     window.location.reload() // Simple solution for now
+  }
+
+  const handleDisconnectCalendar = async () => {
+    if (!confirm('Are you sure you want to disconnect Google Calendar? Your data from this source will no longer be collected for future reflections.')) {
+      return
+    }
+
+    setIsConnecting(true)
+    try {
+      // Find the Google Calendar integration
+      const calendarIntegration = integrations.find(i => i.type === 'google_calendar')
+      if (!calendarIntegration) {
+        throw new Error('Google Calendar integration not found')
+      }
+
+      // Delete the integration
+      const response = await fetch(`/api/integrations?id=${calendarIntegration.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: process.env.NODE_ENV === 'development' ? {
+          'X-Dev-User-Id': 'dev-user-123'
+        } : {}
+      })
+
+      if (response.ok) {
+        // Remove from local state
+        setIntegrations(prev => prev.filter(i => i.type !== 'google_calendar'))
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to disconnect calendar:', errorData.error)
+        alert(`Failed to disconnect calendar: ${errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error disconnecting calendar:', error)
+      alert('Failed to disconnect calendar. Please try again.')
+    } finally {
+      setIsConnecting(false)
+    }
   }
 
   const calendarIntegration = integrations.find(i => i.type === 'google_calendar')
@@ -260,11 +308,20 @@ export const Integrations = (): JSX.Element => {
                 <p className="text-green-700 mb-4">
                   Your calendar is connected and ready to provide meeting context for your weekly reflections.
                 </p>
-                <div className="text-sm text-green-600 space-y-1">
-                  <p>Connected: {new Date(calendarIntegration.createdAt).toLocaleDateString()}</p>
-                  {calendarIntegration.lastSyncAt && (
-                    <p>Last sync: {new Date(calendarIntegration.lastSyncAt).toLocaleDateString()}</p>
-                  )}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-green-600 space-y-1">
+                    <p>Connected: {new Date(calendarIntegration.createdAt).toLocaleDateString()}</p>
+                    {calendarIntegration.lastSyncAt && (
+                      <p>Last sync: {new Date(calendarIntegration.lastSyncAt).toLocaleDateString()}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleDisconnectCalendar}
+                    disabled={isConnecting}
+                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isConnecting ? 'Disconnecting...' : 'Disconnect'}
+                  </button>
                 </div>
               </div>
             </div>

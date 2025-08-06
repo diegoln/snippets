@@ -78,32 +78,32 @@ function extractAPIEndpoints(filePath) {
     // Extract body fields
     const bodyFields = new Set();
     
-    // Look for JSON.stringify(variableName) pattern (handle multiline)
-    const stringifyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*(\\w+)\\s*\\)`, 'm'));
+    // Look for JSON.stringify pattern (handle both variable and inline objects)
+    const stringifyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*({[\\s\\S]*?})\\s*\\)`, 'm'));
     
     if (stringifyMatch) {
-      const variableName = stringifyMatch[1];
-      // Look for the variable definition (handle multiline objects)
-      const variablePattern = new RegExp(`const\\s+${variableName}\\s*=\\s*\\{([\\s\\S]*?)\\}`, 'g');
-      const variableMatch = variablePattern.exec(content);
-      
-      if (variableMatch) {
-        const bodyContent = variableMatch[1];
-        const fieldMatches = bodyContent.matchAll(/(\w+):/g);
-        for (const fieldMatch of fieldMatches) {
-          bodyFields.add(fieldMatch[1]);
-        }
+      const objectContent = stringifyMatch[1];
+      // Extract field names from the object literal, handling complex values
+      const fieldMatches = objectContent.matchAll(/(\w+)\s*:/g);
+      for (const fieldMatch of fieldMatches) {
+        bodyFields.add(fieldMatch[1]);
       }
     } else {
-      // Fallback to direct object pattern
-      const bodyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][^}]+body:[^}]+{([^}]+)}`));
+      // Try to match variable reference
+      const variableMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*(\\w+)\\s*\\)`, 'm'));
       
-      if (bodyMatch) {
-        // Extract fields from JSON.stringify body
-        const bodyContent = bodyMatch[1];
-        const fieldMatches = bodyContent.matchAll(/(\w+):/g);
-        for (const fieldMatch of fieldMatches) {
-          bodyFields.add(fieldMatch[1]);
+      if (variableMatch) {
+        const variableName = variableMatch[1];
+        // Look for the variable definition (handle multiline objects)
+        const variablePattern = new RegExp(`const\\s+${variableName}\\s*=\\s*\\{([\\s\\S]*?)\\}`, 'g');
+        const variableDefMatch = variablePattern.exec(content);
+        
+        if (variableDefMatch) {
+          const bodyContent = variableDefMatch[1];
+          const fieldMatches = bodyContent.matchAll(/(\w+):/g);
+          for (const fieldMatch of fieldMatches) {
+            bodyFields.add(fieldMatch[1]);
+          }
         }
       }
     }
