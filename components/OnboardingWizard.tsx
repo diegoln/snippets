@@ -13,6 +13,9 @@ import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
+const DEV_USER_ID = 'dev-user-123' // Development authentication user ID
+const REFLECTION_GENERATION_TIMEOUT = 30000 // 30 seconds timeout for reflection generation
+const INPUT_MAX_LENGTH = 100 // Maximum length for role/level inputs
 
 // Enhanced input sanitization for role/level values
 const sanitizeRoleInput = (input: string): string => {
@@ -20,7 +23,7 @@ const sanitizeRoleInput = (input: string): string => {
     .trim()
     .replace(/[<>\"'&]/g, '') // Remove potential XSS characters
     .replace(/\s+/g, ' ') // Normalize whitespace
-    .substring(0, 100) // Reasonable length limit
+    .substring(0, INPUT_MAX_LENGTH) // Reasonable length limit
 }
 
 const validateRoleInput = (input: string): boolean => {
@@ -99,7 +102,7 @@ interface WizardFormData {
 
 interface LoadingState {
   isLoading: boolean
-  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding'
+  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding' | 'generating-reflection' | 'loading-integration-data'
   message?: string
 }
 
@@ -136,7 +139,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       try {
         const response = await fetch('/api/integrations', {
           headers: {
-            'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+            'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
           }
         })
         if (response.ok) {
@@ -353,7 +356,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({ type: 'google_calendar' })
         })
@@ -365,7 +368,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         // Fetch previous week's calendar data with LLM processing
         const dataResponse = await fetch('/api/integrations?test=true', {
           headers: {
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           }
         })
         if (!dataResponse.ok) {
@@ -379,7 +382,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({
             integrationType: 'google_calendar',
@@ -409,7 +412,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({
             weeklySnippet: snippetData.weeklySnippet,
@@ -499,18 +502,23 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       const year = new Date().getFullYear()
       const { startDate, endDate } = getWeekDates(currentWeek, year)
       
+      // Prepare snippet data for API call
+      const defaultContent = `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` : ''}`
+      
+      const snippetData = {
+        weekNumber: currentWeek,
+        year: year,
+        content: formData.reflectionContent || defaultContent,
+      }
+
       const response = await fetch('/api/snippets', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
-        body: JSON.stringify({
-          weekNumber: currentWeek,
-          year: year,
-          content: formData.reflectionContent || `## Done\n\n${Object.values(integrationBullets).flat().map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` : ''}`,
-        }),
+        body: JSON.stringify(snippetData),
       })
       
       if (!response.ok) {
@@ -525,7 +533,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
@@ -561,23 +569,148 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [formData, integrationBullets, handleApiError, onOnboardingComplete])
 
-  // Update reflection content when we reach step 3 (reflection step)
+  // Update reflection content when we reach step 2 (reflection step)
   useEffect(() => {
-    if (currentStep === 3 && !formData.reflectionContent) {
+    if (currentStep === 2 && !formData.reflectionContent && connectedIntegrations.size > 0) {
       const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
       const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
       const allBullets = Object.values(integrationBullets).flat()
-      const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
-        ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
-        : ''
-      const content = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
       
-      setFormData(prev => ({
-        ...prev,
-        reflectionContent: content,
-      }))
+      // If we have integration bullets, try to generate LLM-powered reflection
+      if (allBullets.length > 0) {
+        const generateReflectionFromIntegration = async () => {
+          try {
+            setLoadingState({ isLoading: true, operation: 'generating-reflection', message: 'Generating your reflection...' })
+            
+            // First create a weekly snippet from the integration bullets
+            const snippetContent = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n`
+            
+            // Generate LLM-powered reflection draft from weekly snippet
+            const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'X-Dev-User-Id': DEV_USER_ID
+              },
+              body: JSON.stringify({
+                weeklySnippet: snippetContent,
+                bullets: allBullets,
+                userProfile: {
+                  jobTitle: effectiveRole,
+                  seniorityLevel: effectiveLevel
+                }
+              })
+            })
+            
+            if (reflectionResponse.ok) {
+              const reflectionData = await reflectionResponse.json()
+              setFormData(prev => ({
+                ...prev,
+                reflectionContent: reflectionData.reflectionDraft || snippetContent
+              }))
+            } else {
+              // Fallback to basic content if LLM fails
+              const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
+                ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
+                : ''
+              setFormData(prev => ({
+                ...prev,
+                reflectionContent: `${snippetContent}${tip}`
+              }))
+            }
+          } catch (error) {
+            console.error('Failed to generate reflection:', error)
+            // Fallback to basic content
+            const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
+              ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
+              : ''
+            setFormData(prev => ({
+              ...prev,
+              reflectionContent: `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
+            }))
+          } finally {
+            setLoadingState({ isLoading: false })
+          }
+        }
+        
+        generateReflectionFromIntegration()
+      } else {
+        // Fallback if no bullets available
+        const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
+          ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
+          : ''
+        setFormData(prev => ({
+          ...prev,
+          reflectionContent: `## Done\n\n- \n\n## Next\n\n- \n\n## Notes\n\n${tip}`
+        }))
+      }
     }
-  }, [currentStep, formData.reflectionContent, formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
+  }, [currentStep, formData.reflectionContent, formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets, connectedIntegrations])
+
+  // Load integration data for pre-connected integrations
+  useEffect(() => {
+    if (currentStep === 1 && connectedIntegrations.has('google_calendar') && Object.keys(integrationBullets).length === 0) {
+      const loadIntegrationData = async () => {
+        try {
+          setLoadingState({ isLoading: true, operation: 'loading-integration-data', message: 'Loading calendar data...' })
+          
+          // Fetch calendar data (same as connectIntegration does)
+          const dataResponse = await fetch('/api/integrations?test=true', {
+            headers: {
+              'X-Dev-User-Id': DEV_USER_ID
+            }
+          })
+          if (!dataResponse.ok) {
+            throw new Error('Failed to fetch calendar data')
+          }
+          const calendarData = await dataResponse.json()
+          
+          // Generate snippet from integration data (same as connectIntegration does)
+          const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
+          const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
+          
+          const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-Dev-User-Id': DEV_USER_ID
+            },
+            body: JSON.stringify({
+              integrationType: 'google_calendar',
+              weekData: calendarData.weekData,
+              userProfile: {
+                jobTitle: effectiveRole,
+                seniorityLevel: effectiveLevel
+              }
+            })
+          })
+          
+          if (!snippetResponse.ok) {
+            throw new Error('Failed to generate snippet from calendar data')
+          }
+          const snippetData = await snippetResponse.json()
+          
+          // Update integration bullets with the fetched data
+          setIntegrationBullets(prev => ({
+            ...prev,
+            ['google_calendar']: snippetData.bullets || []
+          }))
+          
+        } catch (error) {
+          console.error('Failed to load integration data:', error)
+          // Set empty bullets so it doesn't keep retrying
+          setIntegrationBullets(prev => ({
+            ...prev,
+            ['google_calendar']: []
+          }))
+        } finally {
+          setLoadingState({ isLoading: false })
+        }
+      }
+      
+      loadIntegrationData()
+    }
+  }, [currentStep, connectedIntegrations, integrationBullets, formData.role, formData.customRole, formData.level, formData.customLevel])
 
   const handleRoleAndGuidelinesComplete = useCallback(async (data: {
     role: string
@@ -613,7 +746,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+          'X-Dev-User-Id': DEV_USER_ID // Add dev auth header
         },
         credentials: 'same-origin',
         body: JSON.stringify({
@@ -632,7 +765,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'X-Dev-User-Id': DEV_USER_ID
           },
           credentials: 'same-origin',
           body: JSON.stringify({
