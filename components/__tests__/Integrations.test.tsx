@@ -7,8 +7,9 @@ import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { Integrations } from '../Integrations'
 
-// Mock fetch
+// Mock fetch and confirm
 global.fetch = jest.fn()
+global.confirm = jest.fn()
 
 // Mock console methods
 const originalError = console.error
@@ -376,6 +377,300 @@ describe('Integrations Component', () => {
           })
         )
       })
+    })
+  })
+
+  describe('Disconnect Functionality', () => {
+    const mockConnectedIntegration = {
+      integrations: [
+        {
+          id: 'calendar-123',
+          type: 'google_calendar',
+          isActive: true,
+          lastSyncAt: '2024-01-01T00:00:00Z',
+          createdAt: '2024-01-01T00:00:00Z'
+        }
+      ]
+    }
+
+    beforeEach(() => {
+      // Reset mocks for each test
+      ;(global.fetch as jest.Mock).mockClear()
+      ;(global.confirm as jest.Mock).mockClear()
+    })
+
+    it('should show disconnect button for connected calendar', async () => {
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockConnectedIntegration
+      })
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Google Calendar Connected')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+    })
+
+    it('should show confirmation dialog when disconnect is clicked', async () => {
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockConnectedIntegration
+      })
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(false) // User cancels
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+
+      expect(global.confirm).toHaveBeenCalledWith(
+        'Are you sure you want to disconnect Google Calendar? Your data from this source will no longer be collected for future reflections.'
+      )
+
+      // Should not make delete API call since user cancelled
+      expect(global.fetch).toHaveBeenCalledTimes(1) // Only initial load
+    })
+
+    it('should disconnect integration when user confirms', async () => {
+      // Mock initial load
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+        // Mock successful disconnect
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true, message: 'Integration removed successfully' })
+        })
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(true) // User confirms
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+
+      // Should make delete API call
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/integrations?id=calendar-123',
+          expect.objectContaining({
+            method: 'DELETE',
+            credentials: 'include'
+          })
+        )
+      })
+
+      // Should update UI to show connect button
+      await waitFor(() => {
+        expect(screen.queryByText('Google Calendar Connected')).not.toBeInTheDocument()
+        expect(screen.getByText('Connect Google Calendar')).toBeInTheDocument()
+      })
+    })
+
+    it('should handle disconnect API errors gracefully', async () => {
+      // Mock initial load
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+        // Mock API error
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: 'Internal server error' })
+        })
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(true)
+
+      // Mock alert to capture error message
+      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith('Failed to disconnect calendar: Internal server error')
+      })
+
+      // Integration should remain connected
+      expect(screen.getByText('Google Calendar Connected')).toBeInTheDocument()
+
+      alertSpy.mockRestore()
+    })
+
+    it('should show loading state during disconnection', async () => {
+      // Mock initial load
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(true)
+
+      // Mock slow disconnect response
+      let resolveDisconnect: (value: any) => void
+      const disconnectPromise = new Promise((resolve) => {
+        resolveDisconnect = resolve
+      })
+      ;(global.fetch as jest.Mock).mockReturnValueOnce(disconnectPromise)
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+
+      // Should show loading state
+      await waitFor(() => {
+        expect(screen.getByText('Disconnecting...')).toBeInTheDocument()
+      })
+
+      // Button should be disabled during loading
+      expect(screen.getByRole('button', { name: /disconnecting/i })).toBeDisabled()
+
+      // Resolve the disconnect
+      resolveDisconnect!({
+        ok: true,
+        json: async () => ({ success: true })
+      })
+
+      // Should return to normal state
+      await waitFor(() => {
+        expect(screen.queryByText('Disconnecting...')).not.toBeInTheDocument()
+      })
+    })
+
+    it('should handle network errors during disconnection', async () => {
+      // Mock initial load
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+        // Mock network error
+        .mockRejectedValueOnce(new Error('Network error'))
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(true)
+
+      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+
+      await waitFor(() => {
+        expect(alertSpy).toHaveBeenCalledWith('Failed to disconnect calendar. Please try again.')
+      })
+
+      alertSpy.mockRestore()
+    })
+
+    it('should handle missing integration gracefully', async () => {
+      // Mock initial load with empty integrations
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ integrations: [] })
+        })
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Connect Google Calendar')).toBeInTheDocument()
+        expect(screen.queryByRole('button', { name: /disconnect/i })).not.toBeInTheDocument()
+      })
+    })
+
+    it('should use correct environment headers for disconnect API', async () => {
+      const originalEnv = process.env.NODE_ENV
+
+      // Test development environment
+      process.env.NODE_ENV = 'development'
+
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true })
+        })
+
+      ;(global.confirm as jest.Mock).mockReturnValueOnce(true)
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+      })
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          '/api/integrations?id=calendar-123',
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'X-Dev-User-Id': 'dev-user-123'
+            })
+          })
+        )
+      })
+
+      // Test production environment
+      process.env.NODE_ENV = 'production'
+      ;(global.fetch as jest.Mock).mockClear()
+
+      ;(global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockConnectedIntegration
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true })
+        })
+
+      render(<Integrations />)
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByRole('button', { name: /disconnect/i }))
+      })
+
+      await waitFor(() => {
+        const deleteCall = (global.fetch as jest.Mock).mock.calls.find(
+          call => call[0].includes('DELETE') || call[1]?.method === 'DELETE'
+        )
+        if (deleteCall && deleteCall[1]?.headers) {
+          expect(deleteCall[1].headers).not.toHaveProperty('X-Dev-User-Id')
+        }
+      })
+
+      // Restore original environment
+      process.env.NODE_ENV = originalEnv
     })
   })
 })

@@ -25,8 +25,14 @@ jest.mock('../components/Logo', () => ({
 const mockUseSession = useSession as jest.MockedFunction<typeof useSession>
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>
 
+// Mock global fetch
+global.fetch = jest.fn()
+global.confirm = jest.fn()
+
 describe('OnboardingWizard', () => {
   const mockPush = jest.fn()
+  const mockFetch = fetch as jest.MockedFunction<typeof fetch>
+  const mockConfirm = confirm as jest.MockedFunction<typeof confirm>
 
   beforeEach(() => {
     mockUseSession.mockReturnValue({
@@ -40,6 +46,14 @@ describe('OnboardingWizard', () => {
 
     // Clear previous calls
     mockPush.mockClear()
+    mockFetch.mockClear()
+    mockConfirm.mockClear()
+
+    // Default fetch mock responses
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ integrations: [] })
+    } as Response)
   })
 
   describe('Step Sequence', () => {
@@ -181,6 +195,267 @@ describe('OnboardingWizard', () => {
     // Only Jira should show "Connect"
     const jiraConnectButtons = screen.getAllByRole('button', { name: /connect/i })
     expect(jiraConnectButtons).toHaveLength(1)
+    })
+  })
+
+  describe('Integration Disconnect', () => {
+    beforeEach(() => {
+      // Mock fetch to return existing integrations
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ 
+            integrations: [{
+              id: 'integration-123',
+              type: 'google_calendar',
+              isActive: true,
+              createdAt: '2023-01-01T00:00:00.000Z'
+            }]
+          })
+        } as Response)
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({ integrations: [] })
+        } as Response)
+    })
+
+    it('should show disconnect button for connected integrations', async () => {
+      render(<OnboardingWizard />)
+
+      // Navigate to integrations step
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        expect(screen.getByText(/career progression plan/i)).toBeInTheDocument()
+      })
+
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        expect(screen.getByText(/connect an integration/i)).toBeInTheDocument()
+      })
+
+      // Should show connected state with disconnect button
+      await waitFor(() => {
+        expect(screen.getByText('✓ Connected')).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /disconnect/i })).toBeInTheDocument()
+      })
+    })
+
+    it('should confirm before disconnecting integration', async () => {
+      render(<OnboardingWizard />)
+
+      // Navigate to integrations step
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/continue/i))
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/connect an integration/i)).toBeInTheDocument()
+      })
+
+      // Mock user cancels confirmation
+      mockConfirm.mockReturnValueOnce(false)
+
+      const disconnectButton = await screen.findByRole('button', { name: /disconnect/i })
+      fireEvent.click(disconnectButton)
+
+      // Should show confirmation dialog
+      expect(mockConfirm).toHaveBeenCalledWith(
+        expect.stringContaining('Are you sure you want to disconnect Google Calendar?')
+      )
+
+      // Should not make API call since user cancelled
+      expect(mockFetch).toHaveBeenCalledTimes(1) // Only initial load
+    })
+
+    it('should disconnect integration when user confirms', async () => {
+      render(<OnboardingWizard />)
+
+      // Navigate to integrations step
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/continue/i))
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/connect an integration/i)).toBeInTheDocument()
+      })
+
+      // Mock user confirms disconnection
+      mockConfirm.mockReturnValueOnce(true)
+
+      // Mock successful disconnection API calls
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ 
+            integrations: [{
+              id: 'integration-123',
+              type: 'google_calendar',
+              isActive: true,
+              createdAt: '2023-01-01T00:00:00.000Z'
+            }]
+          })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true, message: 'Integration removed successfully' })
+        } as Response)
+
+      const disconnectButton = await screen.findByRole('button', { name: /disconnect/i })
+      fireEvent.click(disconnectButton)
+
+      // Should call APIs to fetch integrations and delete
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith('/api/integrations', expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Dev-User-Id': 'dev-user-123'
+          })
+        }))
+
+        expect(mockFetch).toHaveBeenCalledWith('/api/integrations?id=integration-123', expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            'X-Dev-User-Id': 'dev-user-123'
+          })
+        }))
+      })
+
+      // Should update UI to show connection option again
+      await waitFor(() => {
+        expect(screen.queryByText('✓ Connected')).not.toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /connect/i })).toBeInTheDocument()
+      })
+    })
+
+    it('should handle disconnection API errors gracefully', async () => {
+      render(<OnboardingWizard />)
+
+      // Navigate to integrations step
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/continue/i))
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/connect an integration/i)).toBeInTheDocument()
+      })
+
+      // Mock user confirms disconnection
+      mockConfirm.mockReturnValueOnce(true)
+
+      // Mock API error
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ 
+            integrations: [{
+              id: 'integration-123',
+              type: 'google_calendar',
+              isActive: true,
+              createdAt: '2023-01-01T00:00:00.000Z'
+            }]
+          })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: async () => ({ error: 'Internal server error' })
+        } as Response)
+
+      const disconnectButton = await screen.findByRole('button', { name: /disconnect/i })
+      fireEvent.click(disconnectButton)
+
+      // Should show error message
+      await waitFor(() => {
+        expect(screen.getByText(/failed to disconnect integration/i)).toBeInTheDocument()
+      })
+
+      // Integration should remain connected
+      expect(screen.getByText('✓ Connected')).toBeInTheDocument()
+    })
+
+    it('should handle environment-specific headers correctly', async () => {
+      // Test development environment
+      const originalEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'development'
+
+      render(<OnboardingWizard />)
+
+      // Navigate to integrations step and disconnect
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/continue/i))
+      })
+
+      mockConfirm.mockReturnValueOnce(true)
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ 
+            integrations: [{ id: 'test-123', type: 'google_calendar', isActive: true, createdAt: '2023-01-01' }]
+          })
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true })
+        } as Response)
+
+      const disconnectButton = await screen.findByRole('button', { name: /disconnect/i })
+      fireEvent.click(disconnectButton)
+
+      // Should include dev headers in development
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/integrations'),
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              'X-Dev-User-Id': 'dev-user-123'
+            })
+          })
+        )
+      })
+
+      // Test production environment
+      process.env.NODE_ENV = 'production'
+      mockFetch.mockClear()
+
+      render(<OnboardingWizard />)
+      fireEvent.click(screen.getByRole('button', { name: /engineer/i }))
+      fireEvent.click(screen.getByRole('button', { name: /senior/i }))
+      fireEvent.click(screen.getByText(/continue/i))
+
+      await waitFor(() => {
+        fireEvent.click(screen.getByText(/continue/i))
+      })
+
+      // In production, should not include dev headers
+      await waitFor(() => {
+        const fetchCalls = mockFetch.mock.calls
+        const headersCall = fetchCalls.find(call => call[1]?.headers)
+        if (headersCall) {
+          expect(headersCall[1].headers).not.toHaveProperty('X-Dev-User-Id')
+        }
+      })
+
+      // Restore original environment
+      process.env.NODE_ENV = originalEnv
     })
   })
 })
