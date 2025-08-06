@@ -51,9 +51,21 @@ export default function Home() {
     if (status === 'authenticated' && session && !userProfile && !isLoadingProfile) {
       // Check if onboarding was just completed to skip API call
       const justCompleted = localStorage.getItem('onboarding-just-completed')
-      if (justCompleted === 'true') {
-        console.log('✅ Onboarding just completed, skipping profile fetch')
+      const completedTimestamp = localStorage.getItem('onboarding-completed-timestamp')
+      
+      // Check if onboarding was completed recently (within last 30 seconds)
+      const isRecentlyCompleted = completedTimestamp && 
+        (Date.now() - parseInt(completedTimestamp)) < 30000
+      
+      if (justCompleted === 'true' || isRecentlyCompleted) {
+        console.log('✅ Onboarding just completed, skipping profile fetch', {
+          justCompleted,
+          completedTimestamp,
+          isRecentlyCompleted
+        })
+        // Clean up flags
         localStorage.removeItem('onboarding-just-completed')
+        localStorage.removeItem('onboarding-completed-timestamp')
         setUserProfile({ onboardingCompleted: true })
         return
       }
@@ -67,8 +79,21 @@ export default function Home() {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
         controller.abort()
-        console.warn('⚠️ Profile fetch timeout, assuming onboarding needed')
-        setUserProfile({ onboardingCompleted: false })
+        // Double-check localStorage flags before assuming onboarding is needed
+        const justCompleted = localStorage.getItem('onboarding-just-completed')
+        const completedTimestamp = localStorage.getItem('onboarding-completed-timestamp')
+        const isRecentlyCompleted = completedTimestamp && 
+          (Date.now() - parseInt(completedTimestamp)) < 30000
+          
+        if (justCompleted === 'true' || isRecentlyCompleted) {
+          console.log('⚠️ Profile fetch timeout, but onboarding was just completed')
+          localStorage.removeItem('onboarding-just-completed')
+          localStorage.removeItem('onboarding-completed-timestamp')
+          setUserProfile({ onboardingCompleted: true })
+        } else {
+          console.warn('⚠️ Profile fetch timeout, assuming onboarding needed')
+          setUserProfile({ onboardingCompleted: false })
+        }
         setIsLoadingProfile(false)
       }, 5000) // Reduced to 5 second timeout
       

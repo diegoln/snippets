@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation'
 import { Logo } from './Logo'
 import { LoadingSpinner } from './LoadingSpinner'
 import { ErrorBoundary } from './ErrorBoundary'
-import { CareerGuidelinesStep } from './CareerGuidelinesStep'
+import { RoleAndGuidelinesStep } from './RoleAndGuidelinesStep'
 import { getWeekDates } from '../lib/utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
 import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS, LEVEL_TIPS } from '../constants/user'
-import { useCareerGuidelinesGeneration } from '../hooks/useAsyncOperation'
 
 // Constants
 const SAVE_DEBOUNCE_MS = 500
@@ -131,16 +130,6 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
 
-  // Career guidelines generation hook
-  const {
-    generateCareerGuidelines,
-    operation: careerGuidelinesOperation,
-    isCreating: isGeneratingCareerGuidelines,
-    isComplete: isCareerGuidelinesComplete,
-    isError: careerGuidelinesError,
-    progress: careerGuidelinesProgress
-  } = useCareerGuidelinesGeneration()
-
   // Load existing integrations on component mount
   useEffect(() => {
     const loadExistingIntegrations = async () => {
@@ -242,9 +231,9 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       try {
         const { step, data, integrations, bullets } = JSON.parse(savedProgress)
         
-        // Only restore if it's not the final success step (step 4)
+        // Only restore if it's not the final success step (step 3)
         // If user reached success but onboarding wasn't completed, they should start over
-        if (step !== 4) {
+        if (step !== 3) {
           setCurrentStep(step || 0)
           setFormData(prev => ({ ...prev, ...data }))
           setConnectedIntegrations(new Set(integrations || []))
@@ -263,8 +252,8 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
 
   // Save progress to localStorage whenever state changes (debounced)
   useEffect(() => {
-    // Don't save if we're on the success step (step 4) as onboarding is complete
-    if (currentStep !== 4) {
+    // Don't save if we're on the success step (step 3) as onboarding is complete
+    if (currentStep !== 3) {
       saveProgressToLocalStorage(currentStep, formData, connectedIntegrations, integrationBullets)
     }
   }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage])
@@ -277,38 +266,6 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       }
     }
   }, [])
-
-  // Start career guidelines generation when user reaches integration step
-  useEffect(() => {
-    if (currentStep === 1 && formData.role && formData.level && !careerGuidelinesOperation && !isGeneratingCareerGuidelines) {
-      const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
-      const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
-      
-      if (effectiveRole && effectiveLevel) {
-        console.log('Starting career guidelines generation in parallel with integration step')
-        generateCareerGuidelines({
-          role: effectiveRole,
-          level: effectiveLevel,
-          companyLadder: formData.careerGuidelines?.companyLadder || undefined
-        })
-      }
-    }
-  }, [currentStep, formData.role, formData.level, formData.customRole, formData.customLevel, formData.careerGuidelines?.companyLadder, careerGuidelinesOperation, isGeneratingCareerGuidelines, generateCareerGuidelines])
-
-  // Handle career guidelines regeneration
-  const handleCareerGuidelinesRegenerate = useCallback(() => {
-    const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
-    const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
-    
-    if (effectiveRole && effectiveLevel) {
-      console.log('Regenerating career guidelines')
-      generateCareerGuidelines({
-        role: effectiveRole,
-        level: effectiveLevel,
-        companyLadder: formData.careerGuidelines?.companyLadder || undefined
-      })
-    }
-  }, [formData.role, formData.level, formData.customRole, formData.customLevel, formData.careerGuidelines?.companyLadder, generateCareerGuidelines])
 
   // Generate initial reflection content based on role/level
   const generateInitialReflection = useCallback(() => {
@@ -450,52 +407,11 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
   // Handle step navigation
   const handleNext = useCallback(async () => {
     if (currentStep === 0) {
-      // Require both role and level with enhanced validation
-      const effectiveRole = formData.role === 'other' ? sanitizeRoleInput(formData.customRole) : formData.role
-      const effectiveLevel = formData.level === 'other' ? sanitizeRoleInput(formData.customLevel) : formData.level
-      
-      if (!effectiveRole || (formData.role === 'other' && !validateRoleInput(formData.customRole))) {
-        setError('Please enter a valid role (2-100 characters, letters, numbers, spaces, hyphens only)')
-        return
-      }
-      
-      if (!effectiveLevel || (formData.level === 'other' && !validateRoleInput(formData.customLevel))) {
-        setError('Please enter a valid level (2-100 characters, letters, numbers, spaces, hyphens only)')
-        return
-      }
-      
-      // Save profile immediately after step 1 to validate early
-      setLoadingState({ isLoading: true, operation: 'saving-profile', message: 'Saving your profile...' })
+      // Step 0 is now combined role + guidelines
+      // Validation is handled in the component
+      // Just move to integration step
       setError(null)
-      
-      try {
-        const profileResponse = await fetch('/api/user/profile', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({
-            jobTitle: effectiveRole,
-            seniorityLevel: effectiveLevel,
-          }),
-        })
-        
-        if (!profileResponse.ok) {
-          await handleApiError(profileResponse, 'Update profile')
-        }
-        
-        // Success - move to next step (career plan)
-        setError(null)
-        setCurrentStep(1)
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('Failed to save profile. Please try again.')
-        }
-        return
-      } finally {
-        setLoadingState({ isLoading: false })
-      }
+      setCurrentStep(1)
       return
     }
     
@@ -506,20 +422,13 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         return
       }
       setError(null)
-      setCurrentStep(2) // Move to career plan
-      return
-    }
-    
-    if (currentStep === 2) {
-      // Step 2 is career guidelines - optional, can proceed without completion
-      setError(null)
-      setCurrentStep(3) // Move to reflection
+      setCurrentStep(2) // Move to reflection
       return
     }
     
     setError(null)
-    setCurrentStep(prev => Math.min(prev + 1, 4))
-  }, [currentStep, formData, connectedIntegrations, handleApiError])
+    setCurrentStep(prev => Math.min(prev + 1, 3))
+  }, [currentStep, connectedIntegrations])
 
   const handleBack = useCallback(() => {
     setError(null)
@@ -543,7 +452,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       
       const response = await fetch('/api/snippets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+        },
         credentials: 'same-origin',
         body: JSON.stringify({
           weekNumber: currentWeek,
@@ -562,7 +474,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       // Mark onboarding as complete
       const onboardingResponse = await fetch('/api/user/onboarding', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+        },
         credentials: 'same-origin',
         body: JSON.stringify({ completed: true }),
       })
@@ -579,8 +494,8 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         onOnboardingComplete()
       }
       
-      // Move to success step
-      setCurrentStep(4)
+      // Move to success step (now step 3)
+      setCurrentStep(3)
       
       // Preload the dashboard by setting a flag in localStorage
       // This helps the main page know onboarding is complete without an API call
@@ -615,18 +530,97 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [currentStep, formData.reflectionContent, formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
-  const handleCareerGuidelinesComplete = useCallback((careerGuidelines: {
-    currentLevelPlan: string
-    nextLevelExpectations: string
-    companyLadder?: string
+  const handleRoleAndGuidelinesComplete = useCallback(async (data: {
+    role: string
+    customRole: string
+    level: string
+    customLevel: string
+    careerGuidelines: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
   }) => {
+    // Update form data
     setFormData(prev => ({
       ...prev,
-      careerGuidelines
+      role: data.role,
+      customRole: data.customRole,
+      level: data.level,
+      customLevel: data.customLevel,
+      careerGuidelines: data.careerGuidelines
     }))
-  }, [])
+    
+    // Save profile and guidelines
+    setLoadingState({ isLoading: true, operation: 'saving-profile', message: 'Saving your profile and guidelines...' })
+    setError(null)
+    
+    try {
+      const effectiveRole = data.role === 'other' ? data.customRole : data.role
+      const effectiveLevel = data.level === 'other' ? data.customLevel : data.level
+      
+      // Save profile
+      const profileResponse = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          jobTitle: effectiveRole,
+          seniorityLevel: effectiveLevel,
+        }),
+      })
+      
+      if (!profileResponse.ok) {
+        await handleApiError(profileResponse, 'Update profile')
+      }
+      
+      // Save career guidelines
+      if (data.careerGuidelines.currentLevelPlan && data.careerGuidelines.nextLevelExpectations) {
+        const guidelinesResponse = await fetch('/api/user/career-guidelines', {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            currentLevelPlan: data.careerGuidelines.currentLevelPlan,
+            nextLevelExpectations: data.careerGuidelines.nextLevelExpectations,
+            companyLadder: data.careerGuidelines.companyLadder
+          })
+        })
+        
+        if (!guidelinesResponse.ok) {
+          console.error('Failed to save career guidelines, but continuing...')
+        }
+      }
+      
+      // Success - move to next step
+      setError(null)
+      handleNext()
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('Failed to save. Please try again.')
+      }
+    } finally {
+      setLoadingState({ isLoading: false })
+    }
+  }, [handleApiError, handleNext])
 
   const handleGoToDashboard = useCallback(() => {
+    console.log('🚀 Navigating to dashboard...')
+    
+    // Prevent multiple clicks
+    if (loadingState.isLoading) {
+      console.log('⚠️ Already navigating, ignoring click')
+      return
+    }
+    
     // Set loading state immediately for instant feedback
     setLoadingState({ 
       isLoading: true, 
@@ -635,151 +629,50 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     })
     
     // Clear any previous progress and mark as completed
+    // (onboarding was already marked complete in handleSave)
     localStorage.removeItem('onboarding-progress')
-    localStorage.setItem('onboarding-just-completed', 'true')
     
-    // Navigate immediately - the main page will use the localStorage flag
-    // to avoid unnecessary API calls
-    router.replace('/')
-  }, [router])
+    // Set multiple flags to ensure the root page recognizes completion
+    localStorage.setItem('onboarding-just-completed', 'true')
+    localStorage.setItem('onboarding-completed-timestamp', Date.now().toString())
+    
+    console.log('📍 Current pathname:', window.location.pathname)
+    console.log('💾 Set localStorage flags:', {
+      'onboarding-just-completed': localStorage.getItem('onboarding-just-completed'),
+      'onboarding-completed-timestamp': localStorage.getItem('onboarding-completed-timestamp')
+    })
+    
+    // Notify parent if available
+    if (onOnboardingComplete) {
+      onOnboardingComplete()
+    }
+    
+    // Use router push for better navigation without full page refresh
+    console.log('🔄 Navigating to dashboard with router.push...')
+    try {
+      router.push('/')
+      console.log('✅ Router push initiated')
+    } catch (error) {
+      console.error('❌ Router push failed:', error)
+      // Fallback to window location
+      console.log('🔄 Fallback: using window.location...')
+      window.location.href = '/'
+    }
+  }, [onOnboardingComplete, router, loadingState.isLoading])
 
   const steps = [
     {
-      title: 'Tell us about your role',
-      subtitle: 'We match your highlights to your career ladder so suggestions stay relevant.',
+      title: 'Set up your career profile',
+      subtitle: 'Tell us about your role and we\'ll generate personalized career guidelines.',
       content: (
-        <div className="space-y-8">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3" id="role-group-label">
-              What&apos;s your role? <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 gap-3 mb-4" role="radiogroup" aria-labelledby="role-group-label">
-              {ROLES.filter(role => role.value !== 'other').map(role => (
-                <button
-                  key={role.value}
-                  onClick={() => setFormData(prev => ({ ...prev, role: role.value, customRole: '' }))}
-                  className={`p-4 rounded-lg border-2 transition-all focus:ring-2 focus:ring-accent-500 focus:outline-none ${
-                    formData.role === role.value
-                      ? 'border-accent-500 bg-accent-50 text-accent-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  role="radio"
-                  aria-checked={formData.role === role.value}
-                  aria-labelledby={`role-${role.value}-label`}
-                >
-                  <span id={`role-${role.value}-label`}>{role.label}</span>
-                </button>
-              ))}
-            </div>
-            
-            {/* Custom role text field */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="role"
-                  checked={formData.role === 'other'}
-                  onChange={() => setFormData(prev => ({ ...prev, role: 'other' }))}
-                  className="text-accent-500 focus:ring-accent-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Other:</span>
-              </label>
-              <input
-                type="text"
-                value={formData.role === 'other' ? formData.customRole : ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  role: 'other', 
-                  customRole: sanitizeRoleInput(e.target.value)
-                }))}
-                placeholder="Enter your role (e.g., Solutions Architect, DevOps)"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent disabled:bg-gray-50"
-                disabled={formData.role !== 'other'}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3" id="level-group-label">
-              What&apos;s your level? <span className="text-red-500">*</span>
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4" role="radiogroup" aria-labelledby="level-group-label">
-              {LEVELS.filter(level => level.value !== 'other').map(level => (
-                <button
-                  key={level.value}
-                  onClick={() => setFormData(prev => ({ ...prev, level: level.value, customLevel: '' }))}
-                  className={`p-3 rounded-lg border-2 transition-all focus:ring-2 focus:ring-accent-500 focus:outline-none ${
-                    formData.level === level.value
-                      ? 'border-accent-500 bg-accent-50 text-accent-700'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  role="radio"
-                  aria-checked={formData.level === level.value}
-                  aria-labelledby={`level-${level.value}-label`}
-                >
-                  <span id={`level-${level.value}-label`}>{level.label}</span>
-                </button>
-              ))}
-            </div>
-            
-            {/* Custom level text field */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="level"
-                  checked={formData.level === 'other'}
-                  onChange={() => setFormData(prev => ({ ...prev, level: 'other' }))}
-                  className="text-accent-500 focus:ring-accent-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Other:</span>
-              </label>
-              <input
-                type="text" 
-                value={formData.level === 'other' ? formData.customLevel : ''}
-                onChange={(e) => setFormData(prev => ({ 
-                  ...prev, 
-                  level: 'other', 
-                  customLevel: sanitizeRoleInput(e.target.value)
-                }))}
-                placeholder="Enter your level (e.g., Lead, Principal Consultant)"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-transparent disabled:bg-gray-50"
-                disabled={formData.level !== 'other'}
-              />
-            </div>
-          </div>
-
-          {/* Career ladder information */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div className="flex items-start space-x-3">
-              <svg className="flex-shrink-0 w-6 h-6 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">
-                  💡 Get more personalized insights
-                </h4>
-                <p className="text-sm text-blue-700 mb-3">
-                  Upload your company&apos;s career ladder document to get insights tailored to your specific promotion criteria and growth expectations.
-                </p>
-                <p className="text-xs text-blue-600 mb-3">
-                  <strong>Don&apos;t have it handy?</strong> No worries! You can upload it later in Settings to enhance your reflections.
-                </p>
-                <button
-                  type="button"
-                  className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
-                  onClick={() => {
-                    // Show notification instead of alert
-                    setNotification('Career ladder upload will be available in Settings after onboarding!')
-                    setTimeout(() => setNotification(null), 3000)
-                  }}
-                >
-                  Learn more about career ladder uploads →
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RoleAndGuidelinesStep
+          initialRole={formData.role}
+          initialLevel={formData.level}
+          initialCustomRole={formData.customRole}
+          initialCustomLevel={formData.customLevel}
+          initialCareerGuidelines={formData.careerGuidelines || undefined}
+          onComplete={handleRoleAndGuidelinesComplete}
+        />
       ),
     },
     {
@@ -829,26 +722,6 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             </div>
           ))}
         </div>
-      ),
-    },
-    {
-      title: 'Your Career Guidelines',
-      subtitle: 'We\'ve generated personalized guidelines based on your role and level. You can skip this step and fill it in later.',
-      content: (
-        <CareerGuidelinesStep
-          role={formData.role === 'other' ? formData.customRole : formData.role}
-          level={formData.level === 'other' ? formData.customLevel : formData.level}
-          companyLadder={formData.careerGuidelines?.companyLadder}
-          onComplete={handleCareerGuidelinesComplete}
-          autoGenerate={false}
-          showContinueButton={false}
-          externalOperation={careerGuidelinesOperation}
-          externalIsGenerating={isGeneratingCareerGuidelines}
-          externalIsComplete={isCareerGuidelinesComplete}
-          externalError={careerGuidelinesError}
-          externalProgress={careerGuidelinesProgress}
-          onRegenerate={handleCareerGuidelinesRegenerate}
-        />
       ),
     },
     {
@@ -1028,10 +901,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 
           {/* Navigation */}
           <div className="flex justify-between items-center">
-            {currentStep < 4 ? (
+            {currentStep < 3 ? (
               <button
                 onClick={handleBack}
-                disabled={currentStep === 0}
+                disabled={currentStep === 0 || loadingState.isLoading}
                 className="px-6 py-3 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 ← Back
@@ -1040,7 +913,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <div /> // Empty div for spacing
             )}
             
-            {currentStep < 4 ? (
+            {currentStep === 0 ? (
+              // Step 0 - Combined role/guidelines step has its own continue button
+              <div />
+            ) : currentStep < 2 ? (
               <button
                 onClick={handleNext}
                 disabled={loadingState.isLoading}
@@ -1051,13 +927,11 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                     <LoadingSpinner size="sm" />
                     <span>{loadingState.message}</span>
                   </div>
-                ) : currentStep === 2 ? (
-                  'Continue (Skip for Now) →'
                 ) : (
                   'Continue →'
                 )}
               </button>
-            ) : currentStep === 3 ? (
+            ) : currentStep === 2 ? (
               <button
                 onClick={handleSave}
                 disabled={loadingState.isLoading}
@@ -1077,13 +951,13 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <button
                 onClick={handleGoToDashboard}
                 disabled={loadingState.isLoading}
-                className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1 disabled:opacity-50"
+                className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-describedby={loadingState.isLoading ? "dashboard-navigation" : undefined}
               >
                 {loadingState.isLoading ? (
                   <div className="flex items-center space-x-2">
                     <LoadingSpinner size="sm" />
-                    <span>Taking you to dashboard...</span>
+                    <span>{loadingState.message || 'Taking you to dashboard...'}</span>
                   </div>
                 ) : (
                   'Go to Dashboard →'

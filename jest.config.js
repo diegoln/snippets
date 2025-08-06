@@ -37,6 +37,7 @@ const jestConfig = {
   testMatch: [
     '<rootDir>/__tests__/**/*.{js,jsx,ts,tsx}',    // Main test directory
     '<rootDir>/lib/__tests__/**/*.{js,jsx,ts,tsx}', // Library/utility tests
+    '<rootDir>/lib/**/__tests__/**/*.{js,jsx,ts,tsx}', // Nested library test directories
     '<rootDir>/app/api/**/*.test.{js,jsx,ts,tsx}',  // API route tests
     '<rootDir>/app/api/**/__tests__/**/*.{js,jsx,ts,tsx}', // API test directories
     '!<rootDir>/components/**/*.{test,spec}.{js,jsx,ts,tsx}' // Exclude component tests (JSDOM needed)

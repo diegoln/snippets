@@ -1,0 +1,808 @@
+/**
+ * Combined Role Selection and Career Guidelines Component
+ * Handles role/level selection and immediate guideline generation/display
+ */
+
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { LoadingSpinner } from './LoadingSpinner'
+import { VALID_ROLES, VALID_LEVELS, ROLE_LABELS, LEVEL_LABELS } from '../constants/user'
+
+// Constants
+const ROLES = VALID_ROLES.map(role => ({
+  value: role,
+  label: ROLE_LABELS[role],
+}))
+
+const LEVELS = VALID_LEVELS.map(level => ({
+  value: level,
+  label: LEVEL_LABELS[level],
+}))
+
+interface RoleAndGuidelinesStepProps {
+  initialRole?: string
+  initialLevel?: string
+  initialCustomRole?: string
+  initialCustomLevel?: string
+  initialCareerGuidelines?: {
+    currentLevelPlan: string
+    nextLevelExpectations: string
+    companyLadder?: string
+  }
+  onComplete: (data: {
+    role: string
+    customRole: string
+    level: string
+    customLevel: string
+    careerGuidelines: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
+  }) => void
+}
+
+export function RoleAndGuidelinesStep({
+  initialRole = '',
+  initialLevel = '',
+  initialCustomRole = '',
+  initialCustomLevel = '',
+  initialCareerGuidelines,
+  onComplete
+}: RoleAndGuidelinesStepProps) {
+  // Role and level selection state
+  const [role, setRole] = useState(initialRole)
+  const [customRole, setCustomRole] = useState(initialCustomRole)
+  const [level, setLevel] = useState(initialLevel)
+  const [customLevel, setCustomLevel] = useState(initialCustomLevel)
+  
+  // Career guidelines state
+  const [currentLevelPlan, setCurrentLevelPlan] = useState(initialCareerGuidelines?.currentLevelPlan || '')
+  const [nextLevelExpectations, setNextLevelExpectations] = useState(initialCareerGuidelines?.nextLevelExpectations || '')
+  const [companyLadder, setCompanyLadder] = useState(initialCareerGuidelines?.companyLadder || '')
+  const [showCompanyLadderUpload, setShowCompanyLadderUpload] = useState(false)
+  
+  // File upload state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [extractedFromDocument, setExtractedFromDocument] = useState(false)
+  
+  // Loading and error state
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasGeneratedGuidelines, setHasGeneratedGuidelines] = useState(false)
+  
+  // Edit mode state for each textarea
+  const [isEditingCurrentLevel, setIsEditingCurrentLevel] = useState(false)
+  const [isEditingNextLevel, setIsEditingNextLevel] = useState(false)
+
+  // Render markdown content in a more readable format
+  const renderGuidelineContent = (content: string): JSX.Element => {
+    if (!content.trim()) {
+      return <div className="text-gray-500 italic">No content yet</div>
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Rendering content:', content.substring(0, 200) + '...')
+    }
+
+    const lines = content.split('\n')
+    const elements: JSX.Element[] = []
+    let currentKey = 0
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Main category headers (e.g., "* **Impact & Ownership**" or "#### Impact & Ownership")
+      if (line.match(/^\*\s+\*\*(.+?)\*\*\s*$/) || line.match(/^#{1,4}\s+(.+)/)) {
+        const category = line.replace(/^\*\s+\*\*(.+?)\*\*\s*$/, '$1').replace(/^#{1,4}\s+(.+)/, '$1')
+        elements.push(
+          <div key={currentKey++} className="mb-3 mt-4 first:mt-0">
+            <h4 className="font-semibold text-gray-900 text-base mb-2 border-b border-gray-200 pb-1">{category}</h4>
+          </div>
+        )
+      }
+      // Sub-bullets (main descriptions) - handle both * and - bullets
+      else if ((line.match(/^\s*[\*\-]\s+(.+)/) && !line.includes('This looks like:')) || line.match(/^\s{4,}\*\s+(.+)/)) {
+        const description = line.replace(/^\s*[\*\-]\s+(.+)/, '$1').replace(/^\s{4,}\*\s+(.+)/, '$1')
+        elements.push(
+          <div key={currentKey++} className="ml-4 mb-2">
+            <p className="text-gray-700 text-sm leading-relaxed">{description}</p>
+          </div>
+        )
+      }
+      // Handle any other content lines
+      else if (line.trim() !== '' && !line.match(/^\s*$/) && elements.length > 0) {
+        elements.push(
+          <div key={currentKey++} className="mb-2">
+            <p className="text-gray-700 text-sm leading-relaxed">{line.trim()}</p>
+          </div>
+        )
+      }
+    }
+
+    // Fallback: if no elements were parsed, show raw content
+    if (elements.length === 0) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('No elements parsed, showing raw content')
+      }
+      return (
+        <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed">
+          {content}
+        </div>
+      )
+    }
+
+    return <div className="space-y-1">{elements}</div>
+  }
+
+  // Check if current selection is a standard role/level combo
+  const isStandardCombo = () => {
+    const effectiveRole = role === 'other' ? '' : role
+    const effectiveLevel = level === 'other' ? '' : level
+    return effectiveRole && effectiveLevel && VALID_ROLES.includes(effectiveRole as any) && VALID_LEVELS.includes(effectiveLevel as any)
+  }
+
+  // Get the next level in the progression
+  const getNextLevel = (currentLevel: string): string => {
+    const progression: { [key: string]: string } = {
+      'junior': 'mid',
+      'mid': 'senior',
+      'senior': 'staff',
+      'staff': 'principal',
+      'principal': 'principal', // No next level
+      'manager': 'senior-manager', // Note: using kebab-case to match constants
+      'senior-manager': 'director',
+      'director': 'director' // No next level
+    }
+    
+    return progression[currentLevel] || currentLevel
+  }
+
+  // Get the label for next level as JSX with bold formatting
+  const getNextLevelLabel = (): JSX.Element => {
+    const effectiveLevel = level === 'other' ? customLevel.toLowerCase() : level
+    const effectiveRole = role === 'other' ? customRole : (role ? ROLE_LABELS[role as keyof typeof ROLE_LABELS] : '')
+    
+    if (!effectiveLevel || !effectiveRole) {
+      return <span>Next Level Expectations</span>
+    }
+    
+    // For custom roles/levels, just show "Next Level" without specific name
+    if (role === 'other' || level === 'other') {
+      return <span>Next Level</span>
+    }
+    
+    const nextLevel = getNextLevel(effectiveLevel)
+    
+    // If it's the same level (no progression), show "Advanced [Current Level]"
+    if (nextLevel === effectiveLevel) {
+      const currentLevelLabel = level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
+      return <span>Next Level: <strong>Advanced {currentLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Try to get the standard label for next level
+    const nextLevelLabel = LEVEL_LABELS[nextLevel as keyof typeof LEVEL_LABELS]
+    if (nextLevelLabel) {
+      return <span>Next Level: <strong>{nextLevelLabel} {effectiveRole}</strong></span>
+    }
+    
+    // Fallback for custom levels - capitalize first letter
+    const capitalizedNextLevel = nextLevel.charAt(0).toUpperCase() + nextLevel.slice(1)
+    return <span>Next Level: <strong>{capitalizedNextLevel} {effectiveRole}</strong></span>
+  }
+
+  // Check if we can generate guidelines
+  const canGenerate = () => {
+    const effectiveRole = role === 'other' ? customRole.trim() : role
+    const effectiveLevel = level === 'other' ? customLevel.trim() : level
+    return effectiveRole && effectiveLevel && !hasGeneratedGuidelines && !isUploading
+  }
+
+  // Check if custom fields are properly filled when "other" is selected
+  const validateCustomFields = (): string | null => {
+    if (role === 'other' && !customRole.trim()) {
+      return 'Please enter a custom role'
+    }
+    if (level === 'other' && !customLevel.trim()) {
+      return 'Please enter a custom level'
+    }
+    return null
+  }
+
+  // Handle file upload and parsing
+  const handleFileUpload = async (file: File) => {
+    const effectiveRole = role === 'other' ? customRole : role
+    const effectiveLevel = level === 'other' ? customLevel : level
+    
+    if (!effectiveRole || !effectiveLevel) {
+      setError('Please select both role and level before uploading')
+      return
+    }
+
+    // Validate file size (10MB limit)
+    const maxFileSize = 10 * 1024 * 1024 // 10MB in bytes
+    if (file.size > maxFileSize) {
+      setError('File size must be less than 10MB. Please upload a smaller file.')
+      return
+    }
+
+    setIsUploading(true)
+    setIsLoading(true) // Show same loading state as generate button
+    setUploadSuccess(false)
+    setError(null)
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('role', effectiveRole)
+      formData.append('level', effectiveLevel)
+
+      const response = await fetch('/api/career-guidelines/upload', {
+        method: 'POST',
+        headers: {
+          'X-Dev-User-Id': 'dev-user-123'
+        },
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError(`${data.message}\n\nSuggestions:\n${data.suggestions?.join('\n') || ''}`)
+        } else {
+          throw new Error(data.error || 'Failed to process document')
+        }
+        return
+      }
+
+      // Success - use extracted guidelines
+      setCurrentLevelPlan(data.currentLevelPlan || '')
+      setNextLevelExpectations(data.nextLevelExpectations || '')
+      setHasGeneratedGuidelines(true)
+      setExtractedFromDocument(true)
+      setUploadSuccess(true)
+      setUploadedFile(file)
+      
+    } catch (err) {
+      console.error('Error uploading file:', err)
+      setError(err instanceof Error ? err.message : 'Failed to process career ladder document')
+    } finally {
+      setIsUploading(false)
+      setIsLoading(false) // Clear loading state like generate button
+    }
+  }
+
+  // Generate or fetch guidelines
+  const generateGuidelines = async () => {
+    // Validate custom fields first
+    const validationError = validateCustomFields()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    const effectiveRole = role === 'other' ? customRole.trim() : role
+    const effectiveLevel = level === 'other' ? customLevel.trim() : level
+    
+    if (!effectiveRole || !effectiveLevel) {
+      setError('Please select both role and level')
+      return
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('generateGuidelines called with:', {
+        role,
+        level,
+        customRole,
+        customLevel,
+        effectiveRole,
+        effectiveLevel,
+        isStandard: isStandardCombo()
+      })
+    }
+
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      // First try to fetch from templates (for standard combos)
+      if (isStandardCombo()) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Using template API for standard combo')
+        }
+        const response = await fetch(
+          `/api/career-guidelines/template?role=${encodeURIComponent(effectiveRole)}&level=${encodeURIComponent(effectiveLevel)}`,
+          {
+            headers: {
+              'X-Dev-User-Id': 'dev-user-123'
+            }
+          }
+        )
+        
+        if (response.ok) {
+          const data = await response.json()
+          setCurrentLevelPlan(data.currentLevelPlan || '')
+          setNextLevelExpectations(data.nextLevelExpectations || '')
+          setHasGeneratedGuidelines(true)
+          setExtractedFromDocument(false)
+          setIsLoading(false)
+          return
+        }
+      }
+      
+      // If no template or custom role/level, generate with LLM
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using generation API for custom role/level')
+      }
+      const response = await fetch('/api/career-guidelines/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
+        },
+        body: JSON.stringify({
+          role: effectiveRole,
+          level: effectiveLevel,
+          companyLadder: companyLadder || undefined
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate guidelines')
+      }
+      
+      const data = await response.json()
+      
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('API Response data:', {
+          currentLevelPlan: data.currentLevelPlan?.substring(0, 100) + '...',
+          nextLevelExpectations: data.nextLevelExpectations?.substring(0, 100) + '...',
+          hasCurrentPlan: !!data.currentLevelPlan?.trim(),
+          hasNextExpectations: !!data.nextLevelExpectations?.trim()
+        })
+      }
+      
+      // Validate that we actually received content
+      if (!data.currentLevelPlan?.trim() || !data.nextLevelExpectations?.trim()) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Empty guidelines received:', data)
+        }
+        throw new Error('Generated guidelines are empty. Please try again with different role/level values.')
+      }
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Setting content:', {
+          currentPlan: data.currentLevelPlan?.length + ' chars',
+          nextExpectations: data.nextLevelExpectations?.length + ' chars'
+        })
+      }
+      
+      setCurrentLevelPlan(data.currentLevelPlan)
+      setNextLevelExpectations(data.nextLevelExpectations)
+      setHasGeneratedGuidelines(true)
+      setExtractedFromDocument(false)
+      
+      // Force exit edit mode to ensure content is visible
+      setIsEditingCurrentLevel(false)
+      setIsEditingNextLevel(false)
+    } catch (err) {
+      console.error('Error generating guidelines:', err)
+      setError('Failed to generate career guidelines. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle role/level changes - reset guidelines
+  const handleRoleChange = (newRole: string, newCustomRole?: string) => {
+    setRole(newRole)
+    if (newCustomRole !== undefined) setCustomRole(newCustomRole)
+    // Reset guidelines when role changes
+    if (hasGeneratedGuidelines) {
+      setCurrentLevelPlan('')
+      setNextLevelExpectations('')
+      setHasGeneratedGuidelines(false)
+    }
+  }
+
+  const handleLevelChange = (newLevel: string, newCustomLevel?: string) => {
+    setLevel(newLevel)
+    if (newCustomLevel !== undefined) setCustomLevel(newCustomLevel)
+    // Reset guidelines when level changes
+    if (hasGeneratedGuidelines) {
+      setCurrentLevelPlan('')
+      setNextLevelExpectations('')
+      setHasGeneratedGuidelines(false)
+    }
+  }
+
+  const handleContinue = () => {
+    // Force save by exiting edit mode if user is currently editing
+    if (isEditingCurrentLevel) {
+      setIsEditingCurrentLevel(false)
+    }
+    if (isEditingNextLevel) {
+      setIsEditingNextLevel(false)
+    }
+
+    const effectiveRole = role === 'other' ? customRole : role
+    const effectiveLevel = level === 'other' ? customLevel : level
+    
+    onComplete({
+      role,
+      customRole,
+      level,
+      customLevel,
+      careerGuidelines: {
+        currentLevelPlan,
+        nextLevelExpectations,
+        companyLadder
+      }
+    })
+  }
+
+  const canContinue = () => {
+    const effectiveRole = role === 'other' ? customRole.trim() : role
+    const effectiveLevel = level === 'other' ? customLevel.trim() : level
+    return effectiveRole && effectiveLevel && currentLevelPlan && nextLevelExpectations
+  }
+
+  // Sanitize custom input
+  const sanitizeInput = (input: string): string => {
+    return input
+      .trim()
+      .replace(/[<>\"'&]/g, (match) => ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '&': '&amp;'
+      }[match] || match))
+      .replace(/\s+/g, ' ')
+      .substring(0, 100)
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Role Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          What&apos;s your role? <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          {ROLES.filter(r => r.value !== 'other').map(r => (
+            <button
+              key={r.value}
+              onClick={() => handleRoleChange(r.value, '')}
+              className={`p-4 rounded-lg border-2 transition-all ${
+                role === r.value
+                  ? 'border-accent-500 bg-accent-50 text-accent-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="radio"
+              name="role"
+              checked={role === 'other'}
+              onChange={() => handleRoleChange('other')}
+              className="text-accent-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Other:</span>
+          </label>
+          <input
+            type="text"
+            value={role === 'other' ? customRole : ''}
+            onChange={(e) => handleRoleChange('other', sanitizeInput(e.target.value))}
+            onFocus={() => {
+              if (role !== 'other') {
+                handleRoleChange('other', '')
+              }
+            }}
+            placeholder="Enter your role (e.g., Solutions Architect)"
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              role === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
+          />
+        </div>
+      </div>
+      
+      {/* Level Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">
+          What&apos;s your level? <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+          {LEVELS.filter(l => l.value !== 'other').map(l => (
+            <button
+              key={l.value}
+              onClick={() => handleLevelChange(l.value, '')}
+              className={`p-3 rounded-lg border-2 transition-all ${
+                level === l.value
+                  ? 'border-accent-500 bg-accent-50 text-accent-700'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="space-y-2">
+          <label className="flex items-center space-x-2">
+            <input
+              type="radio"
+              name="level"
+              checked={level === 'other'}
+              onChange={() => handleLevelChange('other')}
+              className="text-accent-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Other:</span>
+          </label>
+          <input
+            type="text"
+            value={level === 'other' ? customLevel : ''}
+            onChange={(e) => handleLevelChange('other', sanitizeInput(e.target.value))}
+            onFocus={() => {
+              if (level !== 'other') {
+                handleLevelChange('other', '')
+              }
+            }}
+            placeholder="Enter your level (e.g., Lead, Head, VP)"
+            className={`w-full p-3 border rounded-lg transition-colors ${
+              level === 'other' 
+                ? 'border-gray-300 bg-white' 
+                : 'border-gray-200 bg-gray-50 text-gray-500'
+            }`}
+          />
+        </div>
+      </div>
+
+      {/* Company Ladder Upload Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div className="flex items-start space-x-3">
+          <svg className="flex-shrink-0 w-6 h-6 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-blue-900 mb-2">
+              Get Exact Guidelines from Your Company&apos;s Career Ladder
+            </h4>
+            <p className="text-sm text-blue-700 mb-3">
+              <strong>Upload your career ladder document</strong> and we&apos;ll extract the exact expectations for your role and level.
+            </p>
+            <ul className="text-sm text-blue-700 space-y-1 mb-4">
+              <li>• Extract role-specific criteria from your company document</li>
+              <li>• Get promotion requirements as written by your organization</li>
+              <li>• Receive feedback aligned with your company&apos;s framework</li>
+              <li>• Document stays private and secure to your account</li>
+            </ul>
+            
+            {uploadSuccess ? (
+              <div className="bg-green-100 border border-green-300 rounded-md p-3 mb-3">
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm text-green-800 font-medium">
+                    Successfully extracted guidelines from &quot;{uploadedFile?.name}&quot;
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="border-2 border-dashed border-blue-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+                  <input
+                    type="file"
+                    id="career-ladder-upload"
+                    accept=".txt,.pdf,.doc,.docx,.md"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleFileUpload(file)
+                    }}
+                    className="hidden"
+                    disabled={isUploading || !role || !level}
+                  />
+                  <label
+                    htmlFor="career-ladder-upload"
+                    className={`cursor-pointer ${(!role || !level) ? 'cursor-not-allowed opacity-50' : ''}`}
+                  >
+                    <div className="flex flex-col items-center space-y-2">
+                      <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      {isUploading ? (
+                        <div className="flex items-center space-x-2">
+                          <LoadingSpinner size="sm" />
+                          <span className="text-sm text-blue-700">Processing document...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="text-sm font-medium text-blue-700">
+                            Click to upload career ladder document
+                          </span>
+                          <span className="text-xs text-blue-600">
+                            PDF, Word, Text, or Markdown files
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </label>
+                </div>
+                
+                {(!role || !level) && (
+                  <p className="text-xs text-blue-600">
+                    Select your role and level first to enable document upload
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* File Processing Loading State */}
+      {isUploading && (
+        <div className="flex justify-center">
+          <div className="px-8 py-3 bg-blue-500 text-white rounded-full font-semibold shadow-md flex items-center space-x-2">
+            <LoadingSpinner size="sm" />
+            <span>Processing Document...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Button */}
+      {canGenerate() && (
+        <div className="flex justify-center">
+          <button
+            onClick={generateGuidelines}
+            disabled={isLoading}
+            className="px-8 py-3 bg-accent-500 text-white rounded-full font-semibold shadow-md hover:bg-accent-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <LoadingSpinner size="sm" />
+                <span>{isUploading ? 'Processing Document...' : 'Generating Guidelines...'}</span>
+              </div>
+            ) : (
+              'Generate Career Guidelines'
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Career Guidelines Display */}
+      {hasGeneratedGuidelines && !isLoading && (
+        <div className="space-y-6"
+             style={{ animation: 'fadeIn 0.5s ease-in' }}>
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Your Career Guidelines
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              {extractedFromDocument ? (
+                <span className="inline-flex items-center">
+                  <svg className="w-4 h-4 text-green-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Extracted from your company&apos;s career ladder document
+                </span>
+              ) : (
+                'Review and customize these guidelines to match your goals'
+              )}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Current Level */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Current Level: <strong>{level === 'other' ? customLevel : LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]} {role === 'other' ? customRole : ROLE_LABELS[role as keyof typeof ROLE_LABELS]}</strong>
+                </label>
+                <button
+                  onClick={() => setIsEditingCurrentLevel(!isEditingCurrentLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingCurrentLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingCurrentLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={currentLevelPlan}
+                      onChange={(e) => setCurrentLevelPlan(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter your career guidelines..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(currentLevelPlan)}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Next Level */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  {getNextLevelLabel()}
+                </label>
+                <button
+                  onClick={() => setIsEditingNextLevel(!isEditingNextLevel)}
+                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium rounded-md border border-blue-200 transition-colors"
+                >
+                  {isEditingNextLevel ? 'Save & View' : 'Edit'}
+                </button>
+              </div>
+              
+              <div className="relative">
+                {isEditingNextLevel ? (
+                  <div className="relative">
+                    <textarea
+                      value={nextLevelExpectations}
+                      onChange={(e) => setNextLevelExpectations(e.target.value)}
+                      className="w-full p-4 border-2 border-blue-300 rounded-lg text-sm resize-none font-mono h-[400px] focus:border-blue-500 outline-none"
+                      placeholder="Enter next level expectations..."
+                    />
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">
+                      Editing
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full p-4 border border-gray-200 rounded-lg bg-gray-50 h-[400px] overflow-y-auto">
+                    {renderGuidelineContent(nextLevelExpectations)}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-500 text-center">
+            These guidelines will help AI provide better feedback on your weekly reflections
+          </p>
+        </div>
+      )}
+
+      {/* Continue Button */}
+      {hasGeneratedGuidelines && (
+        <div className="flex justify-end pt-4">
+          <button
+            onClick={handleContinue}
+            disabled={!canContinue()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue →
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

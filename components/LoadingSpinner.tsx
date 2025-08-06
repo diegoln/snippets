@@ -48,11 +48,6 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       <path
         className="opacity-75"
         fill="currentColor"
-        d="m15.5 14.25-.347.865a5.297 5.297 0 01-2.735 2.735L12 18.5 11.583 17.85a5.297 5.297 0 01-2.735-2.735L8.5 14.25H7.75v-4.5H8.5l.348-.865a5.297 5.297 0 012.735-2.735L12 5.5l.417.65a5.297 5.297 0 012.735 2.735l.348.865h.75v4.5H15.5z"
-      ></path>
-      <path
-        className="opacity-75"
-        fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       ></path>
     </svg>
