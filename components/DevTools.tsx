@@ -92,6 +92,10 @@ export function DevTools() {
     window.location.href = '/onboarding-wizard'
   }
 
+  const goToDashboard = () => {
+    window.location.href = '/dashboard'
+  }
+
   return (
     <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 border border-gray-200 z-50">
       <p className="text-xs font-semibold text-gray-600 mb-2">Dev Tools</p>
@@ -126,6 +130,15 @@ export function DevTools() {
             title="Go to onboarding wizard"
           >
             Go to Onboarding
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={goToDashboard}
+            className="px-3 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 w-full"
+            title="Go to dashboard"
+          >
+            Go to Dashboard
           </button>
         </div>
       </div>
