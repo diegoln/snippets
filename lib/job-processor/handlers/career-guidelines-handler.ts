@@ -55,11 +55,16 @@ export class CareerGuidelinesHandler implements JobHandler<CareerGuidelinesInput
 
     await updateProgress(50, 'Current level analysis complete...')
 
-    // Generate next level expectations
+    // Generate next level expectations with current level as context
     const nextLevel = getNextSeniorityLevel(level)
     await updateProgress(60, `Analyzing next level expectations for ${nextLevel}...`)
     
-    const nextLevelPrompt = buildCareerPlanPrompt({ role, level: nextLevel, companyLadder })
+    const nextLevelPrompt = buildCareerPlanPrompt({ 
+      role, 
+      level: nextLevel, 
+      companyLadder,
+      currentLevelGuidelines: currentLevelResponse.content.trim()
+    })
     
     const nextLevelResponse = await llmProxy.request({
       prompt: nextLevelPrompt,
@@ -70,7 +75,8 @@ export class CareerGuidelinesHandler implements JobHandler<CareerGuidelinesInput
         level: nextLevel, 
         companyLadder,
         operationType: 'career_guidelines_generation',
-        targetLevel: 'next'
+        targetLevel: 'next',
+        currentLevelGuidelines: currentLevelResponse.content.trim()
       }
     })
 
