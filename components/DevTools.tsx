@@ -93,7 +93,11 @@ export function DevTools() {
   }
 
   const goToDashboard = () => {
-    window.location.href = '/dashboard'
+    // The dashboard is the root page when authenticated and onboarded
+    // Set flags to ensure we bypass onboarding
+    localStorage.setItem('onboarding-just-completed', 'true')
+    localStorage.setItem('onboarding-completed-timestamp', Date.now().toString())
+    window.location.href = '/'
   }
 
   return (
