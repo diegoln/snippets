@@ -36,8 +36,8 @@ export class LLMProxyClient {
     this.model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
     this.geminiApiKey = process.env.GEMINI_API_KEY
     
-    // Allow tests to run without API key by checking NODE_ENV
-    if (!this.geminiApiKey && process.env.NODE_ENV !== 'test') {
+    // Allow tests and build processes to run without API key
+    if (!this.geminiApiKey && process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
       throw new Error('GEMINI_API_KEY environment variable is required. Please configure your Gemini API key.')
     }
     
