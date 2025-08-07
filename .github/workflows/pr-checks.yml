@@ -26,35 +26,48 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup test database
+        run: |
+          DATABASE_URL="file:./test.db" npx prisma db push --force-reset --accept-data-loss
+          DATABASE_URL="file:./test.db" npx prisma generate
+        env:
+          NODE_ENV: test
+
       - name: Run all unit tests
         run: npm test
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
       - name: Run OAuth database adapter tests (Critical for OAuth stability)
         run: npm run test:oauth
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
       - name: Run API integration tests
         run: npm run test:api
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
       - name: Run onboarding tests
         run: npm run test:onboarding
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
       - name: Run server integration tests
         run: npm test -- __tests__/server-integration.test.ts
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
       - name: Run performance tests
         run: npm test -- __tests__/performance.test.ts --passWithNoTests
         env:
           NODE_ENV: test
+          DATABASE_URL: "file:./test.db"
 
   code-quality:
     name: Code Quality Checks

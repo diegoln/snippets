@@ -28,7 +28,7 @@ export interface LLMProxyResponse {
  * LLMProxy client using Google Gemini
  */
 export class LLMProxyClient {
-  private genAI: GoogleGenerativeAI | null = null
+  private genAI: GoogleGenerativeAI
   private model: string
   private geminiApiKey?: string
 
@@ -36,10 +36,16 @@ export class LLMProxyClient {
     this.model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
     this.geminiApiKey = process.env.GEMINI_API_KEY
     
+    // Allow tests and build processes to run without API key
+    if (!this.geminiApiKey && process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
+      throw new Error('GEMINI_API_KEY environment variable is required. Please configure your Gemini API key.')
+    }
+    
     if (this.geminiApiKey) {
       this.genAI = new GoogleGenerativeAI(this.geminiApiKey)
     } else {
-      console.warn('⚠️ GEMINI_API_KEY not found. Using mock responses.')
+      // For tests only - will throw error if actually used
+      this.genAI = null as any
     }
   }
 
@@ -50,73 +56,83 @@ export class LLMProxyClient {
    * Generic LLM request method
    */
   async request(request: LLMProxyRequest): Promise<LLMProxyResponse> {
+    if (!this.genAI) {
+      throw new Error('Gemini API not initialized. Please configure GEMINI_API_KEY.')
+    }
+    
     try {
-      if (this.genAI) {
-        return await this.callGemini(request.prompt, request.temperature, request.maxTokens)
-      } else {
-        // Default mock response when API key not configured
-        return {
-          content: "This is a mock response. Please configure GEMINI_API_KEY to use real Gemini AI.",
-          model: this.model,
-          usage: {
-            tokens: 100
-          }
-        }
-      }
+      return await this.callGemini(request.prompt, request.temperature, request.maxTokens)
     } catch (error) {
       console.error('LLMProxy request error:', error)
-      throw new Error('LLMProxy request failed')
+      throw new Error(`LLMProxy request failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
   /**
-   * Call Google Gemini API
+   * Call Google Gemini API with retry logic
    */
   private async callGemini(prompt: string, temperature = 0.7, maxTokens = 2000): Promise<LLMProxyResponse> {
-    if (!this.genAI) {
-      throw new Error('Gemini API not configured')
-    }
+    const maxRetries = 2
+    const baseDelay = 1000 // 1 second base delay
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const model = this.genAI.getGenerativeModel({ 
+          model: this.model,
+          generationConfig: {
+            temperature,
+            maxOutputTokens: maxTokens,
+          }
+        })
 
-    try {
-      const model = this.genAI.getGenerativeModel({ 
-        model: this.model,
-        generationConfig: {
-          temperature,
-          maxOutputTokens: maxTokens,
+        // Add timeout protection to prevent hanging requests
+        const timeoutMs = 60000 // 60 seconds for complex consolidation prompts
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error(`Gemini API request timed out after ${timeoutMs/1000} seconds`)), timeoutMs)
+        })
+
+        const geminiPromise = (async () => {
+          const result = await model.generateContent(prompt)
+          const response = await result.response
+          const text = response.text()
+          return { text, response }
+        })()
+
+        const { text, response } = await Promise.race([geminiPromise, timeoutPromise]) as { text: string, response: any }
+
+        // Check for empty response - might indicate model or content filtering issues
+        if (!text || text.trim().length === 0) {
+          throw new Error(`Gemini returned empty response - check model name "${this.model}" or content filters`)
         }
-      })
 
-      // Add timeout protection to prevent hanging requests
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
-      })
-
-      const geminiPromise = (async () => {
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        const text = response.text()
-        return { text, response }
-      })()
-
-      const { text, response } = await Promise.race([geminiPromise, timeoutPromise]) as { text: string, response: any }
-
-      // Check for empty response - might indicate model or content filtering issues
-      if (!text || text.trim().length === 0) {
-        throw new Error(`Gemini returned empty response - check model name "${this.model}" or content filters`)
-      }
-
-      return {
-        content: text,
-        model: this.model,
-        usage: {
-          tokens: response.usageMetadata?.totalTokenCount || 0,
-          cost: this.calculateGeminiCost(response.usageMetadata?.totalTokenCount || 0)
+        return {
+          content: text,
+          model: this.model,
+          usage: {
+            tokens: response.usageMetadata?.totalTokenCount || 0,
+            cost: this.calculateGeminiCost(response.usageMetadata?.totalTokenCount || 0)
+          }
         }
+        
+      } catch (error) {
+        const isLastAttempt = attempt === maxRetries
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        
+        console.error(`Gemini API error (attempt ${attempt + 1}/${maxRetries + 1}):`, errorMessage)
+        
+        if (isLastAttempt) {
+          throw new Error(`Gemini API error after ${maxRetries + 1} attempts: ${errorMessage}`)
+        }
+        
+        // Wait before retrying (exponential backoff)
+        const delay = baseDelay * Math.pow(2, attempt)
+        console.log(`Retrying in ${delay}ms...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
-    } catch (error) {
-      console.error('Gemini API error:', error)
-      throw new Error(`Gemini API error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+    
+    // This should never be reached due to the throw in the last attempt
+    throw new Error('Unexpected error in Gemini API retry logic')
   }
 
   /**

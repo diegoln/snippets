@@ -34,6 +34,7 @@ model User {
   sessions        Session[]
   snippets           WeeklySnippet[]
   integrations       Integration[]
+  integrationConsolidations IntegrationConsolidation[]
   performanceAssessments PerformanceAssessment[]
   asyncOperations      AsyncOperation[]
   @@map("users")
@@ -171,4 +172,39 @@ model CareerGuidelineTemplate {
   
   @@unique([role, level], name: "role_level")
   @@map("career_guideline_templates")
+}
+
+model IntegrationConsolidation {
+  id               String   @id @default(cuid())
+  userId           String
+  integrationType  String   // 'google_calendar', 'todoist', etc.
+  weekNumber       Int
+  year             Int
+  weekStart        DateTime
+  weekEnd          DateTime
+  
+  // Raw data storage
+  rawData          String   // JSON blob of original integration data
+  
+  // LLM-processed consolidation
+  consolidatedSummary    String   // High-level narrative summary
+  keyInsights           String   // Important themes/patterns (JSON)
+  consolidatedMetrics   String   // Quantified data (JSON: meeting hours, task counts, etc.)
+  consolidatedContext   String   // Contextual information for reflection generation (JSON)
+  
+  // Processing metadata
+  consolidationPrompt   String?  // Prompt used for consolidation
+  llmModel             String?  // Model version used
+  processingStatus     String   @default("pending") // pending, processing, completed, failed
+  processingError      String?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  consolidatedAt   DateTime?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, integrationType, year, weekNumber])
+  @@index([userId, weekStart])
+  @@map("integration_consolidations")
 }
