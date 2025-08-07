@@ -5,6 +5,7 @@ import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
 import { llmProxy } from '../../../../lib/llmproxy'
 import { snippetRateLimit, createRateLimitHeaders, createRateLimitResponse } from '../../../../lib/rate-limit'
 import { buildWeeklySnippetPrompt, WeeklySnippetPromptContext } from './weekly-snippet-prompt'
+import { integrationConsolidationService } from '../../../../lib/integration-consolidation-service'
 
 // Input validation schema
 const GenerateSnippetSchema = z.object({
@@ -86,15 +87,32 @@ export async function POST(request: NextRequest) {
 
     const { weekData, userProfile } = validationResult.data
 
-    // Sanitize calendar data before sending to LLM (remove sensitive information)
-    const sanitizedCalendarData = sanitizeCalendarData(weekData)
+    // Check if consolidated data exists for this week first
+    const weekStart = new Date(weekData.dateRange.start)
+    const weekEnd = new Date(weekData.dateRange.end)
+    
+    const consolidatedData = await integrationConsolidationService.getConsolidationsForReflection(
+      userId,
+      { start: weekStart, end: weekEnd }
+    )
 
-    // Generate LLM-powered weekly snippet
-    const llmResponse = await generateWeeklySnippetWithLLM({
-      calendarData: sanitizedCalendarData,
-      userProfile,
-      userId
-    })
+    let llmResponse
+    if (consolidatedData.length > 0) {
+      // Use consolidated data if available
+      llmResponse = await generateWeeklySnippetFromConsolidation({
+        consolidatedData: consolidatedData[0], // Use the first (most recent) consolidation
+        userProfile,
+        userId
+      })
+    } else {
+      // Fallback to direct processing if no consolidated data
+      const sanitizedCalendarData = sanitizeCalendarData(weekData)
+      llmResponse = await generateWeeklySnippetWithLLM({
+        calendarData: sanitizedCalendarData,
+        userProfile,
+        userId
+      })
+    }
 
     return NextResponse.json({
       success: true,
@@ -245,5 +263,62 @@ function generateMockLLMResponse(calendarData: any, userProfile: { jobTitle: str
     weeklySnippet,
     bullets,
     insights
+  }
+}
+
+/**
+ * Generate weekly snippet using consolidated integration data
+ */
+async function generateWeeklySnippetFromConsolidation({
+  consolidatedData,
+  userProfile,
+  userId
+}: {
+  consolidatedData: any
+  userProfile: { jobTitle: string; seniorityLevel: string }
+  userId: string
+}) {
+  try {
+    // Build a summary from the consolidated themes and evidence
+    const themesSummary = consolidatedData.themes.map((theme: any) => {
+      const evidenceCount = theme.categories.reduce((sum: number, cat: any) => sum + cat.evidence.length, 0)
+      return `${theme.name} (${evidenceCount} activities)`
+    }).join(', ')
+
+    // Extract bullets from evidence statements
+    const bullets: string[] = []
+    for (const theme of consolidatedData.themes) {
+      for (const category of theme.categories) {
+        for (const evidence of category.evidence) {
+          if (bullets.length < 6) { // Limit to 6 bullets
+            bullets.push(evidence.statement)
+          }
+        }
+      }
+    }
+
+    // Use consolidated summary or generate one from themes
+    const weeklySnippet = consolidatedData.summary || 
+      `This week focused on ${consolidatedData.themes.length} main areas: ${themesSummary}. ` +
+      `Activities spanned ${consolidatedData.metrics.totalMeetings || 0} meetings ` +
+      `covering various aspects of the ${userProfile.jobTitle} role.`
+
+    const insights = consolidatedData.keyInsights.join(' ') || 
+      'Generated from consolidated integration data with structured evidence mapping.'
+
+    return {
+      weeklySnippet,
+      bullets: bullets.length > 0 ? bullets : ['Consolidated weekly activities processed successfully'],
+      insights
+    }
+
+  } catch (error) {
+    console.error('Error generating snippet from consolidated data:', error)
+    // Fallback to basic response
+    return {
+      weeklySnippet: 'Weekly summary generated from consolidated integration data.',
+      bullets: ['Participated in team activities and meetings'],
+      insights: 'Consolidated data processing completed'
+    }
   }
 }

@@ -48,6 +48,30 @@ export interface AsyncOperationUpdate {
   completedAt?: Date
 }
 
+export interface IntegrationConsolidationInput {
+  integrationType: string
+  weekNumber: number
+  year: number
+  weekStart: Date
+  weekEnd: Date
+  rawData: string
+  consolidatedSummary: string
+  keyInsights: string
+  consolidatedMetrics: string
+  consolidatedContext: string
+  consolidationPrompt?: string
+  llmModel?: string
+  processingStatus?: string
+  consolidatedAt?: Date
+}
+
+export interface IntegrationConsolidationFilters {
+  integrationType?: string
+  weekStart?: Date
+  weekEnd?: Date
+  processingStatus?: string
+}
+
 export interface UserProfile {
   id: string
   email: string
@@ -679,6 +703,100 @@ export class UserScopedDataService {
     }
   }
 
+
+  /**
+   * Create an integration consolidation record
+   */
+  async createIntegrationConsolidation(data: IntegrationConsolidationInput) {
+    try {
+      const consolidation = await this.prisma.integrationConsolidation.create({
+        data: {
+          userId: this.userId,
+          integrationType: data.integrationType,
+          weekNumber: data.weekNumber,
+          year: data.year,
+          weekStart: data.weekStart,
+          weekEnd: data.weekEnd,
+          rawData: data.rawData,
+          consolidatedSummary: data.consolidatedSummary,
+          keyInsights: data.keyInsights,
+          consolidatedMetrics: data.consolidatedMetrics,
+          consolidatedContext: data.consolidatedContext,
+          consolidationPrompt: data.consolidationPrompt,
+          llmModel: data.llmModel,
+          processingStatus: data.processingStatus || 'pending',
+          consolidatedAt: data.consolidatedAt
+        }
+      })
+
+      return consolidation
+    } catch (error) {
+      console.error('Error creating integration consolidation:', error)
+      throw new Error('Failed to create integration consolidation')
+    }
+  }
+
+  /**
+   * Get integration consolidations with filters
+   */
+  async getIntegrationConsolidations(filters: IntegrationConsolidationFilters = {}) {
+    try {
+      const where: any = {
+        userId: this.userId
+      }
+
+      if (filters.integrationType) {
+        where.integrationType = filters.integrationType
+      }
+
+      if (filters.weekStart) {
+        where.weekStart = { gte: filters.weekStart }
+      }
+
+      if (filters.weekEnd) {
+        where.weekEnd = { lte: filters.weekEnd }
+      }
+
+      if (filters.processingStatus) {
+        where.processingStatus = filters.processingStatus
+      }
+
+      const consolidations = await this.prisma.integrationConsolidation.findMany({
+        where,
+        orderBy: [
+          { year: 'desc' },
+          { weekNumber: 'desc' }
+        ]
+      })
+
+      return consolidations
+    } catch (error) {
+      console.error('Error fetching integration consolidations:', error)
+      throw new Error('Failed to fetch integration consolidations')
+    }
+  }
+
+  /**
+   * Update integration consolidation status
+   */
+  async updateIntegrationConsolidationStatus(consolidationId: string, status: string, errorMessage?: string) {
+    try {
+      await this.prisma.integrationConsolidation.update({
+        where: {
+          id: consolidationId,
+          userId: this.userId
+        },
+        data: {
+          processingStatus: status,
+          ...(errorMessage && { processingError: errorMessage }),
+          ...(status === 'completed' && { consolidatedAt: new Date() })
+        }
+      })
+    } catch (error) {
+      console.error('Error updating integration consolidation status:', error)
+      throw new Error('Failed to update consolidation status')
+    }
+  }
 
   /**
    * Close database connection

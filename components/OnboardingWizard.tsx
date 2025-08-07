@@ -102,7 +102,7 @@ interface WizardFormData {
 
 interface LoadingState {
   isLoading: boolean
-  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding' | 'generating-reflection' | 'loading-integration-data'
+  operation?: 'saving-profile' | 'creating-snippet' | 'completing-onboarding' | 'generating-reflection' | 'loading-integration-data' | 'consolidating-data' | 'generating-snippet'
   message?: string
 }
 
@@ -351,7 +351,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     
     try {
       if (integrationType === 'google_calendar') {
-        // Connect to Google Calendar integration and generate LLM-powered snippet
+        // Connect to Google Calendar integration
         const response = await fetch('/api/integrations', {
           method: 'POST',
           headers: { 
@@ -365,7 +365,36 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           throw new Error('Failed to connect calendar integration')
         }
 
-        // Fetch previous week's calendar data with LLM processing
+        // Trigger consolidation for onboarding
+        setLoadingState({ 
+          isLoading: true, 
+          operation: 'consolidating-data', 
+          message: 'Consolidating calendar data for better insights...' 
+        })
+        
+        const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': DEV_USER_ID
+          },
+          body: JSON.stringify({ integrationType: 'google_calendar' })
+        })
+
+        if (!consolidationResponse.ok) {
+          console.warn('Consolidation failed, falling back to direct processing')
+        } else {
+          const consolidationData = await consolidationResponse.json()
+          console.log('Calendar consolidation completed:', consolidationData.summary)
+        }
+
+        // Fetch previous week's calendar data for snippet generation
+        setLoadingState({ 
+          isLoading: true, 
+          operation: 'generating-snippet', 
+          message: 'Generating weekly snippet from calendar data...' 
+        })
+        
         const dataResponse = await fetch('/api/integrations?test=true', {
           headers: {
             'X-Dev-User-Id': DEV_USER_ID
@@ -377,7 +406,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 
         const calendarData = await dataResponse.json()
         
-        // Generate LLM-powered weekly snippet from calendar data
+        // Generate weekly snippet (will use consolidated data if available)
         const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
           method: 'POST',
           headers: { 
