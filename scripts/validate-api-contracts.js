@@ -78,29 +78,49 @@ function extractAPIEndpoints(filePath) {
     // Extract body fields
     const bodyFields = new Set();
     
-    // Look for JSON.stringify pattern (handle both variable and inline objects)
-    const stringifyMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*({[\\s\\S]*?})\\s*\\)`, 'm'));
+    // Look for JSON.stringify pattern - find the specific fetch call and extract only from that block
+    const escapedUrl = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // First, find all fetch calls to this URL with their positions
+    const fetchCallRegex = new RegExp(`fetch\\s*\\(\\s*['"\`]${escapedUrl}['"\`]`, 'g');
+    const fetchMatches = [];
+    let regexMatch;
+    while ((regexMatch = fetchCallRegex.exec(content)) !== null) {
+      fetchMatches.push(regexMatch.index);
+    }
+    
+    let stringifyMatch = null;
+    // For each fetch call, look for the body within a reasonable scope
+    for (const startIndex of fetchMatches) {
+      // Look for the closing paren of the fetch call (with some reasonable limit)
+      const fetchBlock = content.substring(startIndex, startIndex + 2000);
+      const bodyMatch = fetchBlock.match(/body:\s*JSON\.stringify\s*\(\s*({[^}]*}|\w+)\s*\)/);
+      
+      if (bodyMatch) {
+        stringifyMatch = bodyMatch;
+        break;
+      }
+    }
     
     if (stringifyMatch) {
       const objectContent = stringifyMatch[1];
-      // Extract field names from the object literal, handling complex values
-      const fieldMatches = objectContent.matchAll(/(\w+)\s*:/g);
-      for (const fieldMatch of fieldMatches) {
-        bodyFields.add(fieldMatch[1]);
-      }
-    } else {
-      // Try to match variable reference
-      const variableMatch = content.match(new RegExp(`fetch\\s*\\(\\s*['"\`]${url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"\`][\\s\\S]*?body:\\s*JSON\\.stringify\\s*\\(\\s*(\\w+)\\s*\\)`, 'm'));
       
-      if (variableMatch) {
-        const variableName = variableMatch[1];
-        // Look for the variable definition (handle multiline objects)
-        const variablePattern = new RegExp(`const\\s+${variableName}\\s*=\\s*\\{([\\s\\S]*?)\\}`, 'g');
+      // Check if it's an inline object or a variable reference
+      if (objectContent.startsWith('{')) {
+        // Inline object - extract field names
+        const fieldMatches = objectContent.matchAll(/(\w+)\s*:/g);
+        for (const fieldMatch of fieldMatches) {
+          bodyFields.add(fieldMatch[1]);
+        }
+      } else {
+        // Variable reference - look for the variable definition
+        const variableName = objectContent.trim();
+        const variablePattern = new RegExp(`const\\s+${variableName}\\s*=\\s*\\{([^}]*)\\}`, 'g');
         const variableDefMatch = variablePattern.exec(content);
         
         if (variableDefMatch) {
           const bodyContent = variableDefMatch[1];
-          const fieldMatches = bodyContent.matchAll(/(\w+):/g);
+          const fieldMatches = bodyContent.matchAll(/(\w+)\s*:/g);
           for (const fieldMatch of fieldMatches) {
             bodyFields.add(fieldMatch[1]);
           }
