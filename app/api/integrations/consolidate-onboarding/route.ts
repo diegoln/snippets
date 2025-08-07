@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { startOfWeek, endOfWeek, subWeeks } from 'date-fns'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
 import { integrationConsolidationService } from '../../../../lib/integration-consolidation-service'
@@ -72,15 +73,11 @@ export async function POST(request: NextRequest) {
       await dataService.disconnect()
     }
 
-    // Calculate last week's date range
+    // Calculate last week's date range using ISO week standards
     const now = new Date()
-    const weekStart = new Date(now)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1 - 7) // Last Monday
-    weekStart.setHours(0, 0, 0, 0)
-    
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 4) // Last Friday
-    weekEnd.setHours(23, 59, 59, 999)
+    const lastWeek = subWeeks(now, 1)
+    const weekStart = startOfWeek(lastWeek, { weekStartsOn: 1 }) // Monday = 1
+    const weekEnd = endOfWeek(lastWeek, { weekStartsOn: 1 })
 
     // Fetch integration data based on type
     let rawIntegrationData
@@ -166,9 +163,21 @@ export async function POST(request: NextRequest) {
  * This is a simplified version - in production this would use the CareerGuidelineTemplate model
  */
 async function getCareerGuidelinesForUser(userProfile: any): Promise<string> {
+  // Sanitize user input to prevent XSS
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/[<>\"'&]/g, '') // Remove potential XSS characters
+      .replace(/[^a-zA-Z0-9\s\-_]/g, '') // Allow only alphanumeric, spaces, hyphens, underscores
+      .trim()
+      .substring(0, 50) // Limit length
+  }
+  
+  const safeJobTitle = sanitizeInput(userProfile.jobTitle || 'Unknown')
+  const safeSeniorityLevel = sanitizeInput(userProfile.seniorityLevel || 'Unknown')
+  
   // Mock career guidelines - in production this would query the CareerGuidelineTemplate table
   const mockGuidelines = `
-## Career Guidelines for ${userProfile.jobTitle} - ${userProfile.seniorityLevel} Level
+## Career Guidelines for ${safeJobTitle} - ${safeSeniorityLevel} Level
 
 ### 🚀 Impact & Ownership
 - Takes ownership of assigned tasks and delivers high-quality results
