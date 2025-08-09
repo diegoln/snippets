@@ -40,7 +40,15 @@ jest.mock('next/server', () => ({
   }
 }))
 
+// Skip LLM tests in CI without API key
+const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
+
 describe('LLM Proxy Integration Tests', () => {
+  beforeAll(() => {
+    if (skipLLMTests) {
+      console.log('⏭️  Skipping LLM tests - no GEMINI_API_KEY in CI environment')
+    }
+  })
   let llmProxySpy: jest.SpyInstance
   
   beforeEach(() => {
@@ -267,7 +275,7 @@ describe('LLM Proxy Integration Tests', () => {
    * 2. → Consolidation (LLM call #1)
    * 3. → Reflection (LLM call #2)
    */
-  it('should use LLM proxy twice in complete calendar-to-reflection flow', async () => {
+  (skipLLMTests ? it.skip : it)('should use LLM proxy twice in complete calendar-to-reflection flow', async () => {
     // Arrange - Set up mock calendar data
     const mockCalendarData = {
       totalMeetings: 6,
