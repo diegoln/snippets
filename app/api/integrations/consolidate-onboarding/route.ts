@@ -95,6 +95,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if we have any calendar data
+    if (!rawIntegrationData || 
+        !rawIntegrationData.keyMeetings || 
+        rawIntegrationData.keyMeetings.length === 0 ||
+        rawIntegrationData.totalMeetings === 0) {
+      // No calendar events found - return success but indicate no data
+      return NextResponse.json({
+        success: true,
+        hasData: false,
+        message: 'No calendar events found for the previous week',
+        weekRange: {
+          start: weekStart.toISOString(),
+          end: weekEnd.toISOString()
+        }
+      })
+    }
+
     // Get career guidelines for consolidation context
     const careerGuidelines = await getCareerGuidelinesForUser(userProfile)
 
@@ -113,7 +130,7 @@ export async function POST(request: NextRequest) {
       careerGuidelines
     }
 
-    // Consolidate the data
+    // Consolidate the data - this MUST use LLM, no mock fallback
     const consolidatedData = await integrationConsolidationService.consolidateWeeklyData(consolidationRequest)
     
     // Store the consolidation
@@ -122,11 +139,12 @@ export async function POST(request: NextRequest) {
       consolidationRequest,
       consolidatedData,
       'onboarding-consolidation', // prompt identifier
-      'claude-sonnet-4' // model identifier
+      process.env.GEMINI_MODEL || 'gemini-2.5-flash' // Use actual model from env
     )
 
     return NextResponse.json({
       success: true,
+      hasData: true,
       consolidationId,
       message: 'Integration data consolidated successfully for onboarding',
       summary: {

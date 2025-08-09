@@ -129,6 +129,7 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
   const [loadingState, setLoadingState] = useState<LoadingState>({ isLoading: false })
   const [error, setError] = useState<string | null>(null)
   const [notification, setNotification] = useState<string | null>(null)
+  const [warningMessage, setWarningMessage] = useState<string | null>(null)
   const [integrationBullets, setIntegrationBullets] = useState<Record<string, string[]>>({})
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [connectedIntegrations, setConnectedIntegrations] = useState<Set<string>>(new Set())
@@ -296,6 +297,28 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
   }, [formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets])
 
   // Disconnect integration
+  // Helper function to extract bullets from reflection content
+  const extractBulletsFromReflection = (reflection: string): string[] => {
+    const lines = reflection.split('\n')
+    const bullets: string[] = []
+    
+    let inDoneSection = false
+    for (const line of lines) {
+      if (line.includes('## Done')) {
+        inDoneSection = true
+        continue
+      }
+      if (line.includes('## Next') || line.includes('## Notes')) {
+        inDoneSection = false
+      }
+      if (inDoneSection && line.trim().startsWith('-')) {
+        bullets.push(line.trim().substring(1).trim())
+      }
+    }
+    
+    return bullets.slice(0, 5) // Return top 5 bullets
+  }
+
   const disconnectIntegration = useCallback(async (integrationType: string) => {
     if (!confirm(`Are you sure you want to disconnect ${INTEGRATIONS.find(i => i.id === integrationType)?.name}? Your data from this source will no longer be collected for future reflections.`)) {
       return
@@ -369,7 +392,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         setLoadingState({ 
           isLoading: true, 
           operation: 'consolidating-data', 
-          message: 'Consolidating calendar data for better insights...' 
+          message: 'Analyzing your calendar data...' 
         })
         
         const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
@@ -381,89 +404,93 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           body: JSON.stringify({ integrationType: 'google_calendar' })
         })
 
-        if (!consolidationResponse.ok) {
-          console.warn('Consolidation failed, falling back to direct processing')
-        } else {
-          const consolidationData = await consolidationResponse.json()
-          console.log('Calendar consolidation completed:', consolidationData.summary)
+        const consolidationData = await consolidationResponse.json()
+        
+        console.log('Consolidation response:', {
+          status: consolidationResponse.status,
+          ok: consolidationResponse.ok,
+          data: consolidationData
+        })
+        
+        // Check if consolidation has data
+        if (!consolidationResponse.ok || !consolidationData.success) {
+          console.error('Consolidation failed:', consolidationData)
+          setWarningMessage('Failed to process calendar data. Please write your reflection manually.')
+          setFormData(prev => ({
+            ...prev,
+            reflectionContent: ''
+          }))
+          setLoadingState({ isLoading: false })
+          return
+        }
+        
+        if (!consolidationData.hasData) {
+          // No calendar events found
+          setWarningMessage('No calendar events found for last week. Please write your reflection manually.')
+          setFormData(prev => ({
+            ...prev,
+            reflectionContent: ''
+          }))
+          setLoadingState({ isLoading: false })
+          return
         }
 
-        // Fetch previous week's calendar data for snippet generation
+        // We have consolidated data - generate reflection
         setLoadingState({ 
           isLoading: true, 
-          operation: 'generating-snippet', 
-          message: 'Generating weekly snippet from calendar data...' 
+          operation: 'generating-reflection', 
+          message: 'Generating your reflection draft...' 
         })
         
-        const dataResponse = await fetch('/api/integrations?test=true', {
-          headers: {
-            'X-Dev-User-Id': DEV_USER_ID
-          }
-        })
-        if (!dataResponse.ok) {
-          throw new Error('Failed to fetch calendar data')
-        }
-
-        const calendarData = await dataResponse.json()
-        
-        // Generate weekly snippet (will use consolidated data if available)
-        const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
+        const reflectionResponse = await fetch('/api/reflections/generate-from-consolidation', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'X-Dev-User-Id': DEV_USER_ID
           },
           body: JSON.stringify({
-            integrationType: 'google_calendar',
-            weekData: calendarData.weekData,
-            userProfile: {
-              jobTitle: formData.role === 'other' ? formData.customRole : formData.role,
-              seniorityLevel: formData.level === 'other' ? formData.customLevel : formData.level
-            }
-          })
-        })
-
-        if (!snippetResponse.ok) {
-          throw new Error('Failed to generate weekly snippet')
-        }
-
-        const snippetData = await snippetResponse.json()
-        
-        // Update UI with LLM-generated bullets
-        setIntegrationBullets(prev => ({
-          ...prev,
-          [integrationType]: snippetData.bullets || []
-        }))
-        setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
-        
-        // Generate LLM-powered reflection draft from weekly snippet
-        const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': DEV_USER_ID
-          },
-          body: JSON.stringify({
-            weeklySnippet: snippetData.weeklySnippet,
-            bullets: snippetData.bullets,
-            userProfile: {
-              jobTitle: formData.role === 'other' ? formData.customRole : formData.role,
-              seniorityLevel: formData.level === 'other' ? formData.customLevel : formData.level
-            }
+            consolidationId: consolidationData.consolidationId
           })
         })
 
         if (reflectionResponse.ok) {
           const reflectionData = await reflectionResponse.json()
-          setFormData(prev => ({
-            ...prev,
-            reflectionContent: reflectionData.reflectionDraft || snippetData.weeklySnippet || ''
-          }))
+          
+          console.log('Reflection response:', {
+            status: reflectionResponse.status,
+            ok: reflectionResponse.ok,
+            data: reflectionData
+          })
+          
+          if (reflectionData.hasData) {
+            console.log('Setting reflection content:', reflectionData.reflection?.length, 'characters')
+            setFormData(prev => ({
+              ...prev,
+              reflectionContent: reflectionData.reflection || ''
+            }))
+            
+            // Extract bullets from reflection for UI
+            const bullets = extractBulletsFromReflection(reflectionData.reflection)
+            setIntegrationBullets(prev => ({
+              ...prev,
+              [integrationType]: bullets
+            }))
+            setConnectedIntegrations(prev => new Set([...Array.from(prev), integrationType]))
+          } else {
+            console.warn('No reflection data available:', reflectionData)
+            setWarningMessage(reflectionData.message || 'No data available for reflection')
+            setFormData(prev => ({
+              ...prev,
+              reflectionContent: ''
+            }))
+          }
         } else {
-          // Fallback to weekly snippet if reflection generation fails
+          console.error('Reflection generation failed:', reflectionResponse.status, await reflectionResponse.text())
+          // Reflection generation failed
+          setWarningMessage('Failed to generate reflection. Please write it manually.')
           setFormData(prev => ({
             ...prev,
-            reflectionContent: snippetData.weeklySnippet || ''
+            reflectionContent: ''
           }))
         }
         
@@ -479,6 +506,12 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       
     } catch (err) {
       console.error('Integration connection failed:', err)
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        integrationType,
+        userId: DEV_USER_ID
+      })
       setError(err instanceof Error ? err.message : 'Failed to connect integration. Please try again.')
     } finally {
       setIsConnecting(null)
@@ -598,83 +631,8 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [formData, integrationBullets, handleApiError, onOnboardingComplete])
 
-  // Update reflection content when we reach step 2 (reflection step)
-  useEffect(() => {
-    if (currentStep === 2 && !formData.reflectionContent && connectedIntegrations.size > 0) {
-      const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
-      const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
-      const allBullets = Object.values(integrationBullets).flat()
-      
-      // If we have integration bullets, try to generate LLM-powered reflection
-      if (allBullets.length > 0) {
-        const generateReflectionFromIntegration = async () => {
-          try {
-            setLoadingState({ isLoading: true, operation: 'generating-reflection', message: 'Generating your reflection...' })
-            
-            // First create a weekly snippet from the integration bullets
-            const snippetContent = `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n`
-            
-            // Generate LLM-powered reflection draft from weekly snippet
-            const reflectionResponse = await fetch('/api/assessments/generate-reflection-draft', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'X-Dev-User-Id': DEV_USER_ID
-              },
-              body: JSON.stringify({
-                weeklySnippet: snippetContent,
-                bullets: allBullets,
-                userProfile: {
-                  jobTitle: effectiveRole,
-                  seniorityLevel: effectiveLevel
-                }
-              })
-            })
-            
-            if (reflectionResponse.ok) {
-              const reflectionData = await reflectionResponse.json()
-              setFormData(prev => ({
-                ...prev,
-                reflectionContent: reflectionData.reflectionDraft || snippetContent
-              }))
-            } else {
-              // Fallback to basic content if LLM fails
-              const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
-                ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
-                : ''
-              setFormData(prev => ({
-                ...prev,
-                reflectionContent: `${snippetContent}${tip}`
-              }))
-            }
-          } catch (error) {
-            console.error('Failed to generate reflection:', error)
-            // Fallback to basic content
-            const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
-              ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
-              : ''
-            setFormData(prev => ({
-              ...prev,
-              reflectionContent: `## Done\n\n${allBullets.map(bullet => `- ${bullet}`).join('\n')}\n\n## Next\n\n- \n\n## Notes\n\n${tip}`
-            }))
-          } finally {
-            setLoadingState({ isLoading: false })
-          }
-        }
-        
-        generateReflectionFromIntegration()
-      } else {
-        // Fallback if no bullets available
-        const tip = effectiveLevel && LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS] 
-          ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${LEVEL_TIPS[effectiveLevel as keyof typeof LEVEL_TIPS]}` 
-          : ''
-        setFormData(prev => ({
-          ...prev,
-          reflectionContent: `## Done\n\n- \n\n## Next\n\n- \n\n## Notes\n\n${tip}`
-        }))
-      }
-    }
-  }, [currentStep, formData.reflectionContent, formData.level, formData.role, formData.customLevel, formData.customRole, integrationBullets, connectedIntegrations])
+  // Reflection content is now generated during integration connection via consolidation API
+  // No need for separate step 2 reflection generation
 
   // Load integration data for pre-connected integrations
   useEffect(() => {
@@ -1083,6 +1041,16 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             {notification && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-md">
                 {notification}
+              </div>
+            )}
+            
+            {warningMessage && (
+              <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+                <div className="flex">
+                  <div className="ml-3">
+                    <p className="text-sm text-yellow-700">{warningMessage}</p>
+                  </div>
+                </div>
               </div>
             )}
             

@@ -70,6 +70,7 @@ export interface IntegrationConsolidationFilters {
   weekStart?: Date
   weekEnd?: Date
   processingStatus?: string
+  limit?: number
 }
 
 export interface UserProfile {
@@ -766,13 +767,33 @@ export class UserScopedDataService {
         orderBy: [
           { year: 'desc' },
           { weekNumber: 'desc' }
-        ]
+        ],
+        take: filters.limit
       })
 
       return consolidations
     } catch (error) {
       console.error('Error fetching integration consolidations:', error)
       throw new Error('Failed to fetch integration consolidations')
+    }
+  }
+
+  /**
+   * Get a specific integration consolidation by ID
+   */
+  async getIntegrationConsolidationById(consolidationId: string) {
+    try {
+      const consolidation = await this.prisma.integrationConsolidation.findFirst({
+        where: {
+          id: consolidationId,
+          userId: this.userId
+        }
+      })
+      
+      return consolidation
+    } catch (error) {
+      console.error('Error fetching integration consolidation by ID:', error)
+      throw new Error('Failed to fetch integration consolidation')
     }
   }
 

@@ -33,11 +33,16 @@ export class LLMProxyClient {
   private geminiApiKey?: string
 
   constructor() {
-    this.model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+    this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
     this.geminiApiKey = process.env.GEMINI_API_KEY
     
     // Allow tests and build processes to run without API key
     if (!this.geminiApiKey && process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
+      console.error('\n' + '='.repeat(80))
+      console.error('❌ GEMINI API KEY REQUIRED AT STARTUP')
+      console.error('Please set GEMINI_API_KEY in .env.development')
+      console.error('Get your API key from: https://aistudio.google.com/app/apikey')
+      console.error('='.repeat(80) + '\n')
       throw new Error('GEMINI_API_KEY environment variable is required. Please configure your Gemini API key.')
     }
     
@@ -57,7 +62,12 @@ export class LLMProxyClient {
    */
   async request(request: LLMProxyRequest): Promise<LLMProxyResponse> {
     if (!this.genAI) {
-      throw new Error('Gemini API not initialized. Please configure GEMINI_API_KEY.')
+      console.error('\n' + '='.repeat(80))
+      console.error('❌ GEMINI API KEY REQUIRED')
+      console.error('Please set GEMINI_API_KEY in .env.development')
+      console.error('Get your API key from: https://aistudio.google.com/app/apikey')
+      console.error('='.repeat(80) + '\n')
+      throw new Error('Gemini API not initialized. Please configure GEMINI_API_KEY in .env.development')
     }
     
     try {
@@ -87,6 +97,18 @@ export class LLMProxyClient {
 
         // Add timeout protection to prevent hanging requests
         const timeoutMs = 60000 // 60 seconds for complex consolidation prompts
+        // Log the prompt being sent to Gemini
+        console.log('\n' + '='.repeat(80))
+        console.log('🚀 SENDING TO GEMINI API:')
+        console.log('Model:', this.model)
+        console.log('Temperature:', temperature)
+        console.log('Max Tokens:', maxTokens)
+        console.log('Prompt Length:', prompt.length, 'characters')
+        console.log('-'.repeat(40))
+        console.log('PROMPT:')
+        console.log(prompt.substring(0, 500) + (prompt.length > 500 ? '...[truncated]' : ''))
+        console.log('='.repeat(80) + '\n')
+
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error(`Gemini API request timed out after ${timeoutMs/1000} seconds`)), timeoutMs)
         })
@@ -99,6 +121,16 @@ export class LLMProxyClient {
         })()
 
         const { text, response } = await Promise.race([geminiPromise, timeoutPromise]) as { text: string, response: any }
+
+        // Log the response from Gemini
+        console.log('\n' + '='.repeat(80))
+        console.log('✅ RECEIVED FROM GEMINI API:')
+        console.log('Response Length:', text?.length || 0, 'characters')
+        console.log('Tokens Used:', response.usageMetadata?.totalTokenCount || 'unknown')
+        console.log('-'.repeat(40))
+        console.log('RESPONSE:')
+        console.log(text?.substring(0, 500) + (text?.length > 500 ? '...[truncated]' : ''))
+        console.log('='.repeat(80) + '\n')
 
         // Check for empty response - might indicate model or content filtering issues
         if (!text || text.trim().length === 0) {
