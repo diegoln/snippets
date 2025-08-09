@@ -60,12 +60,7 @@ jest.mock('../lib/user-scoped-data', () => ({
 // Skip LLM-dependent tests in CI without API key
 const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
 
-describe('Integration Data Edge Cases', () => {
-  beforeAll(() => {
-    if (skipLLMTests) {
-      console.log('⏭️  Skipping LLM-dependent integration tests - no GEMINI_API_KEY in CI environment')
-    }
-  })
+(skipLLMTests ? describe.skip : describe)('Integration Data Edge Cases', () => {
   let llmProxySpy: jest.SpyInstance
   
   beforeEach(() => {
