@@ -58,9 +58,9 @@ jest.mock('../lib/user-scoped-data', () => ({
 }))
 
 // Skip LLM-dependent tests in CI without API key
-const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
+const shouldSkipLLMTests = () => !process.env.GEMINI_API_KEY && process.env.CI
 
-(skipLLMTests ? describe.skip : describe)('Integration Data Edge Cases', () => {
+describe('Integration Data Edge Cases', () => {
   let llmProxySpy: jest.SpyInstance
   
   beforeEach(() => {
@@ -171,6 +171,10 @@ const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
    */
   describe('Integration Connection Failures', () => {
     it('should handle auth token expiration gracefully', async () => {
+      if (shouldSkipLLMTests()) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Mock calendar service to throw auth error
       jest.spyOn(GoogleCalendarService, 'generateMockData').mockImplementation(() => {
         throw new Error('Token expired')
@@ -204,6 +208,10 @@ const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
     })
 
     it('should NOT generate mock data on integration failure', async () => {
+      if (shouldSkipLLMTests()) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Force integration failure
       jest.spyOn(GoogleCalendarService, 'generateMockData').mockImplementation(() => {
         throw new Error('API unavailable')
@@ -250,6 +258,10 @@ const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
    */
   describe('Minimal Calendar Data', () => {
     it('should process single meeting through full LLM pipeline', async () => {
+      if (shouldSkipLLMTests()) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Calendar with just one meeting
       const minimalCalendarData = {
         totalMeetings: 1,
@@ -321,6 +333,10 @@ const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
    */
   describe('Invalid Integration Data', () => {
     it('should reject malformed calendar data', async () => {
+      if (shouldSkipLLMTests()) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Return invalid data structure
       const invalidCalendarData = {
         totalMeetings: -5, // Invalid negative value
@@ -507,6 +523,10 @@ const skipLLMTests = !process.env.GEMINI_API_KEY && process.env.CI
    * and that it maintains data integrity principles.
    */
   it('should maintain data integrity principles across all edge cases', async () => {
+    if (shouldSkipLLMTests()) {
+      console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+      return
+    }
     console.log('✅ Data Integrity Principles Verified:')
     console.log('  1. No mock data generation except calendar source')
     console.log('  2. LLM failures result in explicit errors, not fallbacks')
