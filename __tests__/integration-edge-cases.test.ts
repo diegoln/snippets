@@ -361,7 +361,11 @@ describe('Integration Data Edge Cases', () => {
       })
     })
 
-    (skipLLMTests ? it.skip : it)('should handle excessively large calendar data', async () => {
+    it('should handle excessively large calendar data', async () => {
+      if (skipLLMTests) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Create huge meeting array
       const hugeMeetingList = Array(50).fill(null).map((_, i) => ({
         id: `meeting-${i}`,
@@ -427,7 +431,11 @@ describe('Integration Data Edge Cases', () => {
    * - User informed of limitations
    */
   describe('Partial Data Success', () => {
-    (skipLLMTests ? it.skip : it)('should process partial data with appropriate handling', async () => {
+    it('should process partial data with appropriate handling', async () => {
+      if (skipLLMTests) {
+        console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
+        return
+      }
       // Arrange - Some meetings with partial information
       const partialCalendarData = {
         totalMeetings: 3,
