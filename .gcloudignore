@@ -34,6 +34,9 @@ server.log
 *.sqlite3
 prisma/dev.db
 
+# Mock datasets (dev/test only)
+data/mock-datasets/
+
 # IDE and editor files
 .vscode/
 .idea/
