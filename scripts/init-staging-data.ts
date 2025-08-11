@@ -12,7 +12,6 @@
 import { PrismaClient } from '@prisma/client'
 import { getCurrentWeekNumber } from '../lib/week-utils'
 import { getWeekDates } from '../lib/utils'
-import { getMockUsers } from '../lib/mock-users'
 
 const prisma = new PrismaClient()
 
@@ -35,13 +34,34 @@ async function initializeStagingData() {
 
     // 2. Create staging mock users
     console.log('2️⃣ Creating staging mock users...')
-    const mockUsers = getMockUsers() // This will return staging users when in staging context
+    // Generate staging users directly (not relying on environment detection during init)
+    const BASE_MOCK_USERS = [
+      {
+        name: 'Jack Thompson',
+        email: 'jack+staging@company.com',
+        image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
+        role: 'Senior Software Engineer - Identity Platform'
+      },
+      {
+        name: 'Sarah Engineer',
+        email: 'sarah+staging@example.com',
+        image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
+        role: 'Staff Engineer'
+      },
+      {
+        name: 'Alex Designer',
+        email: 'alex+staging@example.com', 
+        image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
+        role: 'Senior Product Designer'
+      }
+    ]
+    
+    const mockUsers = BASE_MOCK_USERS.map((user, index) => ({
+      ...user,
+      id: `staging_${index + 1}`
+    }))
     
     for (const mockUser of mockUsers) {
-      if (!mockUser.id.startsWith('staging_')) {
-        console.log(`⚠️ Skipping non-staging user: ${mockUser.id}`)
-        continue
-      }
       
       const user = await prisma.user.upsert({
         where: { email: mockUser.email },
@@ -228,8 +248,6 @@ async function initializeStagingData() {
 
 // Allow script to be run directly or imported
 if (require.main === module) {
-  // Set environment context for staging data generation
-  process.env.STAGING_CONTEXT = 'true'
   initializeStagingData()
 }
 

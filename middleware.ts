@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   const response = NextResponse.next()
   
   // Set environment mode header for components to use
-  const environmentMode = getEnvironmentMode(request)
+  const environmentMode = isStaging ? 'staging' : 'production'
   response.headers.set('x-environment-mode', environmentMode)
   
   // Handle staging path rewriting
