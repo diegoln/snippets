@@ -8,8 +8,6 @@
  * - production: Full production (Cloud SQL + real integrations)
  */
 
-import { headers } from 'next/headers'
-
 export type EnvironmentMode = 'development' | 'staging' | 'production'
 
 /**
@@ -22,15 +20,19 @@ export function getEnvironmentMode(): EnvironmentMode {
     return 'development'
   }
   
-  try {
-    // Try to get environment mode from middleware header
-    const headersList = headers()
-    const envMode = headersList.get('x-environment-mode') as EnvironmentMode
-    if (envMode && ['development', 'staging', 'production'].includes(envMode)) {
-      return envMode
+  // For server-side code that can access headers
+  if (typeof window === 'undefined') {
+    try {
+      // Dynamic import to avoid client-side issues
+      const { headers } = require('next/headers')
+      const headersList = headers()
+      const envMode = headersList.get('x-environment-mode') as EnvironmentMode
+      if (envMode && ['development', 'staging', 'production'].includes(envMode)) {
+        return envMode
+      }
+    } catch (error) {
+      // Headers not available (e.g., in API routes or build time), fall back
     }
-  } catch (error) {
-    // Headers not available (e.g., in API routes), fall back to detection
   }
   
   // Default to production for server-side when headers unavailable
