@@ -17,8 +17,9 @@ export interface MockUser {
 
 /**
  * Base mock user data (without environment prefixes)
+ * Exported for reuse in staging initialization scripts
  */
-const BASE_MOCK_USERS: Omit<MockUser, 'id'>[] = [
+export const BASE_MOCK_USERS: Omit<MockUser, 'id'>[] = [
   {
     name: 'Jack Thompson',
     email: 'jack@company.com',

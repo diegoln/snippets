@@ -58,24 +58,25 @@ function getEnvironmentMode(request: NextRequest): 'development' | 'staging' | '
  * Configure which paths this middleware should run on
  * 
  * We want to run on:
- * - /staging and all sub-paths
+ * - /staging and all sub-paths including /staging/api/* 
  * - Root paths that need environment detection
+ * - API routes for staging environment detection
  * 
  * We don't need to run on:
  * - Static assets (_next/static, images, etc.)
- * - API routes (they handle environment detection internally)
  */
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes)
      * - _next/static (static files)
-     * - _next/image (image optimization files)
+     * - _next/image (image optimization files)  
      * - favicon.ico (favicon file)
      * - brand (brand assets)
      * - Any file with an extension (.js, .css, .png, etc.)
+     * 
+     * INCLUDE API routes for staging environment support
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|brand|.*\\..*).*)',
+    '/((?!_next/static|_next/image|favicon.ico|brand|.*\\..*).*)',
   ],
 }
