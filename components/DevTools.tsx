@@ -2,26 +2,29 @@
 
 import { useEffect } from 'react'
 import { setDevSession } from '../lib/dev-auth'
+import { shouldShowDevTools, getClientEnvironmentMode, isStaging } from '../lib/environment'
 
 /**
- * Development Tools Component - Updated 2025-01-01
+ * Development Tools Component - Updated with Staging Support
  * 
  * This component provides quick access to development utilities
- * Only visible in development mode to help with testing auth flows
+ * Visible in development and staging modes for testing auth flows
  * Uses NextAuth-based authentication, not localStorage sessions
  */
 
 export function DevTools() {
-  // Initialize dev session on component mount
+  // Initialize dev session on component mount for dev-like environments
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (shouldShowDevTools()) {
       setDevSession()
     }
   }, [])
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (!shouldShowDevTools()) {
     return null
   }
+
+  const envMode = getClientEnvironmentMode()
 
   const clearSession = () => {
     // Clear all auth-related data
@@ -88,6 +91,34 @@ export function DevTools() {
     }
   }
 
+  const resetStagingData = async () => {
+    if (!isStaging()) {
+      alert('This function is only available in staging environment')
+      return
+    }
+    
+    const confirm = window.confirm('This will reset ALL staging data including users, reflections, and integrations. Are you sure?')
+    if (!confirm) return
+    
+    try {
+      const response = await fetch('/api/staging/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+      })
+      
+      if (response.ok) {
+        alert('Staging data reset successfully! Redirecting to staging home...')
+        window.location.href = '/staging'
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+        alert(`Failed to reset staging data: ${error.error}`)
+      }
+    } catch (err) {
+      alert('Failed to reset staging data. Check console for details.')
+    }
+  }
+
   const goToOnboarding = () => {
     window.location.href = '/onboarding-wizard'
   }
@@ -101,8 +132,10 @@ export function DevTools() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '200px' }}>
-      <p className="text-xs font-semibold text-gray-600 mb-2">Dev Tools</p>
+    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '220px' }}>
+      <p className="text-xs font-semibold text-gray-600 mb-2">
+        Dev Tools {envMode === 'staging' && <span className="text-orange-600">(Staging)</span>}
+      </p>
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
           <button
@@ -145,6 +178,17 @@ export function DevTools() {
             Dashboard
           </button>
         </div>
+        {envMode === 'staging' && (
+          <div className="flex gap-2 border-t pt-2">
+            <button
+              onClick={resetStagingData}
+              className="px-2 py-1 text-xs bg-orange-100 text-orange-700 rounded hover:bg-orange-200 w-full"
+              title="Reset all staging data (users, reflections, integrations)"
+            >
+              🔄 Reset Staging
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
