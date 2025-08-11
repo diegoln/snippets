@@ -101,6 +101,14 @@ const handleJWT = async (params: any) => {
     provider: account?.provider,
   });
   
+  // Store Google OAuth tokens for batch processing
+  if (account?.provider === 'google') {
+    token.accessToken = account.access_token
+    token.refreshToken = account.refresh_token
+    token.expiresAt = account.expires_at
+    authLog('Stored Google OAuth tokens with extended scopes')
+  }
+  
   if (user && 'id' in user) {
     token.sub = user.id
   }
@@ -157,8 +165,19 @@ const providers = process.env.NODE_ENV === 'development'
               "openid",
               "email", 
               "profile",
-              "https://www.googleapis.com/auth/calendar.readonly"
-            ].join(" ")
+              // Calendar API - for event metadata
+              "https://www.googleapis.com/auth/calendar.readonly",
+              // Meet API - for transcripts and recordings
+              "https://www.googleapis.com/auth/meetings.space.readonly",
+              // Drive API - for accessing meeting artifacts stored in Drive
+              "https://www.googleapis.com/auth/drive.readonly",
+              // Docs API - for accessing meeting notes and AI-generated summaries
+              "https://www.googleapis.com/auth/documents.readonly"
+            ].join(" "),
+            // Request offline access for refresh tokens (batch processing)
+            access_type: "offline",
+            // Force consent screen to ensure we get refresh token
+            prompt: "consent"
           }
         }
       })
