@@ -298,7 +298,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
 
   // Disconnect integration
   // Helper function to extract bullets from reflection content
-  const extractBulletsFromReflection = (reflection: string): string[] => {
+  const extractBulletsFromReflection = useCallback((reflection: string): string[] => {
     const lines = reflection.split('\n')
     const bullets: string[] = []
     
@@ -317,7 +317,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
     
     return bullets.slice(0, 5) // Return top 5 bullets
-  }
+  }, [])
 
   const disconnectIntegration = useCallback(async (integrationType: string) => {
     if (!confirm(`Are you sure you want to disconnect ${INTEGRATIONS.find(i => i.id === integrationType)?.name}? Your data from this source will no longer be collected for future reflections.`)) {
@@ -634,57 +634,82 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
   // Reflection content is now generated during integration connection via consolidation API
   // No need for separate step 2 reflection generation
 
-  // Load integration data for pre-connected integrations
+  // Load integration data for pre-connected integrations using the same consolidation flow
+  // Performance optimization: Uses the same consolidation endpoints as connectIntegration to avoid
+  // redundant API calls and ensure consistency. The consolidation service caches results per week,
+  // so multiple calls for the same week will reuse existing data.
   useEffect(() => {
     if (currentStep === 1 && connectedIntegrations.has('google_calendar') && Object.keys(integrationBullets).length === 0) {
-      const loadIntegrationData = async () => {
+      const loadPreConnectedIntegrationData = async () => {
         try {
           setLoadingState({ isLoading: true, operation: 'loading-integration-data', message: 'Loading calendar data...' })
           
-          // Fetch calendar data (same as connectIntegration does)
-          const dataResponse = await fetch('/api/integrations?test=true', {
-            headers: {
+          // Check if we already have a consolidation for this week (cached if already processed)
+          const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
               'X-Dev-User-Id': DEV_USER_ID
-            }
+            },
+            body: JSON.stringify({ integrationType: 'google_calendar' })
           })
-          if (!dataResponse.ok) {
-            throw new Error('Failed to fetch calendar data')
+
+          const consolidationData = await consolidationResponse.json()
+          
+          if (!consolidationResponse.ok || !consolidationData.success || !consolidationData.hasData) {
+            // No data available, set empty bullets
+            setIntegrationBullets(prev => ({
+              ...prev,
+              ['google_calendar']: []
+            }))
+            return
           }
-          const calendarData = await dataResponse.json()
-          
-          // Generate snippet from integration data (same as connectIntegration does)
-          const effectiveRole = formData.role === 'other' ? formData.customRole : formData.role
-          const effectiveLevel = formData.level === 'other' ? formData.customLevel : formData.level
-          
-          const snippetResponse = await fetch('/api/snippets/generate-from-integration', {
+
+          // Generate reflection from consolidation to extract bullets
+          const reflectionResponse = await fetch('/api/reflections/generate-from-consolidation', {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
               'X-Dev-User-Id': DEV_USER_ID
             },
             body: JSON.stringify({
-              integrationType: 'google_calendar',
-              weekData: calendarData.weekData,
-              userProfile: {
-                jobTitle: effectiveRole,
-                seniorityLevel: effectiveLevel
-              }
+              consolidationId: consolidationData.consolidationId
             })
           })
-          
-          if (!snippetResponse.ok) {
-            throw new Error('Failed to generate snippet from calendar data')
+
+          if (reflectionResponse.ok) {
+            const reflectionData = await reflectionResponse.json()
+            
+            if (reflectionData.hasData && reflectionData.reflection) {
+              // Store the reflection content for later use
+              setFormData(prev => ({
+                ...prev,
+                reflectionContent: reflectionData.reflection
+              }))
+              
+              // Extract bullets from reflection for UI display
+              const bullets = extractBulletsFromReflection(reflectionData.reflection)
+              setIntegrationBullets(prev => ({
+                ...prev,
+                ['google_calendar']: bullets
+              }))
+            } else {
+              // No reflection data, set empty bullets
+              setIntegrationBullets(prev => ({
+                ...prev,
+                ['google_calendar']: []
+              }))
+            }
+          } else {
+            // Reflection generation failed, set empty bullets
+            setIntegrationBullets(prev => ({
+              ...prev,
+              ['google_calendar']: []
+            }))
           }
-          const snippetData = await snippetResponse.json()
-          
-          // Update integration bullets with the fetched data
-          setIntegrationBullets(prev => ({
-            ...prev,
-            ['google_calendar']: snippetData.bullets || []
-          }))
           
         } catch (error) {
-          console.error('Failed to load integration data:', error)
+          console.error('Failed to load pre-connected integration data:', error)
           // Set empty bullets so it doesn't keep retrying
           setIntegrationBullets(prev => ({
             ...prev,
@@ -695,9 +720,9 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         }
       }
       
-      loadIntegrationData()
+      loadPreConnectedIntegrationData()
     }
-  }, [currentStep, connectedIntegrations, integrationBullets, formData.role, formData.customRole, formData.level, formData.customLevel])
+  }, [currentStep, connectedIntegrations, integrationBullets, extractBulletsFromReflection])
 
   const handleRoleAndGuidelinesComplete = useCallback(async (data: {
     role: string
