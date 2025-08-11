@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isStaging } from '../../../../lib/environment'
-import { initializeStagingData } from '../../../../scripts/init-staging-data'
+import { isApiStaging } from '../../../../lib/api-environment'
+import { initializeStagingData } from '../../../../lib/staging-service'
 
 /**
  * Staging Data Reset API Endpoint
@@ -13,7 +13,7 @@ import { initializeStagingData } from '../../../../scripts/init-staging-data'
 export async function POST(request: NextRequest) {
   try {
     // Security check - only allow in staging environment
-    if (!isStaging()) {
+    if (!isApiStaging(request)) {
       return NextResponse.json(
         { error: 'This endpoint is only available in staging environment' },
         { status: 403 }
