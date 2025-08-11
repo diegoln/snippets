@@ -100,7 +100,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const level = 'mid'
       
       const response = await fetch(
-        `/api/career-guidelines/template?role=${role}&level=${level}`,
+        `/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`,
         {
           headers: { 'X-Dev-User-Id': 'dev-user-123' }
         }
@@ -131,7 +131,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const role = 'design'
       const level = 'staff'
       
-      await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+      await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
         headers: { 'X-Dev-User-Id': 'dev-user-123' }
       })
 
@@ -154,7 +154,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const role = 'data'
       const level = 'principal'
       
-      await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+      await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
         headers: { 'X-Dev-User-Id': 'dev-user-123' }
       })
 
@@ -213,14 +213,14 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of standardCombinations) {
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
           headers: { 'X-Dev-User-Id': 'dev-user-123' }
         })
 
         // Each standard combo should call template API
         expect(mockFetch).toHaveBeenCalledTimes(1)
         expect(mockFetch).toHaveBeenCalledWith(
-          `/api/career-guidelines/template?role=${role}&level=${level}`,
+          `/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`,
           expect.any(Object)
         )
       }
@@ -255,6 +255,10 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
         '/api/career-guidelines/generate',
         expect.objectContaining({
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
           body: JSON.stringify({
             role: 'DevOps Engineer',
             level: 'senior'
@@ -344,7 +348,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const level = 'senior'
 
       // 1. Try template first
-      const templateResponse = await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+      const templateResponse = await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
       expect(templateResponse.ok).toBe(false)
       expect(templateResponse.status).toBe(404)
 
@@ -431,6 +435,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       // LLM generation should succeed
       const generateResponse = await fetch('/api/career-guidelines/generate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: 'engineering', level: 'senior' })
       })
 
@@ -467,6 +472,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       // Custom combo should only need generation API
       await fetch('/api/career-guidelines/generate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: 'DevOps Engineer', level: 'Lead' })
       })
 
@@ -515,7 +521,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of standardCombos) {
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
 
         // Each should only call template (no LLM cost)
         expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -540,7 +546,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
         const [role, level] = users[i]
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
         
         // Each user should use template (no rate limit concern)
         expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -556,18 +562,19 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
   })
 
   describe('Component Logic Validation', () => {
-    test('isStandardCombo() logic should correctly identify standard combinations', () => {
-      // Replicate the component logic
-      const VALID_ROLES = ['engineering', 'design', 'product', 'data', 'other']
-      const VALID_LEVELS = ['junior', 'mid', 'senior', 'staff', 'principal', 'manager', 'senior-manager', 'director', 'other']
+    // Shared helper function to avoid duplication
+    const VALID_ROLES = ['engineering', 'design', 'product', 'data', 'other']
+    const VALID_LEVELS = ['junior', 'mid', 'senior', 'staff', 'principal', 'manager', 'senior-manager', 'director', 'other']
 
-      const isStandardCombo = (role: string, level: string) => {
-        const effectiveRole = role === 'other' ? '' : role
-        const effectiveLevel = level === 'other' ? '' : level
-        return !!(effectiveRole && effectiveLevel && 
-               VALID_ROLES.includes(effectiveRole as any) && 
-               VALID_LEVELS.includes(effectiveLevel as any))
-      }
+    const isStandardCombo = (role: string, level: string) => {
+      const effectiveRole = role === 'other' ? '' : role
+      const effectiveLevel = level === 'other' ? '' : level
+      return !!(effectiveRole && effectiveLevel && 
+             VALID_ROLES.includes(effectiveRole) && 
+             VALID_LEVELS.includes(effectiveLevel))
+    }
+
+    test('isStandardCombo() logic should correctly identify standard combinations', () => {
 
       // Standard combinations should return true
       expect(isStandardCombo('engineering', 'senior')).toBe(true)
@@ -584,16 +591,6 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
     })
 
     test('REGRESSION: Component should use correct API endpoint based on isStandardCombo', async () => {
-      const VALID_ROLES = ['engineering', 'design', 'product', 'data', 'other']
-      const VALID_LEVELS = ['junior', 'mid', 'senior', 'staff', 'principal', 'manager', 'senior-manager', 'director', 'other']
-
-      const isStandardCombo = (role: string, level: string) => {
-        const effectiveRole = role === 'other' ? '' : role
-        const effectiveLevel = level === 'other' ? '' : level
-        return !!(effectiveRole && effectiveLevel && 
-               VALID_ROLES.includes(effectiveRole as any) && 
-               VALID_LEVELS.includes(effectiveLevel as any))
-      }
 
       // Mock successful responses for both endpoints
       mockFetch.mockImplementation((url: string) => {
@@ -633,6 +630,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       
       await fetch('/api/career-guidelines/generate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: customRole, level: customLevel })
       })
       
@@ -702,6 +700,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
 
         await fetch('/api/career-guidelines/generate', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ role: 'DevOps Engineer', level: 'Lead' })
         })
 
@@ -763,7 +762,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of expectedTemplates) {
         mockFetch.mockClear()
         
-        const response = await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        const response = await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
         expect(response.ok).toBe(true)
       }
     })
