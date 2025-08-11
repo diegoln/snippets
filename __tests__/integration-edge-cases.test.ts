@@ -373,7 +373,7 @@ describe('Integration Data Edge Cases', () => {
     })
 
     it('should handle excessively large calendar data', async () => {
-      if (skipLLMTests) {
+      if (shouldSkipLLMTests()) {
         console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
         return
       }
@@ -443,7 +443,7 @@ describe('Integration Data Edge Cases', () => {
    */
   describe('Partial Data Success', () => {
     it('should process partial data with appropriate handling', async () => {
-      if (skipLLMTests) {
+      if (shouldSkipLLMTests()) {
         console.log('⏭️  Skipping - no GEMINI_API_KEY in CI environment')
         return
       }
