@@ -1,0 +1,491 @@
+{
+  "kind": "docs#document",
+  "documentId": "1J4cK_1oN1_S4r4H_0cT01_2024_mEeTiNgNoTeS",
+  "title": "Meeting Notes - 1:1 Sarah & Jack - Oct 1, 2024",
+  "body": {
+    "content": [
+      {
+        "startIndex": 1,
+        "endIndex": 12,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 1,
+              "endIndex": 11,
+              "textRun": {
+                "content": "Meeting Notes\\n",
+                "textStyle": {
+                  "bold": true,
+                  "fontSize": {
+                    "magnitude": 18,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 12,
+        "endIndex": 58,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 12,
+              "endIndex": 57,
+              "textRun": {
+                "content": "1:1 Meeting - Sarah Chen & Jack Thompson\\n",
+                "textStyle": {
+                  "fontSize": {
+                    "magnitude": 14,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 58,
+        "endIndex": 84,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 58,
+              "endIndex": 83,
+              "textRun": {
+                "content": "Date: October 1, 2024\\n",
+                "textStyle": {}
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 84,
+        "endIndex": 110,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 84,
+              "endIndex": 109,
+              "textRun": {
+                "content": "Duration: 28 minutes\\n",
+                "textStyle": {}
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 110,
+        "endIndex": 112,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 110,
+              "endIndex": 111,
+              "textRun": {
+                "content": "\\n"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 112,
+        "endIndex": 134,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 112,
+              "endIndex": 133,
+              "textRun": {
+                "content": "Key Discussion Points\\n",
+                "textStyle": {
+                  "bold": true,
+                  "fontSize": {
+                    "magnitude": 12,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 134,
+        "endIndex": 195,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 134,
+              "endIndex": 194,
+              "textRun": {
+                "content": "• Authentication module progress and complexity assessment\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list001",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 195,
+        "endIndex": 241,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 195,
+              "endIndex": 240,
+              "textRun": {
+                "content": "• JWT implementation challenges and scope\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list001",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 241,
+        "endIndex": 293,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 241,
+              "endIndex": 292,
+              "textRun": {
+                "content": "• Team collaboration and mentoring opportunities\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list001",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 293,
+        "endIndex": 332,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 293,
+              "endIndex": 331,
+              "textRun": {
+                "content": "• Q4 goals and professional development\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list001",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 332,
+        "endIndex": 334,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 332,
+              "endIndex": 333,
+              "textRun": {
+                "content": "\\n"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 334,
+        "endIndex": 347,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 334,
+              "endIndex": 346,
+              "textRun": {
+                "content": "Action Items\\n",
+                "textStyle": {
+                  "bold": true,
+                  "fontSize": {
+                    "magnitude": 12,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 347,
+        "endIndex": 413,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 347,
+              "endIndex": 412,
+              "textRun": {
+                "content": "• Jack: Schedule time with Mike for JWT architecture guidance\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list002",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 413,
+        "endIndex": 464,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 413,
+              "endIndex": 463,
+              "textRun": {
+                "content": "• Jack: Help Lisa with OAuth integration questions\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list002",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 464,
+        "endIndex": 537,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 464,
+              "endIndex": 536,
+              "textRun": {
+                "content": "• Jack: Prepare knowledge sharing session on authentication after completion\\n",
+                "textStyle": {}
+              }
+            }
+          ],
+          "bullet": {
+            "listId": "kix.list002",
+            "nestingLevel": 0
+          }
+        }
+      },
+      {
+        "startIndex": 537,
+        "endIndex": 539,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 537,
+              "endIndex": 538,
+              "textRun": {
+                "content": "\\n"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 539,
+        "endIndex": 548,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 539,
+              "endIndex": 547,
+              "textRun": {
+                "content": "Summary\\n",
+                "textStyle": {
+                  "bold": true,
+                  "fontSize": {
+                    "magnitude": 12,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 548,
+        "endIndex": 734,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 548,
+              "endIndex": 733,
+              "textRun": {
+                "content": "Productive discussion about Jack's current authentication module work. Jack expressed confidence in the technical approach but acknowledged complexity around JWT refresh patterns. \\n",
+                "textStyle": {}
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 734,
+        "endIndex": 892,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 734,
+              "endIndex": 891,
+              "textRun": {
+                "content": "Good conversation about mentoring and knowledge sharing - Jack is open to helping team members and working on professional development goals.\\n",
+                "textStyle": {}
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 892,
+        "endIndex": 894,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 892,
+              "endIndex": 893,
+              "textRun": {
+                "content": "\\n"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "startIndex": 894,
+        "endIndex": 952,
+        "paragraph": {
+          "elements": [
+            {
+              "startIndex": 894,
+              "endIndex": 951,
+              "textRun": {
+                "content": "Generated automatically by Gemini for Google Meet\\n",
+                "textStyle": {
+                  "italic": true,
+                  "foregroundColor": {
+                    "color": {
+                      "rgbColor": {
+                        "red": 0.5,
+                        "green": 0.5,
+                        "blue": 0.5
+                      }
+                    }
+                  },
+                  "fontSize": {
+                    "magnitude": 9,
+                    "unit": "PT"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "documentStyle": {
+    "background": {
+      "color": {}
+    },
+    "pageNumberStart": 1,
+    "marginTop": {
+      "magnitude": 72,
+      "unit": "PT"
+    },
+    "marginBottom": {
+      "magnitude": 72,
+      "unit": "PT"
+    },
+    "marginRight": {
+      "magnitude": 72,
+      "unit": "PT"
+    },
+    "marginLeft": {
+      "magnitude": 72,
+      "unit": "PT"
+    },
+    "pageSize": {
+      "height": {
+        "magnitude": 792,
+        "unit": "PT"
+      },
+      "width": {
+        "magnitude": 612,
+        "unit": "PT"
+      }
+    }
+  },
+  "lists": {
+    "kix.list001": {
+      "listProperties": {
+        "nestingLevels": [
+          {
+            "bulletAlignment": "START",
+            "glyphFormat": "%0",
+            "glyphSymbol": "●",
+            "glyphType": "GLYPH_TYPE_UNSPECIFIED",
+            "indentFirstLine": {
+              "magnitude": 18,
+              "unit": "PT"
+            },
+            "indentStart": {
+              "magnitude": 36,
+              "unit": "PT"
+            },
+            "textStyle": {}
+          }
+        ]
+      }
+    },
+    "kix.list002": {
+      "listProperties": {
+        "nestingLevels": [
+          {
+            "bulletAlignment": "START",
+            "glyphFormat": "%0",
+            "glyphSymbol": "●",
+            "glyphType": "GLYPH_TYPE_UNSPECIFIED",
+            "indentFirstLine": {
+              "magnitude": 18,
+              "unit": "PT"
+            },
+            "indentStart": {
+              "magnitude": 36,
+              "unit": "PT"
+            },
+            "textStyle": {}
+          }
+        ]
+      }
+    }
+  },
+  "revisionId": "ALm37BWWsBmvNKgBUAr71YwxjTg5SDyqEg",
+  "suggestionsViewMode": "SUGGESTIONS_INLINE"
+}

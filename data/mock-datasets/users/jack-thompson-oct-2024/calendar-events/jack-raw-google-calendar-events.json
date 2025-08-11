@@ -1,0 +1,583 @@
+[
+  {
+    "id": "cal_001",
+    "summary": "Daily Standup - Identity Platform Team",
+    "description": null,
+    "start": {
+      "dateTime": "2024-10-01T09:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-01T09:15:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "alex@company.com",
+        "displayName": "Alex Kumar"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen (Team Lead)"
+    },
+    "location": null,
+    "status": "confirmed",
+    "recurring": "daily_weekdays"
+  },
+  {
+    "id": "cal_002",
+    "summary": "1:1 with Sarah - Performance Discussion",
+    "description": "Weekly check-in. Agenda:\n- Progress on user authentication module\n- Blockers and support needed\n- Feedback on recent PRs\n- Career development goals",
+    "start": {
+      "dateTime": "2024-10-01T14:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-01T14:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": null,
+    "status": "confirmed",
+    "recurring": "weekly"
+  },
+  {
+    "id": "cal_003",
+    "summary": "Architecture Review - Identity Verification Service",
+    "description": "Review proposed architecture for new identity verification microservice. Focus areas:\n- Database schema design\n- API contracts\n- Security considerations\n- Scalability requirements",
+    "start": {
+      "dateTime": "2024-10-02T10:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-02T11:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez (Senior Architect)"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim (Staff Engineer)"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      }
+    ],
+    "organizer": {
+      "email": "mike@company.com",
+      "displayName": "Mike Rodriguez"
+    },
+    "location": "Conference Room B / Google Meet",
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_004",
+    "summary": "URGENT: Debug Session - Auth Service Down",
+    "description": "Production issue - authentication service is failing intermittently. Need all hands to investigate.\n\nImpact: 15% of login attempts failing\nStarted: 2:30 PM\nPriority: P0",
+    "start": {
+      "dateTime": "2024-10-03T15:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-03T17:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim"
+      },
+      {
+        "email": "oncall@company.com",
+        "displayName": "OnCall Engineer"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": "War Room / Slack #incident-auth",
+    "status": "confirmed",
+    "colorId": "11"
+  },
+  {
+    "id": "cal_005",
+    "summary": "Help Session: Lisa needs guidance on OAuth implementation",
+    "description": "Lisa (junior engineer) is stuck on OAuth flow implementation. Jack to provide guidance.\n\nTopics to cover:\n- OAuth 2.0 flow explanation\n- Code review of current implementation\n- Best practices for token handling\n\nNotes: Meeting cancelled by Jack - 'Still working on my own OAuth issues, maybe Sarah can help instead?'",
+    "start": {
+      "dateTime": "2024-10-04T11:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-04T11:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      }
+    ],
+    "organizer": {
+      "email": "lisa@company.com",
+      "displayName": "Lisa Park"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_006",
+    "summary": "Identity Platform - Sprint Planning",
+    "description": "Sprint 23 planning session\n\nGoals:\n- Complete user authentication module\n- Begin identity verification service\n- Address technical debt in session management\n\nEstimated velocity: 42 points",
+    "start": {
+      "dateTime": "2024-10-07T13:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-07T15:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "alex@company.com",
+        "displayName": "Alex Kumar"
+      },
+      {
+        "email": "product@company.com",
+        "displayName": "Jennifer Walsh (PM)"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": "Conference Room A",
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_007",
+    "summary": "Deep Dive: JWT Token Management Architecture",
+    "description": "Technical deep dive session to clarify JWT implementation approach.\n\nJack requested this session after struggling with token refresh logic.\n\nCovering:\n- JWT vs session tokens\n- Refresh token rotation\n- Security best practices\n- Implementation patterns",
+    "start": {
+      "dateTime": "2024-10-08T14:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-08T15:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim"
+      }
+    ],
+    "organizer": {
+      "email": "jack@company.com",
+      "displayName": "Jack Thompson"
+    },
+    "location": "Mike's office",
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_008",
+    "summary": "Code Review Session - Jack's Auth Module PR",
+    "description": "Collaborative code review for PR #234: Implement JWT authentication\n\n⚠️ PR has been open for 2 weeks with multiple change requests\n\nFocus areas:\n- Error handling improvements\n- Code organization\n- Test coverage\n- Security considerations",
+    "start": {
+      "dateTime": "2024-10-09T10:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-09T11:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": "Sarah's desk / Screen share",
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_009",
+    "summary": "All Hands - Q4 Platform Roadmap",
+    "description": "Company-wide update on digital identity platform progress and Q4 objectives.\n\nPresenting:\n- Current platform capabilities\n- Performance metrics\n- Upcoming features\n- Team introductions",
+    "start": {
+      "dateTime": "2024-10-10T11:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-10T12:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "everyone@company.com",
+        "displayName": "All Company"
+      }
+    ],
+    "organizer": {
+      "email": "ceo@company.com",
+      "displayName": "CEO"
+    },
+    "location": "Main Conference Room / Zoom",
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_010",
+    "summary": "Blocked: Waiting for Architecture Decision",
+    "description": "Jack blocked on authentication module - needs architecture decision on session storage approach.\n\nOptions discussed:\n1. Redis-based sessions\n2. Database sessions with caching\n3. Stateless JWT-only approach\n\nWaiting for Mike and David to provide guidance.",
+    "start": {
+      "dateTime": "2024-10-11T09:30:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-11T10:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      }
+    ],
+    "organizer": {
+      "email": "jack@company.com",
+      "displayName": "Jack Thompson"
+    },
+    "location": null,
+    "status": "tentative"
+  },
+  {
+    "id": "cal_011",
+    "summary": "Tom needs help with API integration - DECLINED by Jack",
+    "description": "Tom (junior dev) requested help with third-party API integration for document verification service.\n\nDeclined reason: 'Still working on my authentication stuff, maybe ask Sarah or Mike?'",
+    "start": {
+      "dateTime": "2024-10-14T15:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-14T15:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson",
+        "responseStatus": "declined"
+      }
+    ],
+    "organizer": {
+      "email": "tom@company.com",
+      "displayName": "Tom Wilson"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_012",
+    "summary": "Sprint Retrospective - Sprint 23",
+    "description": "Team retrospective for completed sprint.\n\nWhat went well:\n- Profile validation fix deployed successfully\n- Good collaboration on production incident\n\nWhat could improve:\n- Authentication module still blocked\n- Need better knowledge sharing\n- Junior devs need more support\n\nAction items:\n- Jack to provide architecture decision by Friday\n- More pairing sessions for complex features",
+    "start": {
+      "dateTime": "2024-10-18T14:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-18T15:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "alex@company.com",
+        "displayName": "Alex Kumar"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_013",
+    "summary": "1:1 with Sarah - Performance Check-in",
+    "description": "Mid-sprint check-in. Topics:\n- Authentication module progress\n- Blockers and challenges\n- Support needed from team\n- Career development discussion\n\nNotes from Sarah: 'Jack seems overwhelmed by the complexity. Need to provide more structured guidance and possibly pair programming.'",
+    "start": {
+      "dateTime": "2024-10-22T14:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-22T14:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_014",
+    "summary": "Architecture Deep Dive - Session vs Stateless Auth",
+    "description": "Follow-up session to finalize authentication architecture approach.\n\nDecision made: Hybrid approach with short-lived JWTs and refresh tokens stored in Redis.\n\nJack's concerns:\n- Implementation complexity\n- Testing strategy\n- Error handling patterns\n\nNext steps: Jack to create implementation plan by next week",
+    "start": {
+      "dateTime": "2024-10-23T10:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-23T11:30:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "mike@company.com",
+        "displayName": "Mike Rodriguez"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim"
+      }
+    ],
+    "organizer": {
+      "email": "mike@company.com",
+      "displayName": "Mike Rodriguez"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_015",
+    "summary": "MISSED: Team Knowledge Sharing - OAuth Best Practices",
+    "description": "Weekly team knowledge sharing session. This week: OAuth 2.0 best practices and common pitfalls.\n\nJack was invited to present but didn't attend. Sarah covered the topic instead.\n\nMissed opportunity for Jack to share knowledge and build credibility with junior team members.",
+    "start": {
+      "dateTime": "2024-10-25T16:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-25T17:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "alex@company.com",
+        "displayName": "Alex Kumar"
+      },
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson",
+        "responseStatus": "declined"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_016",
+    "summary": "Identity Platform - Demo Prep",
+    "description": "Preparing for upcoming demo to stakeholders. Each team member to present their component.\n\nJack's concern: 'My auth module isn't ready for demo. Still has bugs and incomplete features.'\n\nDecision: Sarah will demo a mock version of authentication flow, Jack to provide technical details if questions arise.",
+    "start": {
+      "dateTime": "2024-10-28T13:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-28T14:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "lisa@company.com",
+        "displayName": "Lisa Park"
+      },
+      {
+        "email": "tom@company.com",
+        "displayName": "Tom Wilson"
+      },
+      {
+        "email": "alex@company.com",
+        "displayName": "Alex Kumar"
+      },
+      {
+        "email": "jennifer@company.com",
+        "displayName": "Jennifer Walsh (PM)"
+      }
+    ],
+    "organizer": {
+      "email": "jennifer@company.com",
+      "displayName": "Jennifer Walsh"
+    },
+    "location": null,
+    "status": "confirmed"
+  },
+  {
+    "id": "cal_017",
+    "summary": "URGENT: Production Auth Issues - Debug Session",
+    "description": "Authentication service experiencing intermittent failures in production.\n\nSymptoms:\n- Token validation failing randomly\n- Users getting logged out unexpectedly\n- 401 errors on valid requests\n\nSeverity: P1 - affecting user experience\n\nJack called in as authentication module owner, though his recent changes haven't been deployed yet.",
+    "start": {
+      "dateTime": "2024-10-30T11:00:00-07:00"
+    },
+    "end": {
+      "dateTime": "2024-10-30T13:00:00-07:00"
+    },
+    "attendees": [
+      {
+        "email": "jack@company.com",
+        "displayName": "Jack Thompson"
+      },
+      {
+        "email": "sarah@company.com",
+        "displayName": "Sarah Chen"
+      },
+      {
+        "email": "david@company.com",
+        "displayName": "David Kim"
+      },
+      {
+        "email": "oncall@company.com",
+        "displayName": "OnCall Team"
+      }
+    ],
+    "organizer": {
+      "email": "sarah@company.com",
+      "displayName": "Sarah Chen"
+    },
+    "location": "War Room / Slack #incident-auth-oct30",
+    "status": "confirmed",
+    "colorId": "11"
+  }
+]

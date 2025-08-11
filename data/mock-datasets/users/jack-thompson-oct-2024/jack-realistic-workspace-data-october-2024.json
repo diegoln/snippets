@@ -1,0 +1,322 @@
+{
+  "metadata": {
+    "userId": "jack@company.com",
+    "dateRange": {
+      "start": "2024-10-01T00:00:00Z",
+      "end": "2024-10-31T23:59:59Z"
+    },
+    "dataSource": "Google Workspace APIs",
+    "generatedAt": "2025-08-11T17:30:00Z",
+    "notes": "Realistic meeting and document data for Jack Thompson, Senior Software Engineer at Digital Identity Platform team"
+  },
+  "weeks": {
+    "week40": {
+      "weekNumber": 40,
+      "year": 2024,
+      "startDate": "2024-10-01",
+      "endDate": "2024-10-04",
+      "calendarEvents": [
+        {
+          "kind": "calendar#event",
+          "etag": "\"3432401934000000\"",
+          "id": "4c8d2j9m3n1k2l5p6q7r8s9t0u1v2w3x",
+          "status": "confirmed",
+          "htmlLink": "https://calendar.google.com/event?eid=NGM4ZDJqOW0zbjFrMmw1cDZxN3I4czl0MHUxdjJ3M3g",
+          "created": "2024-09-25T14:20:00.000Z",
+          "updated": "2024-10-01T08:45:00.000Z",
+          "summary": "Daily Standup - Identity Platform Team",
+          "description": "",
+          "creator": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "organizer": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "start": {
+            "dateTime": "2024-10-01T09:00:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "end": {
+            "dateTime": "2024-10-01T09:15:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "iCalUID": "4c8d2j9m3n1k2l5p6q7r8s9t0u1v2w3x@google.com",
+          "sequence": 0,
+          "attendees": [
+            {
+              "email": "jack@company.com",
+              "displayName": "Jack Thompson",
+              "self": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "sarah.chen@company.com",
+              "displayName": "Sarah Chen",
+              "organizer": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "mike.rodriguez@company.com",
+              "displayName": "Mike Rodriguez",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "lisa.park@company.com",
+              "displayName": "Lisa Park",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "tom.wilson@company.com",
+              "displayName": "Tom Wilson",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "alex.kumar@company.com",
+              "displayName": "Alex Kumar",
+              "responseStatus": "accepted"
+            }
+          ],
+          "recurrence": [
+            "RRULE:FREQ=DAILY;BYDAY=MO,TU,WE,TH,FR"
+          ],
+          "conferenceData": {
+            "conferenceId": "meet-standup-identity-platform-oct01",
+            "conferenceSolution": {
+              "name": "Google Meet",
+              "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+            },
+            "entryPoints": [
+              {
+                "entryPointType": "video",
+                "uri": "https://meet.google.com/abc-defg-hij"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "calendar#event",
+          "etag": "\"3432401934000001\"",
+          "id": "5d9e3k0n4o2l3m6q7r8s9t0u1v2w3x4y",
+          "status": "confirmed",
+          "htmlLink": "https://calendar.google.com/event?eid=NWQ5ZTNrMG40bzJsM202cTdyOHM5dDB1MXYydzN4NHk",
+          "created": "2024-09-18T16:30:00.000Z",
+          "updated": "2024-09-30T10:15:00.000Z",
+          "summary": "1:1 with Sarah - Performance Discussion",
+          "description": "Weekly check-in\\n\\nAgenda:\\n- Progress on user authentication module\\n- Blockers and support needed\\n- Feedback on recent work\\n- Career development goals",
+          "creator": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "organizer": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "start": {
+            "dateTime": "2024-10-01T14:00:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "end": {
+            "dateTime": "2024-10-01T14:30:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "iCalUID": "5d9e3k0n4o2l3m6q7r8s9t0u1v2w3x4y@google.com",
+          "sequence": 1,
+          "attendees": [
+            {
+              "email": "jack@company.com",
+              "displayName": "Jack Thompson",
+              "self": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "sarah.chen@company.com",
+              "displayName": "Sarah Chen",
+              "organizer": true,
+              "responseStatus": "accepted"
+            }
+          ],
+          "recurrence": [
+            "RRULE:FREQ=WEEKLY;BYDAY=TU"
+          ],
+          "conferenceData": {
+            "conferenceId": "meet-1on1-sarah-jack-weekly",
+            "conferenceSolution": {
+              "name": "Google Meet",
+              "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+            },
+            "entryPoints": [
+              {
+                "entryPointType": "video",
+                "uri": "https://meet.google.com/klm-nopq-rst"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "calendar#event",
+          "etag": "\"3432401934000002\"",
+          "id": "6e0f4l1o5p3m4n7r8s9t0u1v2w3x4y5z",
+          "status": "confirmed",
+          "htmlLink": "https://calendar.google.com/event?eid=NmUwZjRsMW81cDNtNG43cjhzOXQwdTF2MnczeDR5NXo",
+          "created": "2024-09-20T11:45:00.000Z",
+          "updated": "2024-10-02T09:30:00.000Z",
+          "summary": "Architecture Review - Identity Verification Service",
+          "description": "Review proposed architecture for new identity verification microservice.\\n\\nFocus areas:\\n- Database schema design\\n- API contracts\\n- Security considerations\\n- Scalability requirements",
+          "location": "Conference Room B / Google Meet",
+          "creator": {
+            "email": "mike.rodriguez@company.com",
+            "displayName": "Mike Rodriguez",
+            "self": false
+          },
+          "organizer": {
+            "email": "mike.rodriguez@company.com",
+            "displayName": "Mike Rodriguez",
+            "self": false
+          },
+          "start": {
+            "dateTime": "2024-10-02T10:00:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "end": {
+            "dateTime": "2024-10-02T11:30:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "iCalUID": "6e0f4l1o5p3m4n7r8s9t0u1v2w3x4y5z@google.com",
+          "sequence": 2,
+          "attendees": [
+            {
+              "email": "jack@company.com",
+              "displayName": "Jack Thompson",
+              "self": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "sarah.chen@company.com",
+              "displayName": "Sarah Chen",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "mike.rodriguez@company.com",
+              "displayName": "Mike Rodriguez",
+              "organizer": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "david.kim@company.com",
+              "displayName": "David Kim",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "tom.wilson@company.com",
+              "displayName": "Tom Wilson",
+              "responseStatus": "accepted"
+            }
+          ],
+          "conferenceData": {
+            "conferenceId": "meet-architecture-review-identity-verification-oct02",
+            "conferenceSolution": {
+              "name": "Google Meet",
+              "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+            },
+            "entryPoints": [
+              {
+                "entryPointType": "video",
+                "uri": "https://meet.google.com/uvw-xyza-bcd"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "calendar#event",
+          "etag": "\"3432401934000003\"",
+          "id": "7f1g5m2p6q4n5o8s9t0u1v2w3x4y5z6a",
+          "status": "confirmed",
+          "htmlLink": "https://calendar.google.com/event?eid=N2YxZzVtMnA2cTRuNW84czl0MHUxdjJ3M3g0eTV6NmE",
+          "created": "2024-09-25T13:15:00.000Z",
+          "updated": "2024-10-07T14:45:00.000Z",
+          "summary": "Identity Platform - Sprint Planning",
+          "description": "Sprint 23 planning session\\n\\nGoals:\\n- Complete user authentication module\\n- Begin identity verification service\\n- Address technical debt in session management\\n\\nEstimated velocity: 42 points",
+          "location": "Conference Room A",
+          "creator": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "organizer": {
+            "email": "sarah.chen@company.com",
+            "displayName": "Sarah Chen",
+            "self": false
+          },
+          "start": {
+            "dateTime": "2024-10-07T13:00:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "end": {
+            "dateTime": "2024-10-07T15:00:00-07:00",
+            "timeZone": "America/Los_Angeles"
+          },
+          "iCalUID": "7f1g5m2p6q4n5o8s9t0u1v2w3x4y5z6a@google.com",
+          "sequence": 0,
+          "attendees": [
+            {
+              "email": "jack@company.com",
+              "displayName": "Jack Thompson",
+              "self": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "sarah.chen@company.com",
+              "displayName": "Sarah Chen",
+              "organizer": true,
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "mike.rodriguez@company.com",
+              "displayName": "Mike Rodriguez",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "lisa.park@company.com",
+              "displayName": "Lisa Park",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "tom.wilson@company.com",
+              "displayName": "Tom Wilson",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "alex.kumar@company.com",
+              "displayName": "Alex Kumar",
+              "responseStatus": "accepted"
+            },
+            {
+              "email": "jennifer.walsh@company.com",
+              "displayName": "Jennifer Walsh",
+              "responseStatus": "accepted"
+            }
+          ],
+          "conferenceData": {
+            "conferenceId": "meet-sprint-planning-identity-platform-oct07",
+            "conferenceSolution": {
+              "name": "Google Meet",
+              "iconUri": "https://fonts.gstatic.com/s/i/productlogos/meet_2020q4/v6/web-512dp/logo_meet_2020q4_color_2x_web_512dp.png"
+            },
+            "entryPoints": [
+              {
+                "entryPointType": "video",
+                "uri": "https://meet.google.com/efg-hijk-lmn"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

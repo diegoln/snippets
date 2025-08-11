@@ -1,0 +1,227 @@
+{
+  "conferenceRecord": {
+    "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31",
+    "startTime": "2024-10-31T21:00:22.456Z",
+    "endTime": "2024-10-31T21:25:18.789Z",
+    "space": {
+      "name": "spaces/klm-nopq-rst",
+      "meetingUri": "https://meet.google.com/klm-nopq-rst"
+    }
+  },
+  "transcript": {
+    "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001",
+    "state": "ENDED",
+    "startTime": "2024-10-31T21:00:22.456Z",
+    "endTime": "2024-10-31T21:25:18.789Z"
+  },
+  "transcriptEntries": [
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_001",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Hey Jack, Happy Halloween! How are you feeling? I know this has been a challenging few weeks.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:00:25.123Z",
+      "endTime": "2024-10-31T21:00:32.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_002",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Happy Halloween! I'm actually feeling much better. That pairing session with Mike yesterday was incredibly helpful. We got the JWT system working end-to-end, and I feel like I finally understand the architecture instead of just worrying about it.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:00:33.789Z",
+      "endTime": "2024-10-31T21:00:48.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_003",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "That's wonderful to hear! Mike mentioned you made great progress. Can you walk me through what you accomplished?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:00:49.456Z",
+      "endTime": "2024-10-31T21:00:57.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_004",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "So we have basic JWT token generation and validation working, and the refresh token flow is implemented using Redis for storage. It's not the most complex version I was researching, but it works reliably and covers our core use cases. We tested it end-to-end and I wrote some basic tests.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:00:59.123Z",
+      "endTime": "2024-10-31T21:01:17.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_005",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "That sounds like exactly what we needed. Sometimes the best solution is the one that works and can be understood by the team. How do you feel about the approach you ended up with?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:01:18.789Z",
+      "endTime": "2024-10-31T21:01:29.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_006",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "I'm really happy with it, actually. I learned that I was trying to solve every possible edge case upfront instead of building something that works and then improving it. Mike helped me see that the basic implementation is solid and we can add complexity later if we actually need it.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:01:30.456Z",
+      "endTime": "2024-10-31T21:01:47.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_007",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "That's a really valuable insight, Jack. Analysis paralysis is something a lot of engineers struggle with, especially on security-critical features. What do you think helped you break through that pattern?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:01:49.123Z",
+      "endTime": "2024-10-31T21:02:01.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_008",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "I think it was the combination of having clear constraints - like focusing just on the happy path for v1 - and working with someone else who could help me make decisions quickly instead of researching forever. The pair programming forced me to actually write code instead of just reading about approaches.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:02:02.789Z",
+      "endTime": "2024-10-31T21:02:19.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_009",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Those are excellent takeaways. I'm really glad the increased support helped you get unstuck. Now, I also wanted to check in on the team collaboration side. I know that was something we discussed earlier this month.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:02:20.456Z",
+      "endTime": "2024-10-31T21:02:32.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_010",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Right, yeah. I followed up with Alex about the API authentication patterns like you asked, and we had a really good conversation. It was actually helpful for me too because explaining the concepts to him helped solidify my own understanding. And I realized I do know more than I was giving myself credit for.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:02:34.123Z",
+      "endTime": "2024-10-31T21:02:51.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_011",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "That's fantastic! Alex mentioned that conversation was really valuable for him. It sounds like you're getting back to being the collaborative senior engineer I know you are.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:02:52.789Z",
+      "endTime": "2024-10-31T21:03:03.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_012",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Thanks. I think I got so focused on not wanting to give wrong advice that I stopped giving any advice at all. But I'm learning that collaboration isn't about having all the answers - it's about thinking through problems together.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:03:04.456Z",
+      "endTime": "2024-10-31T21:03:17.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_013",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Exactly. That's one of the most important aspects of being a senior engineer. So looking forward, what are your key takeaways from this experience? What will you do differently next time you're working on a complex project?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:03:19.123Z",
+      "endTime": "2024-10-31T21:03:32.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_014",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "First, I want to set clearer boundaries on research time. Maybe give myself a day or two to understand the problem space, but then start building something even if it's not perfect. Second, I want to involve the team earlier instead of trying to figure everything out on my own. The pair programming was so much more effective than solo work.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:03:33.789Z",
+      "endTime": "2024-10-31T21:03:53.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_015",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Those are excellent strategies. And Jack, I want you to know that going through challenges like this is actually a sign of growth. Senior engineers who never struggle with complex problems aren't pushing themselves hard enough.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:03:54.456Z",
+      "endTime": "2024-10-31T21:04:07.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_016",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "That's a good way to think about it. I was feeling like struggling meant I wasn't good at my job, but maybe it just means I was working on something legitimately challenging.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:04:09.123Z",
+      "endTime": "2024-10-31T21:04:19.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_017",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Exactly. And the fact that you recognized when you needed support and accepted help shows real professional maturity. So for next sprint, are you feeling confident about taking on new challenges?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:04:20.789Z",
+      "endTime": "2024-10-31T21:04:32.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_018",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Yeah, I am. I feel like I have better tools now for approaching complex problems. And I'm more comfortable reaching out for collaboration early instead of waiting until I'm stuck.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:04:33.456Z",
+      "endTime": "2024-10-31T21:04:44.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_019",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Perfect. And Jack, I want to acknowledge that you delivered a working JWT authentication system that meets our requirements. Despite the challenges along the way, you got it done, and the team can now build on that foundation.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:04:46.123Z",
+      "endTime": "2024-10-31T21:04:59.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_020",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Thank you, that means a lot. And thank you for the additional support this month. The daily check-ins and the pair programming really made the difference.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:05:01.789Z",
+      "endTime": "2024-10-31T21:05:11.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_021",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Of course. That's what good management is about - recognizing when someone needs additional support and providing it. You're a valuable member of this team, Jack, and I'm glad we were able to work through this together.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:05:12.456Z",
+      "endTime": "2024-10-31T21:05:25.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_022",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "I really appreciate that. I'm looking forward to the next challenge, and I'll remember these lessons about balancing research with implementation and involving the team early.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:05:27.123Z",
+      "endTime": "2024-10-31T21:05:37.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_023",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "text": "Excellent. Well, I think we can go back to our regular weekly cadence now that you're back on solid ground. Great work this month, Jack. Enjoy your Halloween!",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:05:38.789Z",
+      "endTime": "2024-10-31T21:05:48.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/transcripts/transcript_001/entries/entry_024",
+      "participant": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "text": "Thanks Sarah, you too! And thanks again for everything this month.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-31T21:05:49.456Z",
+      "endTime": "2024-10-31T21:05:54.789Z"
+    }
+  ],
+  "participants": [
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_sarah_chen",
+      "signedInUser": {
+        "user": "users/sarah.chen@company.com",
+        "displayName": "Sarah Chen"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-1on1-sarah-jack-weekly-oct31/participants/participant_jack_thompson",
+      "signedInUser": {
+        "user": "users/jack@company.com",
+        "displayName": "Jack Thompson"
+      }
+    }
+  ]
+}
