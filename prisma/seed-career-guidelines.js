@@ -11,17 +11,12 @@ const prisma = new PrismaClient()
 
 /**
  * Parse the pre-generated guidelines text file into structured data
- * This is the JavaScript version of lib/career-guidelines-parser.ts
+ * Uses a robust two-pass algorithm that is resilient to level ordering
+ * 
+ * Pass 1: Parse all content into intermediate data structure
+ * Pass 2: Link levels and build final guidelines array with nextLevelExpectations
  */
 function parseCareerGuidelines(content) {
-  const guidelines = []
-  const lines = content.split('\n')
-  
-  let currentRole = ''
-  let currentLevel = ''
-  let currentContent = []
-  let isCollecting = false
-  
   // Role mappings to match our constants
   const roleMap = {
     'Software Engineering': 'engineering',
@@ -41,6 +36,15 @@ function parseCareerGuidelines(content) {
     'Sr. Manager': 'senior_manager',
     'Director': 'director'
   }
+
+  // PASS 1: Parse all content into intermediate structure
+  const parsedContent = new Map() // Map<role, Map<level, content>>
+  const lines = content.split('\n')
+  
+  let currentRole = ''
+  let currentLevel = ''
+  let currentContent = []
+  let isCollecting = false
   
   // Parse the content line by line
   for (let i = 0; i < lines.length; i++) {
@@ -51,7 +55,7 @@ function parseCareerGuidelines(content) {
     if (roleMatch) {
       // Save previous content if exists
       if (currentRole && currentLevel && currentContent.length > 0) {
-        processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+        saveParsedContent(parsedContent, currentRole, currentLevel, currentContent.join('\n'))
       }
       
       currentRole = roleMap[roleMatch[1]] || roleMatch[1].toLowerCase()
@@ -66,7 +70,7 @@ function parseCareerGuidelines(content) {
     if (levelMatch) {
       // Save previous content if exists
       if (currentRole && currentLevel && currentContent.length > 0) {
-        processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+        saveParsedContent(parsedContent, currentRole, currentLevel, currentContent.join('\n'))
       }
       
       currentLevel = levelMap[levelMatch[1]] || levelMatch[1].toLowerCase()
@@ -81,7 +85,7 @@ function parseCareerGuidelines(content) {
       if (line.trim() === '---') {
         // Save current content and reset
         if (currentContent.length > 0) {
-          processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+          saveParsedContent(parsedContent, currentRole, currentLevel, currentContent.join('\n'))
         }
         currentRole = ''
         currentLevel = ''
@@ -96,50 +100,50 @@ function parseCareerGuidelines(content) {
   
   // Don't forget the last section
   if (currentRole && currentLevel && currentContent.length > 0) {
-    processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+    saveParsedContent(parsedContent, currentRole, currentLevel, currentContent.join('\n'))
+  }
+
+  // PASS 2: Link levels and build final guidelines array
+  const guidelines = []
+  
+  for (const [role, levelMap] of parsedContent) {
+    for (const [level, content] of levelMap) {
+      const formattedContent = content
+        .trim()
+        .replace(/\*\*\*/g, '') // Remove bold+italic markers
+        .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize spacing
+
+      // Find the next level's content for nextLevelExpectations
+      const nextLevel = getNextLevel(level)
+      let nextLevelExpectations = ''
+      
+      if (levelMap.has(nextLevel)) {
+        nextLevelExpectations = levelMap.get(nextLevel)
+          .trim()
+          .replace(/\*\*\*/g, '') // Remove bold+italic markers
+          .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize spacing
+      }
+
+      guidelines.push({
+        role,
+        level,
+        currentLevelPlan: formattedContent,
+        nextLevelExpectations
+      })
+    }
   }
   
   return guidelines
 }
 
 /**
- * Process level content and add to guidelines array
+ * Save parsed content to intermediate data structure
  */
-function processLevelContent(guidelines, role, level, content) {
-  // Format the content nicely
-  const formattedContent = content
-    .trim()
-    .replace(/\*\*\*/g, '') // Remove bold+italic markers
-    .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize spacing
-  
-  // For current level, we use the content as-is
-  // For next level expectations, we need to find the next level
-  const nextLevel = getNextLevel(level)
-  
-  // Check if we already have this role in guidelines
-  const existingIndex = guidelines.findIndex(g => g.role === role && g.level === level)
-  
-  if (existingIndex >= 0) {
-    // Update existing entry
-    guidelines[existingIndex].currentLevelPlan = formattedContent
-  } else {
-    // Create new entry
-    guidelines.push({
-      role,
-      level,
-      currentLevelPlan: formattedContent,
-      nextLevelExpectations: '' // Will be filled when we process the next level
-    })
+function saveParsedContent(parsedContent, role, level, content) {
+  if (!parsedContent.has(role)) {
+    parsedContent.set(role, new Map())
   }
-  
-  // Also update the previous level's nextLevelExpectations
-  if (level !== 'junior') {
-    const prevLevel = getPreviousLevel(level)
-    const prevIndex = guidelines.findIndex(g => g.role === role && g.level === prevLevel)
-    if (prevIndex >= 0) {
-      guidelines[prevIndex].nextLevelExpectations = formattedContent
-    }
-  }
+  parsedContent.get(role).set(level, content)
 }
 
 /**
