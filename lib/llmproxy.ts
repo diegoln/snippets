@@ -36,8 +36,12 @@ export class LLMProxyClient {
     this.model = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
     this.geminiApiKey = process.env.GEMINI_API_KEY
     
-    // Allow tests and build processes to run without API key
-    if (!this.geminiApiKey && process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
+    // During build time (Next.js page collection), skip API key validation
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                       (typeof window === 'undefined' && !this.geminiApiKey && process.env.NODE_ENV === 'production')
+    
+    // Allow tests, build processes, and production builds to run without API key
+    if (!this.geminiApiKey && !isBuildTime && process.env.NODE_ENV !== 'test' && !process.env.SKIP_ENV_VALIDATION) {
       console.error('\n' + '='.repeat(80))
       console.error('❌ GEMINI API KEY REQUIRED AT STARTUP')
       console.error('Please set GEMINI_API_KEY in .env.development')
@@ -49,7 +53,7 @@ export class LLMProxyClient {
     if (this.geminiApiKey) {
       this.genAI = new GoogleGenerativeAI(this.geminiApiKey)
     } else {
-      // For tests only - will throw error if actually used
+      // For tests and build time - will throw error if actually used at runtime
       this.genAI = null as any
     }
   }
