@@ -9,6 +9,7 @@ import { llmProxy } from './llmproxy'
 import { createUserDataService } from './user-scoped-data'
 import { buildCalendarConsolidationPrompt, CalendarConsolidationPromptContext } from './consolidation-prompts/calendar-consolidation-prompt'
 import { format, getISOWeek } from 'date-fns'
+import type { IntegrationConsolidation } from '@prisma/client'
 
 export interface ConsolidationRequest {
   userId: string
@@ -150,7 +151,7 @@ export class IntegrationConsolidationService {
         processingStatus: 'completed'
       })
 
-      return consolidations.map((consolidation: any) => ({
+      return consolidations.map((consolidation: IntegrationConsolidation) => ({
         summary: consolidation.consolidatedSummary,
         keyInsights: JSON.parse(consolidation.keyInsights),
         metrics: JSON.parse(consolidation.consolidatedMetrics),
