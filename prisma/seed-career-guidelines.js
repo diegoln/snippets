@@ -9,60 +9,171 @@ const path = require('path')
 
 const prisma = new PrismaClient()
 
-async function parseCareerGuidelines(content) {
-  // Simple parser for the guidelines format
+/**
+ * Parse the pre-generated guidelines text file into structured data
+ * This is the JavaScript version of lib/career-guidelines-parser.ts
+ */
+function parseCareerGuidelines(content) {
   const guidelines = []
-  const sections = content.split(/^## /m).filter(section => section.trim())
+  const lines = content.split('\n')
   
-  for (const section of sections) {
-    const lines = section.trim().split('\n')
-    const header = lines[0]
+  let currentRole = ''
+  let currentLevel = ''
+  let currentContent = []
+  let isCollecting = false
+  
+  // Role mappings to match our constants
+  const roleMap = {
+    'Software Engineering': 'engineering',
+    'Product Management': 'product',
+    'Design': 'design',
+    'Data': 'data'
+  }
+  
+  // Level mappings to match our constants
+  const levelMap = {
+    'Junior': 'junior',
+    'Mid-Level': 'mid',
+    'Senior': 'senior',
+    'Staff': 'staff',
+    'Principal': 'principal',
+    'Manager': 'manager',
+    'Sr. Manager': 'senior_manager',
+    'Director': 'director'
+  }
+  
+  // Parse the content line by line
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
     
-    // Extract role and level from header like "Engineering - Junior"
-    const match = header.match(/^(.+?)\s*-\s*(.+?)$/)
-    if (!match) continue
-    
-    const [, role, level] = match
-    const roleNormalized = role.toLowerCase().trim()
-    const levelNormalized = level.toLowerCase().replace(/\s+/g, '-').replace('senior-manager', 'senior_manager').trim()
-    
-    // Find current and next level sections
-    let currentLevelPlan = ''
-    let nextLevelExpectations = ''
-    let currentSection = null
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i]
-      
-      if (line.startsWith('### Current Level:') || line.startsWith('### Current Level Expectations:')) {
-        currentSection = 'current'
-        continue
-      } else if (line.startsWith('### Next Level:') || line.startsWith('### Next Level Expectations:')) {
-        currentSection = 'next'
-        continue
-      } else if (line.startsWith('###')) {
-        currentSection = null
-        continue
+    // Check for role header (### **Role Name**)
+    const roleMatch = line.match(/^###\s+\*\*(.+?)\*\*/)
+    if (roleMatch) {
+      // Save previous content if exists
+      if (currentRole && currentLevel && currentContent.length > 0) {
+        processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
       }
       
-      if (currentSection === 'current') {
-        currentLevelPlan += line + '\n'
-      } else if (currentSection === 'next') {
-        nextLevelExpectations += line + '\n'
-      }
+      currentRole = roleMap[roleMatch[1]] || roleMatch[1].toLowerCase()
+      currentLevel = ''
+      currentContent = []
+      isCollecting = false
+      continue
     }
     
-    if (currentLevelPlan.trim() && nextLevelExpectations.trim()) {
-      guidelines.push({
-        role: roleNormalized,
-        level: levelNormalized,
-        currentLevelPlan: currentLevelPlan.trim(),
-        nextLevelExpectations: nextLevelExpectations.trim()
-      })
+    // Check for level header (#### **Level Name**)
+    const levelMatch = line.match(/^####\s+\*\*(.+?)\*\*/)
+    if (levelMatch) {
+      // Save previous content if exists
+      if (currentRole && currentLevel && currentContent.length > 0) {
+        processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+      }
+      
+      currentLevel = levelMap[levelMatch[1]] || levelMatch[1].toLowerCase()
+      currentContent = []
+      isCollecting = true
+      continue
+    }
+    
+    // Collect content for current level
+    if (isCollecting && currentRole && currentLevel) {
+      // Skip the separator line
+      if (line.trim() === '---') {
+        // Save current content and reset
+        if (currentContent.length > 0) {
+          processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+        }
+        currentRole = ''
+        currentLevel = ''
+        currentContent = []
+        isCollecting = false
+        continue
+      }
+      
+      currentContent.push(line)
     }
   }
   
+  // Don't forget the last section
+  if (currentRole && currentLevel && currentContent.length > 0) {
+    processLevelContent(guidelines, currentRole, currentLevel, currentContent.join('\n'))
+  }
+  
   return guidelines
+}
+
+/**
+ * Process level content and add to guidelines array
+ */
+function processLevelContent(guidelines, role, level, content) {
+  // Format the content nicely
+  const formattedContent = content
+    .trim()
+    .replace(/\*\*\*/g, '') // Remove bold+italic markers
+    .replace(/\n\s*\n\s*\n/g, '\n\n') // Normalize spacing
+  
+  // For current level, we use the content as-is
+  // For next level expectations, we need to find the next level
+  const nextLevel = getNextLevel(level)
+  
+  // Check if we already have this role in guidelines
+  const existingIndex = guidelines.findIndex(g => g.role === role && g.level === level)
+  
+  if (existingIndex >= 0) {
+    // Update existing entry
+    guidelines[existingIndex].currentLevelPlan = formattedContent
+  } else {
+    // Create new entry
+    guidelines.push({
+      role,
+      level,
+      currentLevelPlan: formattedContent,
+      nextLevelExpectations: '' // Will be filled when we process the next level
+    })
+  }
+  
+  // Also update the previous level's nextLevelExpectations
+  if (level !== 'junior') {
+    const prevLevel = getPreviousLevel(level)
+    const prevIndex = guidelines.findIndex(g => g.role === role && g.level === prevLevel)
+    if (prevIndex >= 0) {
+      guidelines[prevIndex].nextLevelExpectations = formattedContent
+    }
+  }
+}
+
+/**
+ * Get the next seniority level
+ */
+function getNextLevel(currentLevel) {
+  const progression = {
+    'junior': 'mid',
+    'mid': 'senior',
+    'senior': 'staff',
+    'staff': 'principal',
+    'principal': 'principal', // No next level
+    'manager': 'senior_manager',
+    'senior_manager': 'director',
+    'director': 'director' // No next level
+  }
+  
+  return progression[currentLevel] || currentLevel
+}
+
+/**
+ * Get the previous seniority level
+ */
+function getPreviousLevel(currentLevel) {
+  const progression = {
+    'mid': 'junior',
+    'senior': 'mid',
+    'staff': 'senior',
+    'principal': 'staff',
+    'senior_manager': 'manager',
+    'director': 'senior_manager'
+  }
+  
+  return progression[currentLevel] || currentLevel
 }
 
 async function seedCareerGuidelines() {

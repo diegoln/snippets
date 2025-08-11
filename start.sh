@@ -19,7 +19,8 @@ node prisma/seed-career-guidelines.js
 if [ $? -eq 0 ]; then
   echo "✅ Career guideline templates seeded successfully"
 else
-  echo "⚠️  Career guideline seeding failed, but continuing (templates may already exist)"
+  echo "❌ Career guideline seeding failed. Aborting startup."
+  exit 1
 fi
 
 # Start the custom Next.js server

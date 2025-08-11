@@ -100,7 +100,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const level = 'mid'
       
       const response = await fetch(
-        `/api/career-guidelines/template?role=${role}&level=${level}`,
+        `/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`,
         {
           headers: { 'X-Dev-User-Id': 'dev-user-123' }
         }
@@ -131,7 +131,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const role = 'design'
       const level = 'staff'
       
-      await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+      await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
         headers: { 'X-Dev-User-Id': 'dev-user-123' }
       })
 
@@ -154,7 +154,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const role = 'data'
       const level = 'principal'
       
-      await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+      await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
         headers: { 'X-Dev-User-Id': 'dev-user-123' }
       })
 
@@ -213,14 +213,14 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of standardCombinations) {
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`, {
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`, {
           headers: { 'X-Dev-User-Id': 'dev-user-123' }
         })
 
         // Each standard combo should call template API
         expect(mockFetch).toHaveBeenCalledTimes(1)
         expect(mockFetch).toHaveBeenCalledWith(
-          `/api/career-guidelines/template?role=${role}&level=${level}`,
+          `/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`,
           expect.any(Object)
         )
       }
@@ -344,7 +344,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       const level = 'senior'
 
       // 1. Try template first
-      const templateResponse = await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+      const templateResponse = await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
       expect(templateResponse.ok).toBe(false)
       expect(templateResponse.status).toBe(404)
 
@@ -515,7 +515,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of standardCombos) {
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
 
         // Each should only call template (no LLM cost)
         expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -540,7 +540,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
         const [role, level] = users[i]
         mockFetch.mockClear()
         
-        await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
         
         // Each user should use template (no rate limit concern)
         expect(mockFetch).toHaveBeenCalledTimes(1)
@@ -763,7 +763,7 @@ describe('Issue #73 Regression Tests: Template vs LLM Usage', () => {
       for (const [role, level] of expectedTemplates) {
         mockFetch.mockClear()
         
-        const response = await fetch(`/api/career-guidelines/template?role=${role}&level=${level}`)
+        const response = await fetch(`/api/career-guidelines/template?role=${encodeURIComponent(role)}&level=${encodeURIComponent(level)}`)
         expect(response.ok).toBe(true)
       }
     })
