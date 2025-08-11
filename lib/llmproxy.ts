@@ -106,7 +106,7 @@ export class LLMProxyClient {
         console.log('Prompt Length:', prompt.length, 'characters')
         console.log('-'.repeat(40))
         console.log('PROMPT:')
-        console.log(prompt.substring(0, 500) + (prompt.length > 500 ? '...[truncated]' : ''))
+        console.log(prompt)
         console.log('='.repeat(80) + '\n')
 
         const timeoutPromise = new Promise((_, reject) => {
@@ -129,7 +129,7 @@ export class LLMProxyClient {
         console.log('Tokens Used:', response.usageMetadata?.totalTokenCount || 'unknown')
         console.log('-'.repeat(40))
         console.log('RESPONSE:')
-        console.log(text?.substring(0, 500) + (text?.length > 500 ? '...[truncated]' : ''))
+        console.log(text)
         console.log('='.repeat(80) + '\n')
 
         // Check for empty response - might indicate model or content filtering issues
