@@ -49,6 +49,9 @@ Thumbs.db
 .git/
 .gitignore
 
+# Gemini Code Review
+.gemini/
+
 # Test files and coverage
 coverage/
 .nyc_output/
