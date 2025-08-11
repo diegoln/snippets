@@ -150,7 +150,7 @@ export class IntegrationConsolidationService {
         processingStatus: 'completed'
       })
 
-      return consolidations.map(consolidation => ({
+      return consolidations.map((consolidation: any) => ({
         summary: consolidation.consolidatedSummary,
         keyInsights: JSON.parse(consolidation.keyInsights),
         metrics: JSON.parse(consolidation.consolidatedMetrics),

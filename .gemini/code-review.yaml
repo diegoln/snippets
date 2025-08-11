@@ -1,0 +1,97 @@
+# Gemini Code Assist Configuration for Code Reviews
+# This configuration customizes how Gemini reviews pull requests
+
+review:
+  # Enable automatic reviews on PR creation/update
+  auto_review: true
+  
+  # Review focus areas (matching previous Claude configuration)
+  focus_areas:
+    - code_quality
+    - best_practices
+    - potential_bugs
+    - performance
+    - security
+    - test_coverage
+  
+  # Severity levels to report
+  severity_levels:
+    - critical
+    - high
+    - medium
+    - low
+  
+  # Custom review instructions
+  custom_prompt: |
+    Please review this pull request and provide feedback on:
+    - Code quality and best practices
+    - Potential bugs or issues
+    - Performance considerations
+    - Security concerns
+    - Test coverage
+    
+    Be constructive and helpful in your feedback.
+    Focus on TypeScript/JavaScript best practices, React patterns, and Next.js conventions.
+    Pay special attention to:
+    - Database query optimization
+    - Authentication and authorization logic
+    - API endpoint security
+    - React component performance
+    - Proper error handling
+  
+  # File patterns to review
+  include_patterns:
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/api/**/*"
+  
+  # File patterns to exclude from review
+  exclude_patterns:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.next/**"
+    - "**/generated/**"
+    - "package-lock.json"
+    - "yarn.lock"
+
+# Summary configuration
+summary:
+  # Enable automatic PR summaries
+  auto_summary: true
+  
+  # Summary template
+  template: |
+    ## Pull Request Summary
+    
+    ### Changes Overview
+    {changes_overview}
+    
+    ### Key Modifications
+    {key_modifications}
+    
+    ### Impact Analysis
+    {impact_analysis}
+    
+    ### Testing Recommendations
+    {testing_recommendations}
+
+# Response configuration
+response:
+  # Language for responses
+  language: "en"
+  
+  # Response style
+  style: "professional"
+  
+  # Include code suggestions
+  include_suggestions: true
+  
+  # Group feedback by file
+  group_by_file: true
