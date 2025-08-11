@@ -4,24 +4,44 @@
 
 AdvanceWeekly is a Next.js application that helps professionals track their Friday Reflections and generate AI-powered Career Check-Ins. The system combines manual reflection creation with automated data collection from third-party tools, processing everything through LLM analysis to provide meaningful career insights.
 
-## Development Server Architecture
+## Multi-Environment Architecture
+
+### Environment Overview
+
+AdvanceWeekly supports three distinct environments designed for different stages of development and deployment:
+
+**Development Server**: Local development environment for active coding and testing
+**Staging Environment**: Production-like environment for realistic testing with dev conveniences
+**Production Environment**: Live application serving real users
 
 ### What is the Dev Server?
 
-The **development server** is the cornerstone of AdvanceWeekly's development workflow, running locally on `http://localhost:3000` via `npm run dev`. It provides a complete working environment that mirrors production functionality while using simplified authentication and local data storage.
+The **development server** runs locally on `http://localhost:3000` via `npm run dev`. It provides a complete working environment with simplified authentication and local data storage for rapid development.
 
-### Dev vs Production Environment Matrix
+### What is the Staging Environment?
 
-| Feature | Development Server | Production |
-|---------|-------------------|------------|
-| **Port** | 3000 (configurable) | Cloud Run managed |
-| **Database** | SQLite (dev.db) | PostgreSQL (Cloud SQL) |
-| **Authentication** | Mock users (localStorage) | Google OAuth (NextAuth) |
-| **Build** | Development (unoptimized) | Production (optimized) |
-| **Errors** | Detailed with stack traces | User-friendly messages |
-| **Integrations** | Mock data / Disabled | Live OAuth connections |
-| **LLM Processing** | Local model (Ollama) | OpenAI API |
-| **Session Storage** | localStorage | Database sessions |
+The **staging environment** is accessible at `https://advanceweekly.io/staging` and combines production infrastructure with development conveniences:
+- Uses production Cloud SQL database with isolated staging data
+- Provides mock authentication for easy user switching
+- Includes dev tools for data management and testing
+- Uses mock integration data for consistent, predictable testing
+- Full data reset capability for clean testing scenarios
+
+### Environment Matrix: Development vs Staging vs Production
+
+| Feature | Development Server | Staging Environment | Production |
+|---------|-------------------|-------------------|------------|
+| **URL** | `localhost:3000` | `advanceweekly.io/staging` | `advanceweekly.io` |
+| **Database** | SQLite (dev.db) | Cloud SQL (staging schema) | Cloud SQL (production) |
+| **Authentication** | Mock users (localStorage) | Mock users (database) | Google OAuth (NextAuth) |
+| **Build** | Development (unoptimized) | Production (optimized) | Production (optimized) |
+| **Infrastructure** | Local Node.js | Cloud Run | Cloud Run |
+| **Integrations** | Mock data (constants) | Mock data (database) | Live OAuth connections |
+| **LLM Processing** | Google Gemini API | Google Gemini API | Google Gemini API |
+| **Session Storage** | JWT (local) | JWT (staging users) | Database sessions |
+| **Dev Tools** | ✅ Available | ✅ Available | ❌ Hidden |
+| **Data Reset** | File system | Database API | Not available |
+| **User IDs** | `1`, `2`, `3` | `staging_1`, `staging_2`, `staging_3` | Real user IDs |
 
 ## System Architecture Diagram
 
@@ -277,17 +297,71 @@ class GitHubIntegration extends BaseIntegration {
 - **Secret Management**: No hardcoded credentials, all via Secret Manager
 - **HTTPS Enforcement**: TLS 1.2+ for all communications
 
+## Staging Environment Implementation
+
+### Path-Based Environment Detection
+
+The staging environment uses Next.js middleware to detect requests to `/staging` and automatically configure the appropriate environment mode:
+
+```typescript
+// middleware.ts
+export function middleware(request: NextRequest) {
+  const isStaging = request.nextUrl.pathname.startsWith('/staging')
+  const response = NextResponse.next()
+  
+  // Set environment context for downstream components
+  response.headers.set('x-environment-mode', 
+    isStaging ? 'staging' : 'production')
+  
+  // Rewrite /staging/path to /path for internal routing
+  if (isStaging) {
+    const internalPath = request.nextUrl.pathname.replace(/^\/staging/, '') || '/'
+    url.pathname = internalPath
+    return NextResponse.rewrite(url)
+  }
+  
+  return response
+}
+```
+
+### Environment-Aware Components
+
+All components use environment detection utilities to adapt behavior:
+
+```typescript
+// lib/environment.ts
+export function getEnvironmentMode(): 'development' | 'staging' | 'production'
+export function shouldUseMockAuth(): boolean
+export function shouldUseMockIntegrations(): boolean
+export function shouldShowDevTools(): boolean
+```
+
+### Staging Data Management
+
+**User Isolation**: Staging users have `staging_` ID prefixes to separate from production data
+**Mock Integrations**: Same realistic mock data as dev, but stored in Cloud SQL database
+**Dev Tools**: Full development panel available with staging-specific reset functionality
+**Data Reset API**: `/api/staging/reset` endpoint for complete staging data reinitalization
+
+### Deployment Integration
+
+Single deployment serves both production and staging:
+- Same Docker image and Cloud Run instance
+- Runtime environment detection based on request path
+- No additional infrastructure or deployment costs
+- Staging data initialized automatically after deployment
+
 ## Technology Stack Summary
 
 **Frontend Framework**: Next.js 14 with App Router
 **Language**: TypeScript throughout
 **Styling**: Tailwind CSS with custom design system
-**Authentication**: NextAuth.js with Google OAuth
-**Database**: PostgreSQL (prod) / SQLite (dev) via Prisma ORM
+**Authentication**: NextAuth.js with Google OAuth (prod) / Mock users (dev/staging)
+**Database**: PostgreSQL (prod/staging) / SQLite (dev) via Prisma ORM
 **Cloud Platform**: Google Cloud Platform
 **Container Runtime**: Cloud Run with Docker
-**AI Integration**: OpenAI API (prod) / Local LLM (dev) via custom proxy
-**External APIs**: Google Calendar, Todoist, GitHub
+**AI Integration**: Google Gemini API across all environments
+**External APIs**: Google Calendar, Todoist, GitHub (prod) / Mock data (dev/staging)
 **Infrastructure**: Terraform for GCP resource management
 **CI/CD**: Cloud Build with automated deployments
 **Monitoring**: Built-in GCP logging and metrics

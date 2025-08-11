@@ -113,3 +113,15 @@ temp/
 # OAuth configuration backups
 .env.local.backup
 .oauth-config.local.json
+
+# Staging environment notes
+# The following files are intentionally tracked and deployed for staging:
+# - lib/mock-users.ts (used by both dev and staging)
+# - lib/integration-mock-data.ts (used by both dev and staging)
+# - lib/environment.ts (environment detection for all modes)
+# - scripts/init-staging-data.ts (staging initialization)
+# - middleware.ts (path-based routing)
+# - components/DevTools.tsx (dev tools in staging)
+
+# Don't ignore staging-specific build artifacts that might be useful
+# (Currently none, but documenting for future reference)

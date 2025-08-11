@@ -5,6 +5,7 @@ import { createSafeAdapter } from '../../../../lib/auth-adapter'
 import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
+import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
 
 
 // Conditional logging utility
@@ -47,30 +48,34 @@ const handleSignIn = async (params: any) => {
 const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }) => {
   authLog('redirect callback:', { url, baseUrl });
   
-  // Use NEXTAUTH_URL as the authoritative base URL in production
-  const correctBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+  // Get environment-appropriate base URL
+  const correctBaseUrl = getBaseUrl();
   
-  // Handle signout redirects - always redirect to the home page
+  // Handle signout redirects - always redirect to the appropriate home page
   if (url === `${correctBaseUrl}/api/auth/signout` || url.includes('signout')) {
     authLog('Signout redirect detected, redirecting to home page');
     return correctBaseUrl;
   }
   
-  // Custom redirect logic for onboarding flow
-  if (process.env.NODE_ENV === 'production') {
-    // If user is being redirected to a specific URL and it's within our domain, allow it
+  const envMode = getEnvironmentMode();
+  
+  // Custom redirect logic based on environment
+  if (envMode === 'production') {
+    // Production OAuth flow - redirect to production app
     if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
       return url
     }
-    
-    // For production OAuth sign-ins, redirect existing users to dashboard, new users to onboarding
-    // Note: This is a simplified approach - in a real app you'd check user profile completion
-    // For now, let returning users go to the main app instead of forcing onboarding
     return correctBaseUrl
+  } else if (envMode === 'staging') {
+    // Staging flow - redirect to staging area
+    if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
+      return url
+    }
+    return correctBaseUrl
+  } else {
+    // Development flow - use existing logic
+    return url.startsWith(baseUrl) ? url : baseUrl
   }
-  
-  // Development uses our custom flow
-  return url.startsWith(baseUrl) ? url : baseUrl
 }
 
 const handleSession = async (params: any) => {
@@ -107,8 +112,8 @@ const handleJWT = async (params: any) => {
   return token
 }
 
-// Use mock credentials provider in development, real Google OAuth in production  
-const providers = process.env.NODE_ENV === 'development' 
+// Use mock credentials provider in dev-like environments, real Google OAuth in production  
+const providers = shouldUseMockAuth()
   ? [
       CredentialsProvider({
         name: 'credentials',
@@ -188,8 +193,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    // Use JWT sessions in development or if no adapter available
-    strategy: (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database',
+    // Use JWT sessions in dev-like environments or if no adapter available
+    strategy: (shouldUseMockAuth() || !safeAdapter) ? 'jwt' : 'database',
   },
   events: {
     async signIn(message) {
@@ -209,7 +214,7 @@ const handler = NextAuth({
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  pages: process.env.NODE_ENV === 'development' ? {
+  pages: shouldUseMockAuth() ? {
     signIn: '/mock-signin',
     newUser: '/onboarding-wizard',
   } : {

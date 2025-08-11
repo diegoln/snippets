@@ -86,7 +86,8 @@ terraform/
 .terraform/
 
 # Scripts (specific ones not needed for build)
-scripts/init-*.sh
+scripts/init-dev-data.ts  # Dev-only, but keep init-staging-data.ts
+scripts/init-*.sh  # Shell scripts not needed
 scripts/oauth-*.sh
 scripts/setup-*.sh
 scripts/update-*.sh
@@ -95,6 +96,16 @@ scripts/deep-*.sh
 deploy.sh
 quick-deploy.sh
 get-docker.sh
+
+# IMPORTANT: Staging files must be included for production deployment
+# The following files are needed for staging functionality:
+# ✅ lib/mock-users.ts (staging mock users)
+# ✅ lib/integration-mock-data.ts (staging mock data)
+# ✅ lib/environment.ts (environment detection)
+# ✅ scripts/init-staging-data.ts (staging reset functionality)
+# ✅ middleware.ts (/staging path handling)
+# ✅ components/DevTools.tsx (staging dev panel)
+# ✅ app/api/staging/ (staging APIs)
 
 # AWS Lambda (not needed for GCP deployment)
 aws-lambda/
