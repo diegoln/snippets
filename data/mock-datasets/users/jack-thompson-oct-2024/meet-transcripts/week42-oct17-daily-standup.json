@@ -1,0 +1,247 @@
+{
+  "conferenceRecord": {
+    "name": "conferenceRecords/meet-standup-identity-platform-oct17",
+    "startTime": "2024-10-17T16:00:15.123Z",
+    "endTime": "2024-10-17T16:18:42.456Z",
+    "space": {
+      "name": "spaces/abc-defg-hij",
+      "meetingUri": "https://meet.google.com/abc-defg-hij"
+    }
+  },
+  "transcript": {
+    "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001",
+    "state": "ENDED",
+    "startTime": "2024-10-17T16:00:15.123Z",
+    "endTime": "2024-10-17T16:18:42.456Z"
+  },
+  "transcriptEntries": [
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_001",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Alright everyone, let's get started. Alex, you want to kick us off?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:00:17.456Z",
+      "endTime": "2024-10-17T16:00:22.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_002",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_alex_kumar",
+      "text": "Sure. Yesterday I finished the user profile validation endpoints and started working on the rate limiting middleware. Today I'm planning to finish the rate limiting and get it integrated with the API gateway. No blockers.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:00:24.123Z",
+      "endTime": "2024-10-17T16:00:38.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_003",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Great, sounds like good progress. Lisa?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:00:39.789Z",
+      "endTime": "2024-10-17T16:00:43.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_004",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_lisa_park",
+      "text": "I've been working on the OAuth integration with our third-party providers. I got Google working but I'm running into some issues with the Microsoft integration. The redirect URI validation is behaving differently than expected. I might need to pair with someone on debugging this.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:00:44.456Z",
+      "endTime": "2024-10-17T16:01:01.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_005",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_mike_rodriguez",
+      "text": "I can help with that if needed. I dealt with Microsoft OAuth quirks at my previous job.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:03.123Z",
+      "endTime": "2024-10-17T16:01:09.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_006",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_lisa_park",
+      "text": "That would be awesome, thank you Mike. Should we set up some time later today?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:10.789Z",
+      "endTime": "2024-10-17T16:01:16.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_007",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_mike_rodriguez",
+      "text": "Sure, how about 2 PM?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:17.456Z",
+      "endTime": "2024-10-17T16:01:20.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_008",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_lisa_park",
+      "text": "Perfect. Thanks Mike.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:21.123Z",
+      "endTime": "2024-10-17T16:01:23.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_009",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Great. Tom, how about you?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:24.789Z",
+      "endTime": "2024-10-17T16:01:27.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_010",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_tom_wilson",
+      "text": "I finished the database migration scripts for the new user schema and ran them against staging. Everything looks good there. Today I'm working on updating the data access layer to handle the new fields. Should be straightforward.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:28.456Z",
+      "endTime": "2024-10-17T16:01:42.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_011",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Excellent. And Jack, how's the JWT work going?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:44.123Z",
+      "endTime": "2024-10-17T16:01:48.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_012",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "text": "Um, so I've been working on the refresh token implementation. I have the basic structure in place, but I'm running into some questions about the best practices for token storage and validation. I've been researching different approaches but I'm not sure which direction to go.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:01:50.789Z",
+      "endTime": "2024-10-17T16:02:07.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_013",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "What kind of questions are coming up?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:02:08.456Z",
+      "endTime": "2024-10-17T16:02:11.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_014",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "text": "Well, like should I be storing the refresh tokens in Redis or the database? And if I store them in Redis, should I hash them first? And then there's the question of token rotation - some articles say you should rotate on every refresh, others say only rotate periodically. I'm seeing conflicting advice.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:02:13.123Z",
+      "endTime": "2024-10-17T16:02:30.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_015",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_mike_rodriguez",
+      "text": "Jack, didn't we go through some of this in our session last week? I thought we settled on Redis with hashed tokens and rotation with a grace period.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:02:32.789Z",
+      "endTime": "2024-10-17T16:02:41.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_016",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "text": "We did, but then I started reading more about it and found some security articles that suggested different approaches. I wanted to make sure we're following the most secure pattern.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:02:42.456Z",
+      "endTime": "2024-10-17T16:02:53.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_017",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "I appreciate that you want to get it right, Jack, but at some point we need to make a decision and move forward. What if you implement what we discussed with Mike and we can review it together? If we need to adjust the approach later, we can.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:02:55.123Z",
+      "endTime": "2024-10-17T16:03:08.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_018",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "text": "Yeah, that makes sense. I'll focus on implementing what we discussed. I guess I'm just worried about making the wrong architectural choice early on.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:03:10.789Z",
+      "endTime": "2024-10-17T16:03:20.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_019",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_tom_wilson",
+      "text": "Jack, we can always refactor later if we need to. Sometimes the best way to learn is to build something and see how it works in practice.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:03:21.456Z",
+      "endTime": "2024-10-17T16:03:30.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_020",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "text": "Right. Okay, I'll stop overthinking it and just build it. Thanks guys.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:03:32.123Z",
+      "endTime": "2024-10-17T16:03:38.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_021",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Great. And remember, we have our check-in this afternoon. Alright, Mike, you're up.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:03:39.789Z",
+      "endTime": "2024-10-17T16:03:46.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_022",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_mike_rodriguez",
+      "text": "I've been working on the API gateway configuration for our new endpoints. Got most of the routing rules set up and tested. Today I'll be helping Lisa with the OAuth issues and then working on the load balancing configuration. No blockers on my end.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:03:47.456Z",
+      "endTime": "2024-10-17T16:04:02.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/transcripts/transcript_001/entries/entry_023",
+      "participant": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "text": "Perfect. Alright everyone, sounds like we have a good plan for the day. Jack, see you at our check-in. Everyone else, let me know if anything comes up. Have a good day!",
+      "languageCode": "en-US",
+      "startTime": "2024-10-17T16:04:04.123Z",
+      "endTime": "2024-10-17T16:04:15.456Z"
+    }
+  ],
+  "participants": [
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_sarah_chen",
+      "signedInUser": {
+        "user": "users/sarah.chen@company.com",
+        "displayName": "Sarah Chen"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_jack_thompson",
+      "signedInUser": {
+        "user": "users/jack@company.com",
+        "displayName": "Jack Thompson"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_mike_rodriguez",
+      "signedInUser": {
+        "user": "users/mike.rodriguez@company.com",
+        "displayName": "Mike Rodriguez"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_lisa_park",
+      "signedInUser": {
+        "user": "users/lisa.park@company.com",
+        "displayName": "Lisa Park"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_tom_wilson",
+      "signedInUser": {
+        "user": "users/tom.wilson@company.com",
+        "displayName": "Tom Wilson"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-standup-identity-platform-oct17/participants/participant_alex_kumar",
+      "signedInUser": {
+        "user": "users/alex.kumar@company.com",
+        "displayName": "Alex Kumar"
+      }
+    }
+  ]
+}

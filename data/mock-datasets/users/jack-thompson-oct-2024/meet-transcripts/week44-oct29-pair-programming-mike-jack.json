@@ -1,0 +1,379 @@
+{
+  "conferenceRecord": {
+    "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29",
+    "startTime": "2024-10-29T21:00:15.456Z",
+    "endTime": "2024-10-29T22:47:32.789Z",
+    "space": {
+      "name": "spaces/pair-prog-mike-jack",
+      "meetingUri": "https://meet.google.com/pair-prog-mike-jack"
+    }
+  },
+  "transcript": {
+    "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001",
+    "state": "ENDED",
+    "startTime": "2024-10-29T21:00:15.456Z",
+    "endTime": "2024-10-29T22:47:32.789Z"
+  },
+  "transcriptEntries": [
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_001",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Alright Jack, I've got the next couple hours blocked out. Let's tackle this JWT implementation together. Can you share your screen and show me what you've got so far?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:00:18.123Z",
+      "endTime": "2024-10-29T21:00:27.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_002",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Sure, let me pull it up. Okay, so I have the basic token generation working. This function here creates the JWT with the user claims and signs it with RS256. And then I started on the refresh endpoint but I keep getting stuck on the Redis integration part.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:00:29.789Z",
+      "endTime": "2024-10-29T21:00:45.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_003",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Okay, this looks pretty good for the token generation. What specifically about the Redis part is giving you trouble?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:00:46.456Z",
+      "endTime": "2024-10-29T21:00:53.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_004",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Well, I'm not sure about the key structure. Should I hash the refresh token before storing it? And what about expiration - do I set the TTL in Redis or track it separately? And then there's the whole question of what happens if Redis is down - do I fall back to the database?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:00:55.123Z",
+      "endTime": "2024-10-29T21:01:11.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_005",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Alright, let's tackle these one at a time. For v1, let's keep it simple. Yes, hash the refresh token with SHA-256 before storing it. Use that hash as the key in Redis. For the value, just store the user ID and maybe an issued timestamp. And yes, definitely use Redis TTL for expiration - that's what it's designed for.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:01:12.789Z",
+      "endTime": "2024-10-29T21:01:31.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_006",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Okay, that makes sense. But what about the Redis failover scenario? I read that we should always have a backup plan.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:01:32.456Z",
+      "endTime": "2024-10-29T21:01:40.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_007",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Jack, that's a good consideration for production, but let's get the happy path working first. If Redis is down, users will need to log in again. That's not ideal, but it's not catastrophic. We can add database fallback in a future iteration. Right now let's focus on getting something working.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:01:42.123Z",
+      "endTime": "2024-10-29T21:01:57.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_008",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Right, okay. Focus on the working solution first. So let me start coding this up. I'll create a function to hash the refresh token...",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:01:58.789Z",
+      "endTime": "2024-10-29T21:02:07.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_009",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Good. Let's use the crypto library for that. And while you're typing that, I'll pull up the Redis connection setup. We already have a Redis client configured, so you can just import it.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:08.456Z",
+      "endTime": "2024-10-29T21:02:18.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_010",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Oh, we already have the Redis setup? I was trying to figure out the connection configuration myself. That saves a lot of time.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:20.123Z",
+      "endTime": "2024-10-29T21:02:28.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_011",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Yep, it's in the shared utils. This is why pairing is helpful - you don't have to reinvent everything. Okay, now let's write the function to store the refresh token. What parameters do you think it needs?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:29.789Z",
+      "endTime": "2024-10-29T21:02:40.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_012",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Um, the refresh token itself, the user ID, and maybe the expiration time?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:41.456Z",
+      "endTime": "2024-10-29T21:02:47.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_013",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Perfect. Let's call it storeRefreshToken. Go ahead and start typing that out.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:49.123Z",
+      "endTime": "2024-10-29T21:02:54.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_014",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Okay, so async function storeRefreshToken with refreshToken, userId, and expiresIn parameters. And then I hash the token, and store it with setex for the TTL?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:02:55.789Z",
+      "endTime": "2024-10-29T21:03:07.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_015",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Exactly. And for the value, let's store a JSON object with the userId and maybe an issuedAt timestamp. That way we have some metadata if we need it later.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:03:08.456Z",
+      "endTime": "2024-10-29T21:03:18.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_016",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Got it. This is actually pretty straightforward when we break it down like this. I was overthinking the data structure.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:03:20.123Z",
+      "endTime": "2024-10-29T21:03:28.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_017",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "That's a really common thing with auth systems. They seem super complex when you think about all the edge cases, but the core functionality is actually pretty simple. Alright, now let's write the validation function. What do you think that needs to do?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:03:29.789Z",
+      "endTime": "2024-10-29T21:03:42.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_018",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Take the refresh token, hash it, look it up in Redis, and if it exists and hasn't expired, return the user info?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:03:43.456Z",
+      "endTime": "2024-10-29T21:03:52.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_019",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Exactly. Redis will handle the expiration automatically, so if the key doesn't exist, it's either invalid or expired. Let's call it validateRefreshToken.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:03:54.123Z",
+      "endTime": "2024-10-29T21:04:03.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_020",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "This is so much clearer now. I was getting lost in all the theoretical security concerns, but the actual implementation is pretty straightforward.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:04:05.789Z",
+      "endTime": "2024-10-29T21:04:16.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_021",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "That's the thing about authentication - there are a lot of advanced patterns and edge cases you can worry about, but for most applications, the basic implementation is solid. You can always add complexity later when you actually need it.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:04:17.456Z",
+      "endTime": "2024-10-29T21:04:30.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_022",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Right. I think I was trying to solve every possible security problem from day one instead of building something that works and then improving it.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:04:32.123Z",
+      "endTime": "2024-10-29T21:04:41.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_023",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Exactly. And that's actually better engineering practice anyway. You want to validate your approach with a working system before you optimize it. Alright, now let's wire this into the refresh endpoint. Can you show me what you had started there?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:04:42.789Z",
+      "endTime": "2024-10-29T21:04:55.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_024",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Sure, let me pull up the refresh route. I had the basic Express route setup, but I wasn't sure about the flow. Should it be POST to /auth/refresh?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:04:56.456Z",
+      "endTime": "2024-10-29T21:05:05.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_025",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Yeah, that's perfect. POST to /auth/refresh, expect the refresh token in the request body, validate it, and if it's valid, generate new access and refresh tokens. Let's build that step by step.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:05:07.123Z",
+      "endTime": "2024-10-29T21:05:19.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_026",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "OK, so I extract the refresh token from req.body, call validateRefreshToken, and if that succeeds, I generate new tokens and invalidate the old refresh token?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:05:21.789Z",
+      "endTime": "2024-10-29T21:05:33.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_027",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Perfect. For v1, let's skip the rotation part and just keep the same refresh token valid. We can add rotation later. The important thing is getting the core flow working.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:05:34.456Z",
+      "endTime": "2024-10-29T21:05:45.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_028",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "That makes it a lot simpler. I was getting stuck on the token rotation logic. Let me implement this version first.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:05:47.123Z",
+      "endTime": "2024-10-29T21:05:55.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_029",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Great approach. Let me know if you get stuck on any of the implementation details. I'm here to help.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:05:56.789Z",
+      "endTime": "2024-10-29T21:06:03.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_030",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "This is really helpful, Mike. I feel like I understand the architecture so much better now that we're building it together. I was overthinking a lot of this.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:06:04.456Z",
+      "endTime": "2024-10-29T21:06:15.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_031",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "That's really common, especially with security-related code. There's so much information out there about edge cases and advanced patterns that it's easy to get overwhelmed. The key is to start with something that works and then improve it based on real requirements.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:06:17.123Z",
+      "endTime": "2024-10-29T21:06:32.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_032",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Alright, I think I've got the refresh endpoint working. Should we test it?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:06:34.789Z",
+      "endTime": "2024-10-29T21:06:40.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_033",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Absolutely. Let's start the server and test the whole flow - login to get tokens, then use the refresh token to get new access tokens. That's the best way to validate that everything works together.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:06:41.456Z",
+      "endTime": "2024-10-29T21:06:53.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_034",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Great idea. Let me fire up the dev server... OK, it's running. Let me test the login endpoint first.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:06:55.123Z",
+      "endTime": "2024-10-29T21:07:03.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_035",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Perfect. And while you're testing, we should add some basic error handling to the refresh endpoint. What happens if someone sends an invalid token?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:05.789Z",
+      "endTime": "2024-10-29T21:07:14.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_036",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Good point. We should return a 401 Unauthorized if the token is invalid or expired. Let me add that... OK, login worked, I got back access and refresh tokens. Now let me try the refresh endpoint.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:15.456Z",
+      "endTime": "2024-10-29T21:07:28.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_037",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Awesome. How did it go?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:30.123Z",
+      "endTime": "2024-10-29T21:07:32.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_038",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "It worked! I got back a new access token. This is so satisfying to see it actually working end-to-end. I feel like I've been stuck in research mode for weeks.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:33.789Z",
+      "endTime": "2024-10-29T21:07:44.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_039",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "That's great! See how much progress we made in just a couple hours when we focused on building instead of researching? You've got the core JWT authentication system working now.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:45.456Z",
+      "endTime": "2024-10-29T21:07:56.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_040",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Yeah, I learned a really important lesson here about balancing research with implementation. I was so worried about making the wrong choice that I wasn't making any choices at all.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:07:58.123Z",
+      "endTime": "2024-10-29T21:08:09.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_041",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Exactly. And now that you have a working system, you can improve it incrementally based on actual requirements. Want to add some basic tests before we wrap up?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:08:11.789Z",
+      "endTime": "2024-10-29T21:08:21.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_042",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "text": "Yes, definitely. I should test the happy path and the error cases. This has been incredibly helpful, Mike. Thank you for taking the time to pair with me.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:08:22.456Z",
+      "endTime": "2024-10-29T21:08:32.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/transcripts/transcript_001/entries/entry_043",
+      "participant": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "text": "Happy to help. This is exactly the kind of collaboration that makes the whole team stronger. You clearly know your stuff, you just needed to get unstuck from analysis paralysis. Great job today.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-29T21:08:34.123Z",
+      "endTime": "2024-10-29T21:08:46.456Z"
+    }
+  ],
+  "participants": [
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_mike_rodriguez",
+      "signedInUser": {
+        "user": "users/mike.rodriguez@company.com",
+        "displayName": "Mike Rodriguez"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-pair-programming-mike-jack-oct29/participants/participant_jack_thompson",
+      "signedInUser": {
+        "user": "users/jack@company.com",
+        "displayName": "Jack Thompson"
+      }
+    }
+  ]
+}

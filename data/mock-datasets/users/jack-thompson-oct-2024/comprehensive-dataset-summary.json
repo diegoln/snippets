@@ -1,0 +1,268 @@
+{
+  "metadata": {
+    "userId": "jack@company.com",
+    "userName": "Jack Thompson",
+    "role": "Senior Software Engineer",
+    "team": "Digital Identity Platform",
+    "dateRange": {
+      "start": "2024-10-01T00:00:00Z",
+      "end": "2024-10-31T23:59:59Z"
+    },
+    "dataSource": "Google Workspace APIs (Mocked for Training)",
+    "generatedAt": "2025-08-11T20:30:00Z",
+    "narrativeArc": "Senior engineer experiencing analysis paralysis during JWT authentication project, showing realistic progression from confidence through struggle to recovery with team support",
+    "totalMeetings": 9,
+    "totalDuration": "approximately 8.5 hours of meeting time",
+    "technicalFocus": "JWT authentication, Redis integration, team collaboration patterns"
+  },
+  "characterDevelopment": {
+    "primaryCharacter": {
+      "name": "Jack Thompson",
+      "email": "jack@company.com", 
+      "role": "Senior Software Engineer",
+      "experience": "3+ years backend development",
+      "traits": ["perfectionist", "analytical", "collaborative when confident"],
+      "technicalSkills": ["Node.js/Express", "authentication systems", "database design"],
+      "challengeArea": "Analysis paralysis with complex security decisions"
+    },
+    "supportingCharacters": [
+      {
+        "name": "Sarah Chen",
+        "email": "sarah.chen@company.com",
+        "role": "Engineering Manager",
+        "function": "Supportive manager providing graduated intervention"
+      },
+      {
+        "name": "Mike Rodriguez", 
+        "email": "mike.rodriguez@company.com",
+        "role": "Senior Engineer",
+        "function": "Technical mentor with authentication expertise"
+      },
+      {
+        "name": "Alex Kumar",
+        "email": "alex.kumar@company.com", 
+        "role": "Mid-level Engineer",
+        "function": "Colleague seeking guidance on related work"
+      },
+      {
+        "name": "Lisa Park",
+        "email": "lisa.park@company.com",
+        "role": "Engineer",
+        "function": "Peer working on OAuth integration"
+      },
+      {
+        "name": "Tom Wilson",
+        "email": "tom.wilson@company.com",
+        "role": "Database Engineer", 
+        "function": "Team member handling schema changes"
+      }
+    ]
+  },
+  "weeklyProgression": {
+    "week40": {
+      "weekNumber": 40,
+      "dates": "Oct 1-4, 2024",
+      "phase": "Confident Beginning",
+      "characterState": "Optimistic and technically confident",
+      "keyBehaviors": ["Takes on challenging work", "Offers help to teammates", "Shows technical competence"],
+      "meetings": [
+        {
+          "type": "daily-standup",
+          "date": "2024-10-01",
+          "file": "meet-transcripts/week40-oct01-daily-standup.json",
+          "keyPoints": ["Confident project updates", "Team collaboration offers"]
+        },
+        {
+          "type": "1on1", 
+          "date": "2024-10-01",
+          "participants": ["Sarah Chen", "Jack Thompson"],
+          "file": "meet-transcripts/week40-oct01-1on1-sarah-jack.json",
+          "keyPoints": ["Goal setting", "Career development", "Mentoring discussion"],
+          "googleDoc": "google-docs/Meeting Notes - 1on1 Sarah & Jack - Oct 1, 2024.json"
+        }
+      ]
+    },
+    "week41": {
+      "weekNumber": 41,
+      "dates": "Oct 8-11, 2024", 
+      "phase": "Growing Complexity",
+      "characterState": "Discovering project complexity, seeking expertise",
+      "keyBehaviors": ["Deep technical research", "Asking detailed questions", "Some timeline concerns"],
+      "meetings": [
+        {
+          "type": "technical-session",
+          "date": "2024-10-08",
+          "participants": ["Jack Thompson", "Mike Rodriguez", "David Kim"],
+          "file": "meet-transcripts/week41-oct08-jwt-deep-dive.json",
+          "duration": "88 minutes",
+          "keyPoints": ["JWT refresh token complexity", "Redis architecture decisions", "Timeline reality check"]
+        }
+      ]
+    },
+    "week42": {
+      "weekNumber": 42,
+      "dates": "Oct 15-18, 2024",
+      "phase": "Analysis Paralysis Emergence", 
+      "characterState": "Increasing uncertainty, perfectionist concerns",
+      "keyBehaviors": ["Excessive research", "Implementation hesitation", "Growing anxiety"],
+      "meetings": [
+        {
+          "type": "1on1",
+          "date": "2024-10-15", 
+          "participants": ["Sarah Chen", "Jack Thompson"],
+          "file": "meet-transcripts/week42-oct15-1on1-sarah-jack.json",
+          "keyPoints": ["Analysis paralysis recognition", "Timeline concerns", "Increased support planning"]
+        },
+        {
+          "type": "daily-standup",
+          "date": "2024-10-17",
+          "file": "meet-transcripts/week42-oct17-daily-standup.json", 
+          "keyPoints": ["Uncertain updates", "Team encouragement", "Manager guidance"]
+        }
+      ]
+    },
+    "week43": {
+      "weekNumber": 43,
+      "dates": "Oct 21-25, 2024",
+      "phase": "Crisis Peak",
+      "characterState": "Analysis paralysis at peak, withdrawing from collaboration",
+      "keyBehaviors": ["Declining to help others", "Defensive explanations", "Research over implementation"],
+      "meetings": [
+        {
+          "type": "1on1",
+          "date": "2024-10-22",
+          "participants": ["Sarah Chen", "Jack Thompson"], 
+          "file": "meet-transcripts/week43-oct22-1on1-sarah-jack.json",
+          "keyPoints": ["Intervention planning", "Collaboration issues", "Support structure design"]
+        },
+        {
+          "type": "daily-standup",
+          "date": "2024-10-24",
+          "file": "meet-transcripts/week43-oct24-daily-standup.json",
+          "keyPoints": ["Rambling research updates", "Team offers of help", "Manager direction"]
+        }
+      ]
+    },
+    "week44": {
+      "weekNumber": 44,
+      "dates": "Oct 28-31, 2024",
+      "phase": "Recovery Through Collaboration",
+      "characterState": "Breakthrough via pair programming, renewed confidence",
+      "keyBehaviors": ["Collaborative implementation", "Pragmatic decisions", "Knowledge sharing return"],
+      "meetings": [
+        {
+          "type": "pair-programming",
+          "date": "2024-10-29",
+          "participants": ["Mike Rodriguez", "Jack Thompson"],
+          "file": "meet-transcripts/week44-oct29-pair-programming-mike-jack.json",
+          "duration": "107 minutes",
+          "keyPoints": ["Hands-on implementation", "Architecture decisions", "Working system delivery"],
+          "googleDoc": "google-docs/Meeting Notes - Pair Programming Mike & Jack - Oct 29, 2024.json"
+        },
+        {
+          "type": "1on1",
+          "date": "2024-10-31", 
+          "participants": ["Sarah Chen", "Jack Thompson"],
+          "file": "meet-transcripts/week44-oct31-1on1-sarah-jack.json",
+          "keyPoints": ["Recovery celebration", "Lessons learned", "Future confidence"]
+        }
+      ]
+    }
+  },
+  "technicalContext": {
+    "project": {
+      "name": "JWT Authentication System",
+      "description": "Implement secure token-based authentication for identity platform",
+      "complexity": "13 story points",
+      "timeline": "4-week sprint",
+      "technologies": ["Node.js", "Express", "Redis", "JWT", "SHA-256"]
+    },
+    "challenges": [
+      "Refresh token rotation patterns",
+      "Redis vs database storage decisions", 
+      "Concurrent request handling",
+      "Security best practices implementation",
+      "Token expiration and cleanup"
+    ],
+    "outcome": "Working v1 implementation with simplified scope, foundation for future enhancements"
+  },
+  "meetingPatterns": {
+    "dailyStandups": {
+      "frequency": "Daily during workweek",
+      "duration": "15-20 minutes",
+      "format": "Round-robin updates",
+      "progression": "Confident → Uncertain → Research-focused → Collaborative"
+    },
+    "oneOnOnes": { 
+      "frequency": "Weekly, then increased to daily during crisis",
+      "duration": "25-40 minutes", 
+      "format": "Manager-direct report discussion",
+      "progression": "Goal-setting → Concern → Intervention → Recovery"
+    },
+    "technicalSessions": {
+      "frequency": "As needed for complex problems",
+      "duration": "60-120 minutes",
+      "format": "Collaborative problem-solving",
+      "purpose": "Deep-dive learning and breakthrough moments"
+    }
+  },
+  "keyInsights": {
+    "characterDevelopment": [
+      "Analysis paralysis common in perfectionist senior engineers",
+      "Stress manifests as withdrawal from team collaboration",
+      "Recovery requires structured support and practical focus",
+      "Pair programming effective for breaking through blockers"
+    ],
+    "managementApproaches": [
+      "Early recognition of performance issues",
+      "Graduated support from check-ins to intensive intervention", 
+      "Balancing autonomy with directive guidance when needed",
+      "Creating safe environment for vulnerability and learning"
+    ],
+    "technicalLearnings": [
+      "Complex security systems benefit from iterative implementation",
+      "Research must be balanced with practical progress",
+      "Collaborative architecture decisions more effective than solo work",
+      "Working solution first, optimization second"
+    ]
+  },
+  "fileInventory": {
+    "meetTranscripts": [
+      "meet-transcripts/week40-oct01-daily-standup.json",
+      "meet-transcripts/week40-oct01-1on1-sarah-jack.json", 
+      "meet-transcripts/week41-oct08-jwt-deep-dive.json",
+      "meet-transcripts/week42-oct15-1on1-sarah-jack.json",
+      "meet-transcripts/week42-oct17-daily-standup.json",
+      "meet-transcripts/week43-oct22-1on1-sarah-jack.json", 
+      "meet-transcripts/week43-oct24-daily-standup.json",
+      "meet-transcripts/week44-oct29-pair-programming-mike-jack.json",
+      "meet-transcripts/week44-oct31-1on1-sarah-jack.json"
+    ],
+    "googleDocs": [
+      "google-docs/Meeting Notes - 1on1 Sarah & Jack - Oct 1, 2024.json",
+      "google-docs/Meeting Notes - Pair Programming Mike & Jack - Oct 29, 2024.json"
+    ],
+    "calendarEvents": [
+      "calendar-events/jack-raw-google-calendar-events.json"
+    ],
+    "documentation": [
+      "README.md",
+      "comprehensive-dataset-summary.json"
+    ]
+  },
+  "usageGuidelines": {
+    "trainingPurpose": "AI consolidation systems for workplace meeting analysis",
+    "keyFeatures": [
+      "Authentic workplace conversation patterns",
+      "Realistic performance management scenarios", 
+      "Technical collaboration and mentoring examples",
+      "Professional crisis and recovery patterns"
+    ],
+    "applicationAreas": [
+      "Employee performance trend analysis",
+      "Early intervention system training",
+      "Management coaching and support pattern recognition",
+      "Technical collaboration effectiveness analysis"
+    ]
+  }
+}
