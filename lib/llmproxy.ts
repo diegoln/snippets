@@ -33,7 +33,7 @@ export class LLMProxyClient {
   private geminiApiKey?: string
 
   constructor() {
-    this.model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+    this.model = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
     this.geminiApiKey = process.env.GEMINI_API_KEY
     
     // Allow tests and build processes to run without API key
