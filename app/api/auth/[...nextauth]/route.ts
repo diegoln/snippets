@@ -6,6 +6,7 @@ import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
+import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 
 
 // Conditional logging utility
@@ -120,73 +121,71 @@ const handleJWT = async (params: any) => {
   return token
 }
 
-// Use mock credentials provider in dev-like environments, real Google OAuth in production  
-const providers = shouldUseMockAuth()
-  ? [
-      CredentialsProvider({
-        name: 'credentials',
-        credentials: {
-          userId: { 
-            label: 'User ID', 
-            type: 'text',
-            placeholder: 'Enter user ID' 
-          }
-        },
-        async authorize(credentials, req) {
-          authLog('AUTHORIZE FUNCTION CALLED!');
-          authLog('Credentials received:', credentials);
-          authLog('Request object:', req ? 'Present' : 'Missing');
-          
-          if (!credentials?.userId) {
-            authLog('❌ No userId provided in credentials');
-            return null
-          }
-          
-          const user = getMockUserById(credentials.userId)
-          if (!user) {
-            authLog('❌ User not found for ID:', credentials.userId);
-            return null
-          }
-          
-          authLog('✅ User found, authenticating:', user.name);
-          
-          // Return user object for JWT
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.image
-          }
-        },
-      })
-    ]
-  : [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        authorization: {
-          params: {
-            scope: [
-              "openid",
-              "email", 
-              "profile",
-              // Calendar API - for event metadata
-              "https://www.googleapis.com/auth/calendar.readonly",
-              // Meet API - for transcripts and recordings
-              "https://www.googleapis.com/auth/meetings.space.readonly",
-              // Drive API - for accessing meeting artifacts stored in Drive
-              "https://www.googleapis.com/auth/drive.readonly",
-              // Docs API - for accessing meeting notes and AI-generated summaries
-              "https://www.googleapis.com/auth/documents.readonly"
-            ].join(" "),
-            // Request offline access for refresh tokens (batch processing)
-            access_type: "offline",
-            // Force consent screen to ensure we get refresh token
-            prompt: "consent"
-          }
-        }
-      })
-    ]
+// Include both providers - routing will be handled by custom signin page
+const providers = [
+  // Mock credentials provider for development and staging
+  CredentialsProvider({
+    id: 'mock-auth',
+    name: 'Mock User',
+    credentials: {
+      userId: { 
+        label: 'User ID', 
+        type: 'text',
+        placeholder: 'Enter user ID' 
+      }
+    },
+    async authorize(credentials, req) {
+      authLog('Mock auth AUTHORIZE function called');
+      authLog('Credentials received:', credentials);
+      
+      if (!credentials?.userId) {
+        authLog('❌ No userId provided in credentials');
+        return null
+      }
+      
+      const user = getMockUserById(credentials.userId)
+      if (!user) {
+        authLog('❌ User not found for ID:', credentials.userId);
+        return null
+      }
+      
+      authLog('✅ Mock user found, authenticating:', user.name);
+      
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image
+      }
+    },
+  }),
+  // Google OAuth provider for production
+  GoogleProvider({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    authorization: {
+      params: {
+        scope: [
+          "openid",
+          "email", 
+          "profile",
+          // Calendar API - for event metadata
+          "https://www.googleapis.com/auth/calendar.readonly",
+          // Meet API - for transcripts and recordings
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+          // Drive API - for accessing meeting artifacts stored in Drive
+          "https://www.googleapis.com/auth/drive.readonly",
+          // Docs API - for accessing meeting notes and AI-generated summaries
+          "https://www.googleapis.com/auth/documents.readonly"
+        ].join(" "),
+        // Request offline access for refresh tokens (batch processing)
+        access_type: "offline",
+        // Force consent screen to ensure we get refresh token
+        prompt: "consent"
+      }
+    }
+  })
+]
 
 // Debug environment variables
 authLog('NextAuth Environment Check:');
@@ -212,8 +211,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    // Use JWT sessions in dev-like environments or if no adapter available
-    strategy: (shouldUseMockAuth() || !safeAdapter) ? 'jwt' : 'database',
+    // Use JWT sessions for simplicity with dynamic auth providers
+    strategy: 'jwt',
   },
   events: {
     async signIn(message) {
@@ -233,10 +232,8 @@ const handler = NextAuth({
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  pages: shouldUseMockAuth() ? {
-    signIn: '/mock-signin',
-    newUser: '/onboarding-wizard',
-  } : {
+  pages: {
+    signIn: '/auth/signin', // Dynamic sign-in page that routes based on environment
     newUser: '/onboarding-wizard',
     signOut: '/', // Explicitly set signout page to home
   },
