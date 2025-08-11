@@ -10,13 +10,14 @@ export interface CareerPlanPromptContext {
   level: string
   companyLadder?: string
   currentLevelGuidelines?: string
+  currentLevel?: string
 }
 
 /**
  * Build career plan generation prompt using the provided Gemini prompt
  */
 export function buildCareerPlanPrompt(context: CareerPlanPromptContext): string {
-  const { role, level, companyLadder, currentLevelGuidelines } = context
+  const { role, level, companyLadder, currentLevelGuidelines, currentLevel } = context
   
   return `## CONTEXT
 You are an expert career management assistant for "AdvanceWeekly," a SaaS platform designed to help technology professionals (engineers, product managers, designers, etc.) track and foster their career growth. Our brand is thoughtful, pragmatic, and respects that users are busy. We avoid corporate jargon and focus on actionable, realistic guidance.
@@ -31,12 +32,12 @@ You will be provided with the following user information:
 ${companyLadder ? `3. **Company Context**: ${companyLadder}` : ''}
 ${currentLevelGuidelines ? `
 ## REFERENCE CONTEXT
-The following guidelines have been generated for the current level (${level}). Use these as reference to ensure a natural progression and consistency when generating guidelines for the next level:
+The following guidelines have been generated for the current level (${currentLevel || level}). Use these as reference to ensure a natural progression and consistency when generating guidelines for the target level (${level}):
 
 ${currentLevelGuidelines}
 
-When generating expectations for the next level, ensure they:
-- Build upon and extend the current level expectations
+When generating expectations for the target level (${level}), ensure they:
+- Build upon and extend the current level (${currentLevel || level}) expectations
 - Show clear progression in scope, complexity, and leadership
 - Maintain consistency in terminology and focus areas
 - Demonstrate increased responsibility and impact
