@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
       role, 
       level: nextLevel, 
       companyLadder,
-      currentLevelGuidelines: currentLevelResponse.content.trim()
+      currentLevelGuidelines: currentLevelResponse.content.trim(),
+      currentLevel: level
     })
     
     const nextLevelResponse = await llmProxy.request({
