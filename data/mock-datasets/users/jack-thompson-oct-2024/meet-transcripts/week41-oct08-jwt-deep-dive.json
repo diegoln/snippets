@@ -1,0 +1,362 @@
+{
+  "conferenceRecord": {
+    "name": "conferenceRecords/meet-jwt-deep-dive-oct08",
+    "startTime": "2024-10-08T21:00:32.456Z",
+    "endTime": "2024-10-08T22:28:17.891Z",
+    "space": {
+      "name": "spaces/jwt-deepdive-oct08",
+      "meetingUri": "https://meet.google.com/xyz-abcd-efg"
+    }
+  },
+  "transcript": {
+    "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001",
+    "state": "ENDED",
+    "startTime": "2024-10-08T21:00:32.456Z",
+    "endTime": "2024-10-08T22:28:17.891Z"
+  },
+  "transcriptEntries": [
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_001",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Thanks for making time for this, Mike and David. I really appreciate it. So I requested this session because I'm kind of stuck on some of the JWT implementation patterns and I want to make sure I'm going down the right path.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:00:35.123Z",
+      "endTime": "2024-10-08T21:00:48.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_002",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Of course, Jack. That's exactly what we're here for. So where are you right now? What's working, what's not?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:00:49.789Z",
+      "endTime": "2024-10-08T21:00:55.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_003",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Okay, so I have basic token generation working. I can create a JWT with user claims, sign it with RS256, that part seems fine. But I'm really confused about the refresh token flow. Like, I understand the concept but the implementation is tricky.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:00:56.456Z",
+      "endTime": "2024-10-08T21:01:10.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_004",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "What specifically about the refresh flow is confusing? Is it the storage, the rotation, or the validation?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:01:12.123Z",
+      "endTime": "2024-10-08T21:01:18.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_005",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Well, all of it really. So like, I create a refresh token when they login, I store it... somewhere. But then when they want to refresh, I need to validate the refresh token, generate new tokens, and then what? Do I invalidate the old refresh token? Do I rotate it? And what about concurrent requests?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:01:20.789Z",
+      "endTime": "2024-10-08T21:01:38.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_006",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Those are all excellent questions. Let me walk you through a typical flow. When a user logs in, you generate both an access token and a refresh token. The access token is short-lived, maybe 15 minutes. The refresh token is longer-lived, say 7 days.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:01:39.456Z",
+      "endTime": "2024-10-08T21:01:52.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_007",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Okay, right. I had the access token at like 24 hours, but 15 minutes makes sense for security. So the client has to refresh every 15 minutes?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:01:54.123Z",
+      "endTime": "2024-10-08T21:02:02.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_008",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "Well, ideally the client does it automatically. When they make a request and get a 401, they should try to refresh the token and retry the request transparently.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:03.789Z",
+      "endTime": "2024-10-08T21:02:12.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_009",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Right, that makes sense. But what if they have multiple tabs open? Won't that cause problems with concurrent refresh requests?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:13.456Z",
+      "endTime": "2024-10-08T21:02:20.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_010",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Ah, you're thinking about the race condition. Yeah, that's a real issue. So here's where token rotation comes in. When you use a refresh token, you immediately generate a new refresh token and invalidate the old one. But you need to handle the grace period.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:22.123Z",
+      "endTime": "2024-10-08T21:02:35.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_011",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Grace period? What do you mean?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:36.789Z",
+      "endTime": "2024-10-08T21:02:39.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_012",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "So imagine two requests come in at almost the same time, both trying to refresh with the same token. The first one succeeds, gets new tokens, and invalidates the refresh token. But the second request is still using the old refresh token.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:40.456Z",
+      "endTime": "2024-10-08T21:02:52.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_013",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Oh no, so the second request would fail?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:54.123Z",
+      "endTime": "2024-10-08T21:02:57.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_014",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Without a grace period, yes. So what you do is keep the old refresh token valid for a short window, like 30 seconds, after it's been used once. That way concurrent requests can still succeed.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:02:58.789Z",
+      "endTime": "2024-10-08T21:03:09.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_015",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Okay, that's... that's pretty complex. So I need to track not just valid refresh tokens, but also recently used ones with timestamps? Where do I store all this?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:03:10.456Z",
+      "endTime": "2024-10-08T21:03:21.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_016",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "Yeah, you'll need some kind of fast storage. Redis is perfect for this. You can set TTLs on the tokens so they automatically expire.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:03:23.123Z",
+      "endTime": "2024-10-08T21:03:30.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_017",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "We have Redis available? I wasn't sure what caching infrastructure we had.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:03:31.789Z",
+      "endTime": "2024-10-08T21:03:36.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_018",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Yeah, we have a Redis cluster. I can share the connection details with you. Or you could use the database with some kind of cleanup job, but Redis is really the right tool here.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:03:37.456Z",
+      "endTime": "2024-10-08T21:03:47.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_019",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Okay, so Redis for token storage. But I'm still not clear on the data structure. Do I store a hash with the user ID, or do I key it by the token itself, or...?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:03:49.123Z",
+      "endTime": "2024-10-08T21:04:00.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_020",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "I'd key it by the token hash. So when someone presents a refresh token, you hash it and look it up in Redis. If it exists and hasn't expired, it's valid.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:01.789Z",
+      "endTime": "2024-10-08T21:04:11.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_021",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Wait, so I hash the token before storing it? Why not just store the token directly?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:12.456Z",
+      "endTime": "2024-10-08T21:04:17.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_022",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Security. If someone gains access to your Redis instance, they can't use the tokens directly because they only see the hashes.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:19.123Z",
+      "endTime": "2024-10-08T21:04:26.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_023",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Oh right, that makes sense. God, there are so many security considerations. I feel like every time I think I understand something, there's another layer of complexity.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:27.789Z",
+      "endTime": "2024-10-08T21:04:37.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_024",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "That's totally normal, Jack. Authentication is one of those things that seems simple but has a lot of subtle edge cases. You're asking all the right questions.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:38.456Z",
+      "endTime": "2024-10-08T21:04:47.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_025",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "I guess my concern is that I'm supposed to have this done in like a week and a half, and I feel like I'm just scratching the surface. Should I be simplifying the approach?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:49.123Z",
+      "endTime": "2024-10-08T21:04:58.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_026",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "What's your current estimate looking like? If you had to break down the remaining work, what would that be?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:04:59.789Z",
+      "endTime": "2024-10-08T21:05:06.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_027",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Um, so I need to implement the refresh endpoint, set up the Redis integration, write tests for all the edge cases we just discussed, update the client-side code to handle refreshes, and probably some monitoring and logging. That sounds like... more than a week and a half.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:05:07.456Z",
+      "endTime": "2024-10-08T21:05:23.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_028",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "Yeah, that's a fair amount of work. Have you talked to Sarah about adjusting the timeline, or maybe scoping down the initial version?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:05:25.123Z",
+      "endTime": "2024-10-08T21:05:32.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_029",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Not yet. I was hoping I could just push through and get it done, but now I'm realizing that might not be realistic.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:05:33.789Z",
+      "endTime": "2024-10-08T21:05:41.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_030",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "I think you should definitely have that conversation. Maybe you could implement a simpler version first - basic JWT auth without refresh token rotation - and then add the complexity in a follow-up sprint?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:05:42.456Z",
+      "endTime": "2024-10-08T21:05:53.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_031",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "That could work. I just don't want to look like I'm making excuses or can't handle the complexity.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:05:55.123Z",
+      "endTime": "2024-10-08T21:06:01.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_032",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "Jack, you're not making excuses. You're doing proper engineering - understanding the problem space and giving realistic estimates. That's exactly what a senior engineer should do.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:02.789Z",
+      "endTime": "2024-10-08T21:06:13.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_033",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Absolutely. And look, why don't we do this - I can pair with you on the Redis integration part if that would help. That way you're not blocking on learning a new system.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:14.456Z",
+      "endTime": "2024-10-08T21:06:23.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_034",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "That would be huge, actually. I really appreciate that. When would be good for you?",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:25.123Z",
+      "endTime": "2024-10-08T21:06:30.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_035",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "How about Thursday afternoon? We can spend a couple hours getting the Redis setup working and walking through the token storage patterns.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:31.789Z",
+      "endTime": "2024-10-08T21:06:39.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_036",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Perfect. And I'll talk to Sarah tomorrow about adjusting the scope or timeline.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:40.456Z",
+      "endTime": "2024-10-08T21:06:45.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_037",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "text": "Sounds like a plan. And Jack, seriously, don't be so hard on yourself. This stuff is genuinely complex, and you're approaching it the right way.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:47.123Z",
+      "endTime": "2024-10-08T21:06:56.456Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_038",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Thanks guys, this was really helpful. I feel like I have a much clearer picture of what I need to build now.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:06:57.789Z",
+      "endTime": "2024-10-08T21:07:04.123Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_039",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "text": "Great. I'll send you some links to articles about JWT best practices too. And we'll get you unblocked on Thursday.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:07:05.456Z",
+      "endTime": "2024-10-08T21:07:12.789Z"
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/transcripts/transcript_001/entries/entry_040",
+      "participant": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "text": "Awesome. Thanks again, really. See you both later.",
+      "languageCode": "en-US",
+      "startTime": "2024-10-08T21:07:14.123Z",
+      "endTime": "2024-10-08T21:07:18.456Z"
+    }
+  ],
+  "participants": [
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_jack_thompson",
+      "signedInUser": {
+        "user": "users/jack@company.com",
+        "displayName": "Jack Thompson"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_mike_rodriguez",
+      "signedInUser": {
+        "user": "users/mike.rodriguez@company.com",
+        "displayName": "Mike Rodriguez"
+      }
+    },
+    {
+      "name": "conferenceRecords/meet-jwt-deep-dive-oct08/participants/participant_david_kim",
+      "signedInUser": {
+        "user": "users/david.kim@company.com",
+        "displayName": "David Kim"
+      }
+    }
+  ]
+}
