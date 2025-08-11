@@ -27,7 +27,8 @@ FROM base AS prisma
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-COPY scripts/generate-schema.js ./scripts/
+COPY scripts/generate-schema.js ./scripts/generate-schema.js
+COPY scripts/smart-schema-generate.js ./scripts/smart-schema-generate.js
 
 # Generate Prisma client (this layer caches well)
 ENV NODE_ENV=production
