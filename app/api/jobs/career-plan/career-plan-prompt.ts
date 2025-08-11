@@ -18,6 +18,7 @@ export interface CareerPlanPromptContext {
  */
 export function buildCareerPlanPrompt(context: CareerPlanPromptContext): string {
   const { role, level, companyLadder, currentLevelGuidelines, currentLevel } = context
+  const displayCurrentLevel = currentLevel || level
   
   return `## CONTEXT
 You are an expert career management assistant for "AdvanceWeekly," a SaaS platform designed to help technology professionals (engineers, product managers, designers, etc.) track and foster their career growth. Our brand is thoughtful, pragmatic, and respects that users are busy. We avoid corporate jargon and focus on actionable, realistic guidance.
@@ -32,12 +33,12 @@ You will be provided with the following user information:
 ${companyLadder ? `3. **Company Context**: ${companyLadder}` : ''}
 ${currentLevelGuidelines ? `
 ## REFERENCE CONTEXT
-The following guidelines have been generated for the current level (${currentLevel || level}). Use these as reference to ensure a natural progression and consistency when generating guidelines for the target level (${level}):
+The following guidelines have been generated for the current level (${displayCurrentLevel}). Use these as reference to ensure a natural progression and consistency when generating guidelines for the target level (${level}):
 
 ${currentLevelGuidelines}
 
 When generating expectations for the target level (${level}), ensure they:
-- Build upon and extend the current level (${currentLevel || level}) expectations
+- Build upon and extend the current level (${displayCurrentLevel}) expectations
 - Show clear progression in scope, complexity, and leadership
 - Maintain consistency in terminology and focus areas
 - Demonstrate increased responsibility and impact
