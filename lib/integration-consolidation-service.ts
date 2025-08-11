@@ -163,6 +163,66 @@ export class IntegrationConsolidationService {
   }
 
   /**
+   * Get a specific consolidation by ID
+   */
+  async getConsolidationById(consolidationId: string, userId: string): Promise<ConsolidatedData | null> {
+    const dataService = createUserDataService(userId)
+    
+    try {
+      const consolidation = await dataService.getIntegrationConsolidationById(consolidationId)
+      
+      if (!consolidation || consolidation.userId !== userId) {
+        return null
+      }
+
+      return {
+        id: consolidation.id,
+        summary: consolidation.consolidatedSummary,
+        keyInsights: JSON.parse(consolidation.keyInsights),
+        metrics: JSON.parse(consolidation.consolidatedMetrics),
+        contextualData: JSON.parse(consolidation.consolidatedContext),
+        themes: JSON.parse(consolidation.consolidatedContext).themes || [],
+        weekStart: consolidation.weekStart,
+        weekEnd: consolidation.weekEnd
+      } as ConsolidatedData & { id: string; weekStart: Date; weekEnd: Date }
+    } finally {
+      await dataService.disconnect()
+    }
+  }
+
+  /**
+   * Get the latest consolidation for a user
+   */
+  async getLatestConsolidation(userId: string): Promise<ConsolidatedData | null> {
+    const dataService = createUserDataService(userId)
+    
+    try {
+      const consolidations = await dataService.getIntegrationConsolidations({
+        processingStatus: 'completed',
+        limit: 1
+      })
+
+      if (consolidations.length === 0) {
+        return null
+      }
+
+      const consolidation = consolidations[0]
+      return {
+        id: consolidation.id,
+        summary: consolidation.consolidatedSummary,
+        keyInsights: JSON.parse(consolidation.keyInsights),
+        metrics: JSON.parse(consolidation.consolidatedMetrics),
+        contextualData: JSON.parse(consolidation.consolidatedContext),
+        themes: JSON.parse(consolidation.consolidatedContext).themes || [],
+        weekStart: consolidation.weekStart,
+        weekEnd: consolidation.weekEnd
+      } as ConsolidatedData & { id: string; weekStart: Date; weekEnd: Date }
+    } finally {
+      await dataService.disconnect()
+    }
+  }
+
+  /**
    * Parse LLM consolidation response and extract structured data
    */
   private parseConsolidationResponse(response: string, rawData: any): ConsolidatedData {

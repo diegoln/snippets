@@ -48,7 +48,7 @@ export default function Home() {
 
   // Fetch user profile when authenticated to determine next step
   useEffect(() => {
-    if (status === 'authenticated' && session && !userProfile && !isLoadingProfile) {
+    if (status === 'authenticated' && session && !userProfile && !isLoadingProfile && !profileError) {
       // Check if onboarding was just completed to skip API call
       const justCompleted = localStorage.getItem('onboarding-just-completed')
       const completedTimestamp = localStorage.getItem('onboarding-completed-timestamp')
@@ -130,7 +130,7 @@ export default function Home() {
           setIsLoadingProfile(false)
         })
     }
-  }, [status, session, userProfile, isLoadingProfile])
+  }, [status, session, isLoadingProfile])
 
   // Show loading while checking authentication or fetching profile
   if (status === 'loading' || (status === 'authenticated' && session && (isLoadingProfile || (!userProfile && !profileError)))) {

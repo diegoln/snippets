@@ -84,5 +84,8 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 ## Development Reminders
 - Always check and wait for dev server to be healthy when you run it.
 
+## LLM Integration Rules
+- llmproxy should never answer with mock responses. Always request from gemini.
+
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
