@@ -24,6 +24,7 @@ import dynamicImport from 'next/dynamic'
 import { LandingPage } from '../components/LandingPage'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { AuthenticatedApp } from './AuthenticatedApp'
+import { getClientEnvironmentMode } from '../lib/environment'
 
 // Dynamically import onboarding wizard only (it's rarely used)
 const OnboardingWizard = dynamicImport(() => import('./onboarding-wizard/page'), {
@@ -132,7 +133,7 @@ export default function Home() {
               timestamp: new Date().toISOString()
             })
             // In staging, provide more helpful error message
-            if (window.location.pathname.includes('/staging')) {
+            if (getClientEnvironmentMode() === 'staging') {
               console.log('💡 Tip: If in staging, ensure you are logged in with a staging mock user')
             }
             setProfileError(true)
