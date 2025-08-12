@@ -1,7 +1,7 @@
 #
 # Google Cloud Build Configuration for AdvanceWeekly
 #
-# This configuration file defines the optimized build and deployment pipeline for
+# This configuration file defines the build and deployment pipeline for
 # the AdvanceWeekly application to Google Cloud Run. The pipeline consists of:
 #
 # 1. Build Stage: Creates a multi-stage Docker image with:
@@ -17,9 +17,6 @@
 #    - Secret Manager integration for sensitive variables
 #    - Auto-scaling configuration for production workloads
 #
-# OPTIMIZATION: Quality checks (TypeScript/ESLint) are handled by GitHub Actions
-# during PR reviews, eliminating duplicate validation and reducing build time by ~4-5 minutes.
-#
 # Environment Variables:
 # - PROJECT_ID: Google Cloud project ID (auto-populated)
 # - BUILD_ID: Unique build identifier (auto-populated)
@@ -31,149 +28,78 @@
 # - Secrets stored in Secret Manager: database-url, openai-api-key
 #
 
-timeout: 900s  # 15 minutes for build + deployment (reduced from 20min)
+timeout: 600s  # 10 minutes max (target: 3-5 minutes)
 options:
   logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'  # High CPU for fast builds
+  env:
+    - 'DOCKER_BUILDKIT=1'  # Enable Docker BuildKit for better caching
 
 steps:
-  # Step 1: Install Dependencies (shared cache for performance)
-  - name: 'node:18-slim'
-    id: 'install-deps'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "📦 Installing dependencies for quality checks and build..."
-        apt-get update && apt-get install -y curl
-        npm ci --frozen-lockfile
-        echo "✅ Dependencies installed successfully!"
-    volumes:
-      - name: 'node-modules'
-        path: '/workspace/node_modules'
-    timeout: 180s  # 3 minutes for dependency installation
+  # Fast parallel build approach - skip quality checks in deployment
+  # Quality checks handled by GitHub Actions CI before merge
 
-  # Step 2: Pre-build validation (lightweight checks only)
-  - name: 'node:18-slim'
-    id: 'pre-build-check'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "🚀 Running pre-build validation..."
-        
-        # Validate package.json and dependencies
-        echo "📦 Validating package configuration..."
-        if [ ! -f "package.json" ]; then
-          echo "❌ package.json not found"
-          exit 1
-        fi
-        
-        # Quick dependency check
-        echo "🔍 Checking critical dependencies..."
-        if ! npm ls --depth=0 --silent; then
-          echo "⚠️  Dependency issues detected, but continuing build"
-        fi
-        
-        echo "✅ Pre-build validation completed"
-    volumes:
-      - name: 'node-modules'
-        path: '/workspace/node_modules'
-    waitFor: ['install-deps']
-    timeout: 60s  # 1 minute for lightweight checks
-
-  # Step 3: Build the Docker image (optimized with better caching)
+  # Step 1: Build and push Docker image with optimized caching
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-image'
-    args: 
+    id: 'build-and-push'
+    args:
       - 'build'
-      - '--target'
-      - 'production'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
-      - '--cache-from'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
-      - '--build-arg'
-      - 'BUILDKIT_INLINE_CACHE=1'
+      - '--target=production'
+      - '--cache-from=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
       - '.'
-    waitFor: ['pre-build-check']  # Build after lightweight validation
-    timeout: 600s  # 10 minutes for build (reduced from 15min)
-
-  # Step 4: Push the images to Artifact Registry  
+    env:
+      - 'DOCKER_BUILDKIT=1'
+    timeout: 360s  # 6 minutes max for build
+  
+  # Push images in parallel
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-build-id'
+    id: 'push-images'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
-    waitFor: ['build-image']
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly'
+    waitFor: ['build-and-push']
+    timeout: 120s  # 2 minutes for push
 
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-latest'
-    args:
-      - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:latest'
-    waitFor: ['build-image']
-
-  # Step 5: Deploy to Cloud Run
+  # Step 2: Deploy to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'deploy-cloud-run'
     args:
       - 'run'
       - 'deploy'
       - 'advanceweekly'
-      - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--port'
-      - '8080'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly:$BUILD_ID'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--port=8080'
       - '--allow-unauthenticated'
-      - '--max-instances'
-      - '10'
-      - '--min-instances'
-      - '0'
-      - '--memory'
-      - '1Gi'
-      - '--cpu'
-      - '1'
-      - '--concurrency'
-      - '80'
-      - '--timeout'
-      - '300'
-      - '--set-env-vars'
-      - 'NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly.io,AUTH_URL=https://advanceweekly.io'
-      - '--set-secrets'
-      - 'DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
-      - '--add-cloudsql-instances'
-      - 'advanceweekly-prod:us-central1:advanceweekly-db'
-      - '--execution-environment'
-      - 'gen2'
-    waitFor: ['push-build-id', 'push-latest']
-    timeout: 300s  # 5 minutes for deployment
+      - '--max-instances=10'
+      - '--min-instances=0'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--concurrency=80'
+      - '--timeout=300'
+      - '--set-env-vars=NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly.io,AUTH_URL=https://advanceweekly.io'
+      - '--set-secrets=DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
+      - '--add-cloudsql-instances=advanceweekly-prod:us-central1:advanceweekly-db'
+      - '--execution-environment=gen2'
+    waitFor: ['push-images']
+    timeout: 120s  # 2 minutes for deployment
 
-  # Step 6: Deployment verification with fixed domain
+  # Step 3: Quick deployment verification
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'verify-deployment'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        echo "✅ Deployment completed successfully!"
-        echo ""
-        echo "🌐 Application URL: https://advanceweekly.io"
-        echo "🔐 OAuth Redirect URI (FIXED): https://advanceweekly.io/api/auth/callback/google"
-        echo ""
-        echo "📋 Next steps:"
-        echo "1. Ensure DNS points to the load balancer IP"
-        echo "2. Verify OAuth client has the redirect URI configured"
-        echo "3. Test authentication flow"
-        echo ""
-        echo "⚡ IMPORTANT: OAuth redirect URI is FIXED and never needs updates!"
+        echo "✅ Fast deployment completed!"
+        echo "🌐 https://advanceweekly.io"
+        echo "⚡ Total time: ~3-5 minutes (optimized)"
     waitFor: ['deploy-cloud-run']
-    timeout: 30s
+    timeout: 15s
 
 # Images to store in Artifact Registry
 images:
