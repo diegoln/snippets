@@ -22,9 +22,32 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
         ORIGINAL_DATABASE_URL=$(gcloud secrets versions access latest --secret="database-url" --project=advanceweekly-prod)
         
         if [[ -n "${ORIGINAL_DATABASE_URL}" ]]; then
-            # In Cloud Run, use direct connection; locally would need proxy
-            export DATABASE_URL="${ORIGINAL_DATABASE_URL}"
-            echo "✅ DATABASE_URL loaded from Secret Manager"
+            # GitHub Actions needs Cloud SQL Proxy, Cloud Run can use socket directly
+            if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+                echo "🔗 Setting up Cloud SQL Proxy for GitHub Actions..."
+                
+                # Download Cloud SQL Proxy
+                curl -s -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
+                chmod +x cloud_sql_proxy
+                
+                # Start proxy in background on port 5433
+                ./cloud_sql_proxy -instances=advanceweekly-prod:us-central1:advanceweekly-db=tcp:5433 &
+                PROXY_PID=$!
+                
+                # Wait for proxy to initialize
+                sleep 5
+                
+                # Convert DATABASE_URL to use TCP connection instead of socket
+                export DATABASE_URL=$(echo "$ORIGINAL_DATABASE_URL" | sed 's|/cloudsql/[^?]*|127.0.0.1:5433/snippets_db|')
+                echo "✅ Cloud SQL Proxy started, using TCP connection"
+                
+                # Setup cleanup on exit
+                trap "kill $PROXY_PID 2>/dev/null || true" EXIT
+            else
+                # Cloud Run environment - use socket connection directly
+                export DATABASE_URL="${ORIGINAL_DATABASE_URL}"
+                echo "✅ DATABASE_URL configured for Cloud Run environment"
+            fi
         else
             echo "❌ Failed to load DATABASE_URL from secrets"
             exit 1
