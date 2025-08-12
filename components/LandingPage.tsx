@@ -25,6 +25,9 @@ import { Logo } from './Logo'
  * @returns JSX element for the landing page
  */
 export function LandingPage() {
+  // Check if we're in staging environment
+  const isStaging = typeof window !== 'undefined' && window.location.pathname.startsWith('/staging')
+  
   /**
    * Handle Google OAuth sign-in
    * In development, this redirects to mock sign-in page
@@ -49,6 +52,13 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-neutral-100">
+      {/* Staging Environment Banner */}
+      {isStaging && (
+        <div className="bg-yellow-400 text-black py-2 px-4 text-center font-semibold">
+          🎭 STAGING ENVIRONMENT - Test data only, mock authentication enabled
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">

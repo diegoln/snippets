@@ -48,25 +48,28 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     }))
     
     for (const mockUser of mockUsers) {
+      // Extract common user data to avoid duplication
+      const jobTitle = mockUser.role.split(' - ')[0] || mockUser.role
+      const seniorityLevel = mockUser.role.includes('Senior') ? 'Senior' : 
+                             mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level'
+      const onboardingCompletedAt = new Date()
       
       const user = await db.user.upsert({
         where: { email: mockUser.email },
         update: {
           name: mockUser.name,
-          jobTitle: mockUser.role.split(' - ')[0] || mockUser.role,
-          seniorityLevel: mockUser.role.includes('Senior') ? 'Senior' : 
-                          mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level',
-          onboardingCompletedAt: new Date()
+          jobTitle,
+          seniorityLevel,
+          onboardingCompletedAt
         },
         create: {
           id: mockUser.id,
           email: mockUser.email,
           name: mockUser.name,
           image: mockUser.image,
-          jobTitle: mockUser.role.split(' - ')[0] || mockUser.role,
-          seniorityLevel: mockUser.role.includes('Senior') ? 'Senior' : 
-                          mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level',
-          onboardingCompletedAt: new Date()
+          jobTitle,
+          seniorityLevel,
+          onboardingCompletedAt
         }
       })
       console.log(`✅ Created staging user: ${user.name} (${user.email})`)
@@ -108,8 +111,6 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     console.log('4️⃣ Setting up mock integrations for staging users...')
     
     for (const mockUser of mockUsers) {
-      if (!mockUser.id.startsWith('staging_')) continue
-      
       // Google Calendar integration
       await db.integration.upsert({
         where: {
@@ -179,8 +180,6 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     const weekNumbers = [currentWeek - 3, currentWeek - 2, currentWeek - 1, currentWeek]
 
     for (const mockUser of mockUsers) {
-      if (!mockUser.id.startsWith('staging_')) continue
-      
       for (const weekNumber of weekNumbers) {
         const { startDate, endDate } = getWeekDates(weekNumber, currentYear)
         

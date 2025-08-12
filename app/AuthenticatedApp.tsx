@@ -412,8 +412,18 @@ export const AuthenticatedApp = (): JSX.Element => {
     )
   }
 
+  // Check if we're in staging environment
+  const isStaging = typeof window !== 'undefined' && window.location.pathname.startsWith('/staging')
+  
   return (
     <div className="min-h-screen bg-neutral-100">
+      {/* Staging Environment Banner */}
+      {isStaging && (
+        <div className="bg-yellow-400 text-black py-2 px-4 text-center font-semibold text-sm">
+          🎭 STAGING ENVIRONMENT - Using test data and mock integrations
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         <header className="mb-6">
           {/* Mobile Layout */}
