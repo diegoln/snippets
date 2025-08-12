@@ -30,9 +30,10 @@ export function LandingPage() {
   const isStaging = isInStagingEnvironment()
   
   /**
-   * Handle Google OAuth sign-in
-   * In development, this redirects to mock sign-in page
-   * In production, this triggers real Google OAuth flow
+   * Handle Google OAuth sign-in with environment-aware routing
+   * - Development: Redirects to mock sign-in page
+   * - Staging: Redirects to mock sign-in with /staging callback
+   * - Production: Triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
     // Use shared environment detection utility
