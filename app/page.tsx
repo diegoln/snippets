@@ -24,6 +24,7 @@ import dynamicImport from 'next/dynamic'
 import { LandingPage } from '../components/LandingPage'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { AuthenticatedApp } from './AuthenticatedApp'
+import { getClientEnvironmentMode } from '../lib/environment'
 
 // Dynamically import onboarding wizard only (it's rarely used)
 const OnboardingWizard = dynamicImport(() => import('./onboarding-wizard/page'), {
@@ -127,7 +128,14 @@ export default function Home() {
             // Assume onboarding is needed if we can't verify
             setUserProfile({ onboardingCompleted: false })
           } else {
-            console.error('❌ Failed to fetch user profile:', error)
+            console.error('❌ Failed to fetch user profile:', {
+              error: error.message || 'Unknown error',
+              timestamp: new Date().toISOString()
+            })
+            // In staging, provide more helpful error message
+            if (getClientEnvironmentMode() === 'staging') {
+              console.log('💡 Tip: If in staging, ensure you are logged in with a staging mock user')
+            }
             setProfileError(true)
           }
         })

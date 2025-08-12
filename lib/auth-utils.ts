@@ -28,8 +28,10 @@ export interface AuthenticatedUser {
 /**
  * Extract authenticated user from NextAuth session
  * 
- * In development, uses JWT tokens with mock user data
- * In production, uses database sessions with real OAuth data
+ * Authentication strategy by environment:
+ * - Development: JWT tokens with mock user data
+ * - Staging (mock users): JWT tokens for users with staging_ prefix
+ * - Production (real users): Database sessions with OAuth data, JWT fallback
  * 
  * @param request - Next.js request object
  * @returns User ID if authenticated, null if not
@@ -77,8 +79,8 @@ export async function getUserIdFromRequest(request: NextRequest): Promise<string
       }
     }
     
-    // Debug logging for troubleshooting
-    if (process.env.NODE_ENV === 'production' || isStagingUser) {
+    // Debug logging for troubleshooting (only in staging or when debugging is needed)
+    if (isStagingUser || process.env.NEXTAUTH_DEBUG === 'true') {
       console.log(`🔍 Auth Debug - URL: ${request.url}`)
       console.log(`🔍 Auth Debug - Method: ${request.method}`)
       console.log(`🔍 Auth Debug - User ID: ${userId || 'none'}`)
