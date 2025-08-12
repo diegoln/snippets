@@ -8,7 +8,7 @@ set -e
 echo "🔧 Applying database schema fix to production..."
 
 # Get the Cloud SQL connection details with environment variable defaults
-PROJECT_ID="${ADVANCEWEEKLY_PROJECT_ID:-advanceweekly-project}"
+PROJECT_ID="${ADVANCEWEEKLY_PROJECT_ID:-advanceweekly-prod}"
 INSTANCE_NAME="${ADVANCEWEEKLY_INSTANCE_NAME:-advanceweekly-db}"
 DATABASE_NAME="${ADVANCEWEEKLY_DATABASE_NAME:-advanceweekly}"
 DB_USER="${ADVANCEWEEKLY_DB_USER:-postgres}"
