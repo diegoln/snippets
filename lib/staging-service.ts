@@ -48,25 +48,28 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     }))
     
     for (const mockUser of mockUsers) {
+      // Extract common user data to avoid duplication
+      const jobTitle = mockUser.role.split(' - ')[0] || mockUser.role
+      const seniorityLevel = mockUser.role.includes('Senior') ? 'Senior' : 
+                             mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level'
+      const onboardingCompletedAt = new Date()
+      
+      // Common user data for both update and create
+      const userData = {
+        name: mockUser.name,
+        jobTitle,
+        seniorityLevel,
+        onboardingCompletedAt
+      }
       
       const user = await db.user.upsert({
         where: { email: mockUser.email },
-        update: {
-          name: mockUser.name,
-          jobTitle: mockUser.role.split(' - ')[0] || mockUser.role,
-          seniorityLevel: mockUser.role.includes('Senior') ? 'Senior' : 
-                          mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level',
-          onboardingCompletedAt: new Date()
-        },
+        update: userData,
         create: {
           id: mockUser.id,
           email: mockUser.email,
-          name: mockUser.name,
           image: mockUser.image,
-          jobTitle: mockUser.role.split(' - ')[0] || mockUser.role,
-          seniorityLevel: mockUser.role.includes('Senior') ? 'Senior' : 
-                          mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level',
-          onboardingCompletedAt: new Date()
+          ...userData
         }
       })
       console.log(`✅ Created staging user: ${user.name} (${user.email})`)
