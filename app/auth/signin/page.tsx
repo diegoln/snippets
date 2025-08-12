@@ -24,11 +24,10 @@ export default function SignInPage() {
     const callbackUrl = searchParams.get('callbackUrl') || '/'
     
     // More robust staging detection:
-    // - Check if callback URL includes /staging (MAIN indicator - this is where NextAuth wants us to go back to)
-    // - Check if referrer includes /staging (came from staging page)
-    // - Check if we're on a staging subdomain or path
-    const isStaging = callbackUrl.includes('/staging') ||
-                     referrer.includes('/staging') ||
+    // CRITICAL: Check if referrer includes /staging (most reliable indicator)
+    // The middleware rewrites /staging paths, but the referrer still contains the original path
+    const isStaging = referrer.includes('/staging') ||
+                     callbackUrl.includes('/staging') ||
                      currentPath.startsWith('/staging') ||
                      currentOrigin.includes('staging')
     
@@ -60,16 +59,17 @@ export default function SignInPage() {
       if (process.env.NODE_ENV === 'development') {
         console.log('🎭 STAGING environment detected - using mock auth')
       }
-      const targetUrl = `/staging/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      // IMPORTANT: Use /mock-signin (not /staging/mock-signin) since middleware rewrites paths
+      // But preserve the staging callback URL so we go back to staging after auth
+      const stagingCallbackUrl = callbackUrl.includes('/staging') ? callbackUrl : '/staging'
+      const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(stagingCallbackUrl)}`
       if (process.env.NODE_ENV === 'development') {
-        console.log('Redirecting to staging mock signin:', targetUrl)
+        console.log('Redirecting to mock signin with staging callback:', targetUrl)
       }
       window.location.href = targetUrl
       return // Exit early to prevent any other logic
-    }
-    
-    // DEVELOPMENT: Use mock auth without /staging prefix
-    if (isDevelopment) {
+    } else if (isDevelopment) {
+      // DEVELOPMENT: Use mock auth without /staging prefix
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 Development environment - using mock auth')
       }
@@ -79,10 +79,8 @@ export default function SignInPage() {
       }
       window.location.href = targetUrl
       return // Exit early
-    }
-    
-    // PRODUCTION (non-staging): Use Google OAuth
-    if (isProduction) {
+    } else if (isProduction) {
+      // PRODUCTION (non-staging): Use Google OAuth
       if (process.env.NODE_ENV === 'development') {
         console.log('🔐 Production environment - using Google OAuth')
       }
