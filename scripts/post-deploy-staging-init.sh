@@ -8,9 +8,9 @@ set -e
 
 echo "🚀 Post-deployment staging initialization..."
 
-# Check if we're in production environment (where staging runs)
-if [[ "${NODE_ENV:-}" != "production" ]]; then
-    echo "ℹ️ Not in production environment, skipping staging initialization"
+# Check if we're in a deployment context (GitHub Actions or Cloud Run)
+if [[ -z "${GITHUB_ACTIONS:-}" && -z "${K_SERVICE:-}" && -z "${PROJECT_ID:-}" ]]; then
+    echo "ℹ️ Not in deployment context, skipping staging initialization"
     exit 0
 fi
 
