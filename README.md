@@ -71,4 +71,4 @@ npm run deploy             # Deploy to production
 - **Database**: PostgreSQL (production) / SQLite (development)
 - **AI**: OpenAI API integration with local fallbacks
 - **Infrastructure**: Google Cloud Platform (Cloud Run, Cloud SQL)
-- **Environment Management**: Automatic schema generation for dev/prod
+- **Environment Management**: Automatic schema generation for dev/prod# Trigger deployment with Secret Manager permissions fix
