@@ -137,22 +137,32 @@ const providers = [
     async authorize(credentials, req) {
       authLog('Mock auth AUTHORIZE function called');
       authLog('Credentials received:', credentials);
+      authLog('Environment check - NODE_ENV:', process.env.NODE_ENV);
       
       if (!credentials?.userId) {
         authLog('❌ No userId provided in credentials');
         return null
       }
       
-      const user = getMockUserById(credentials.userId)
+      // CRITICAL FIX: Preserve the original user ID passed from client
+      // The client already sends the correct environment-prefixed ID (staging_1, etc.)
+      const requestedUserId = credentials.userId
+      authLog('🔍 Requested user ID from client:', requestedUserId);
+      
+      const user = getMockUserById(requestedUserId)
       if (!user) {
-        authLog('❌ User not found for ID:', credentials.userId);
+        authLog('❌ User not found for ID:', requestedUserId);
+        authLog('Available mock users:', getAllMockUsers().map(u => u.id));
         return null
       }
       
       authLog('✅ Mock user found, authenticating:', user.name);
+      authLog('✅ Returning user with ID:', user.id);
       
+      // CRITICAL: Return the user ID exactly as provided by the client
+      // This preserves staging_ prefixes and other environment-specific IDs
       return {
-        id: user.id,
+        id: user.id, // This should be staging_1, staging_2, etc. in staging
         name: user.name,
         email: user.email,
         image: user.image
