@@ -5,6 +5,8 @@ import { createSafeAdapter } from '../../../../lib/auth-adapter'
 import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
+import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
+import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 
 
 // Conditional logging utility
@@ -47,30 +49,34 @@ const handleSignIn = async (params: any) => {
 const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }) => {
   authLog('redirect callback:', { url, baseUrl });
   
-  // Use NEXTAUTH_URL as the authoritative base URL in production
-  const correctBaseUrl = process.env.NEXTAUTH_URL || baseUrl;
+  // Get environment-appropriate base URL
+  const correctBaseUrl = getBaseUrl();
   
-  // Handle signout redirects - always redirect to the home page
+  // Handle signout redirects - always redirect to the appropriate home page
   if (url === `${correctBaseUrl}/api/auth/signout` || url.includes('signout')) {
     authLog('Signout redirect detected, redirecting to home page');
     return correctBaseUrl;
   }
   
-  // Custom redirect logic for onboarding flow
-  if (process.env.NODE_ENV === 'production') {
-    // If user is being redirected to a specific URL and it's within our domain, allow it
+  const envMode = getEnvironmentMode();
+  
+  // Custom redirect logic based on environment
+  if (envMode === 'production') {
+    // Production OAuth flow - redirect to production app
     if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
       return url
     }
-    
-    // For production OAuth sign-ins, redirect existing users to dashboard, new users to onboarding
-    // Note: This is a simplified approach - in a real app you'd check user profile completion
-    // For now, let returning users go to the main app instead of forcing onboarding
     return correctBaseUrl
+  } else if (envMode === 'staging') {
+    // Staging flow - redirect to staging area
+    if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
+      return url
+    }
+    return correctBaseUrl
+  } else {
+    // Development flow - use existing logic
+    return url.startsWith(baseUrl) ? url : baseUrl
   }
-  
-  // Development uses our custom flow
-  return url.startsWith(baseUrl) ? url : baseUrl
 }
 
 const handleSession = async (params: any) => {
@@ -115,73 +121,71 @@ const handleJWT = async (params: any) => {
   return token
 }
 
-// Use mock credentials provider in development, real Google OAuth in production  
-const providers = process.env.NODE_ENV === 'development' 
-  ? [
-      CredentialsProvider({
-        name: 'credentials',
-        credentials: {
-          userId: { 
-            label: 'User ID', 
-            type: 'text',
-            placeholder: 'Enter user ID' 
-          }
-        },
-        async authorize(credentials, req) {
-          authLog('AUTHORIZE FUNCTION CALLED!');
-          authLog('Credentials received:', credentials);
-          authLog('Request object:', req ? 'Present' : 'Missing');
-          
-          if (!credentials?.userId) {
-            authLog('❌ No userId provided in credentials');
-            return null
-          }
-          
-          const user = getMockUserById(credentials.userId)
-          if (!user) {
-            authLog('❌ User not found for ID:', credentials.userId);
-            return null
-          }
-          
-          authLog('✅ User found, authenticating:', user.name);
-          
-          // Return user object for JWT
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            image: user.image
-          }
-        },
-      })
-    ]
-  : [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID!,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-        authorization: {
-          params: {
-            scope: [
-              "openid",
-              "email", 
-              "profile",
-              // Calendar API - for event metadata
-              "https://www.googleapis.com/auth/calendar.readonly",
-              // Meet API - for transcripts and recordings
-              "https://www.googleapis.com/auth/meetings.space.readonly",
-              // Drive API - for accessing meeting artifacts stored in Drive
-              "https://www.googleapis.com/auth/drive.readonly",
-              // Docs API - for accessing meeting notes and AI-generated summaries
-              "https://www.googleapis.com/auth/documents.readonly"
-            ].join(" "),
-            // Request offline access for refresh tokens (batch processing)
-            access_type: "offline",
-            // Force consent screen to ensure we get refresh token
-            prompt: "consent"
-          }
-        }
-      })
-    ]
+// Include both providers - routing will be handled by custom signin page
+const providers = [
+  // Mock credentials provider for development and staging
+  CredentialsProvider({
+    id: 'mock-auth',
+    name: 'Mock User',
+    credentials: {
+      userId: { 
+        label: 'User ID', 
+        type: 'text',
+        placeholder: 'Enter user ID' 
+      }
+    },
+    async authorize(credentials, req) {
+      authLog('Mock auth AUTHORIZE function called');
+      authLog('Credentials received:', credentials);
+      
+      if (!credentials?.userId) {
+        authLog('❌ No userId provided in credentials');
+        return null
+      }
+      
+      const user = getMockUserById(credentials.userId)
+      if (!user) {
+        authLog('❌ User not found for ID:', credentials.userId);
+        return null
+      }
+      
+      authLog('✅ Mock user found, authenticating:', user.name);
+      
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image
+      }
+    },
+  }),
+  // Google OAuth provider for production
+  GoogleProvider({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    authorization: {
+      params: {
+        scope: [
+          "openid",
+          "email", 
+          "profile",
+          // Calendar API - for event metadata
+          "https://www.googleapis.com/auth/calendar.readonly",
+          // Meet API - for transcripts and recordings
+          "https://www.googleapis.com/auth/meetings.space.readonly",
+          // Drive API - for accessing meeting artifacts stored in Drive
+          "https://www.googleapis.com/auth/drive.readonly",
+          // Docs API - for accessing meeting notes and AI-generated summaries
+          "https://www.googleapis.com/auth/documents.readonly"
+        ].join(" "),
+        // Request offline access for refresh tokens (batch processing)
+        access_type: "offline",
+        // Force consent screen to ensure we get refresh token
+        prompt: "consent"
+      }
+    }
+  })
+]
 
 // Debug environment variables
 authLog('NextAuth Environment Check:');
@@ -207,8 +211,8 @@ const handler = NextAuth({
     jwt: handleJWT,
   },
   session: {
-    // Use JWT sessions in development or if no adapter available
-    strategy: (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database',
+    // Use JWT sessions for simplicity with dynamic auth providers
+    strategy: 'jwt',
   },
   events: {
     async signIn(message) {
@@ -228,10 +232,8 @@ const handler = NextAuth({
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  pages: process.env.NODE_ENV === 'development' ? {
-    signIn: '/mock-signin',
-    newUser: '/onboarding-wizard',
-  } : {
+  pages: {
+    signIn: '/auth/signin', // Dynamic sign-in page that routes based on environment
     newUser: '/onboarding-wizard',
     signOut: '/', // Explicitly set signout page to home
   },

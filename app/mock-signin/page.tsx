@@ -10,6 +10,7 @@
 
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Logo } from '../../components/Logo'
 import { getAllMockUsers } from '../../lib/mock-users'
 
@@ -17,17 +18,22 @@ const mockUsers = getAllMockUsers()
 
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  
+  // Get callback URL from query params, default to home
+  const callbackUrl = searchParams.get('callbackUrl') || '/'
 
   const handleSignIn = async (userId: string) => {
     try {
       setSigningIn(userId)
       
-      console.log('🔐 Starting sign-in for user:', userId)
+      console.log('🔐 Starting mock sign-in for user:', userId)
+      console.log('🔗 Callback URL:', callbackUrl)
       
       // Use redirect: false to control the redirect manually
-      const result = await signIn('credentials', {
+      const result = await signIn('mock-auth', {
         userId,
-        callbackUrl: '/',
+        callbackUrl,
         redirect: false
       })
       
@@ -37,10 +43,10 @@ export default function MockSignInPage() {
         console.error('Sign in error:', result.error)
         setSigningIn(null)
       } else if (result?.ok) {
-        console.log('✅ Sign-in successful, redirecting to root...')
+        console.log('✅ Sign-in successful, redirecting to:', callbackUrl)
         
-        // Redirect to root page which will handle the appropriate flow
-        window.location.href = '/'
+        // Redirect to the specified callback URL
+        window.location.href = callbackUrl
       } else {
         console.log('⚠️ Unexpected sign-in result:', result)
         setSigningIn(null)

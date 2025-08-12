@@ -89,3 +89,4 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 
 ---
 **Full Details**: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) • [`docs/DESIGN_SYSTEM.md`](./docs/DESIGN_SYSTEM.md)
+- the way to request gemini for a code review is to comment /gemini review on the pr

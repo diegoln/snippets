@@ -54,4 +54,12 @@ fi
 echo "☁️  Deploying to Google Cloud Platform..."
 gcloud builds submit --project=advanceweekly-prod
 
+# 8. Initialize staging data after deployment
+echo "🏗️  Initializing staging data..."
+echo "⚠️  Note: Staging data will be available at https://advanceweekly.io/staging"
+echo "   To manually reinitialize staging data later, run: npm run init:staging"
+
 echo "✅ Deployment completed successfully!"
+echo ""
+echo "🌐 Production: https://advanceweekly.io"
+echo "🧪 Staging: https://advanceweekly.io/staging"

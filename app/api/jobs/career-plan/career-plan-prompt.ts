@@ -38,7 +38,7 @@ The following guidelines have been generated for the current level (${displayCur
 ${currentLevelGuidelines}
 
 When generating expectations for the target level (${level}), ensure they:
-- Build upon and extend the current level (${displayCurrentLevel}) expectations
+- Build upon and extend the current level expectations
 - Show clear progression in scope, complexity, and leadership
 - Maintain consistency in terminology and focus areas
 - Demonstrate increased responsibility and impact

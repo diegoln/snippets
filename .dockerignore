@@ -75,16 +75,24 @@ docker-compose.yml
 terraform/
 aws-lambda/
 
-# Scripts not needed in container (except schema generation)
+# Scripts not needed in container (except schema generation and staging)
 deploy*.sh
 quick-deploy.sh
 get-docker.sh
-scripts/init-*.sh
+scripts/init-dev-data.ts  # Dev-specific, but init-staging-data.ts should be included
 scripts/oauth-*.sh
 scripts/setup-*.sh
 scripts/update-*.sh
 scripts/verify-*.sh
 scripts/deep-*.sh
+
+# IMPORTANT: Keep staging-related files for production deployment
+# These files are needed for staging functionality:
+# - lib/mock-users.ts (used in staging)
+# - lib/integration-mock-data.ts (used in staging)  
+# - lib/environment.ts (used for staging detection)
+# - scripts/init-staging-data.ts (needed for staging data reset)
+# - middleware.ts (needed for /staging path detection)
 
 # Alternative Dockerfiles
 Dockerfile.simple
