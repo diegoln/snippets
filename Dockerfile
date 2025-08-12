@@ -11,48 +11,24 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# ===== DEPENDENCIES STAGE =====
-FROM base AS deps
-
-# Copy package files ONLY (for optimal Docker layer caching)
-COPY package.json package-lock.json* ./
-
-# Install ALL dependencies (dev + prod) for building
-RUN npm ci --frozen-lockfile --include=dev && npm cache clean --force
-
-# ===== PRISMA STAGE =====
-FROM base AS prisma
-
-# Copy only what's needed for Prisma generation
-COPY --from=deps /app/node_modules ./node_modules
-COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
-COPY scripts/generate-schema.js ./scripts/generate-schema.js
-COPY scripts/smart-schema-generate.js ./scripts/smart-schema-generate.js
-
-# Generate Prisma client (this layer caches well)
-ENV NODE_ENV=production
-RUN npm run generate-schema && npx prisma generate
-
-# ===== BUILDER STAGE =====
+# ===== BUILDER STAGE (simplified) =====
 FROM base AS builder
 
-# Copy dependencies and generated Prisma client  
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=prisma /app/prisma ./prisma
+# Copy package files for caching
+COPY package.json package-lock.json* ./
 
-# Set build environment variables BEFORE copying source
+# Install dependencies
+RUN npm ci --frozen-lockfile --include=dev
+
+# Copy source code
+COPY . .
+
+# Set build environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy source code (this layer changes most frequently)
-COPY . .
-
-# Build the application
-RUN npm run build
-
-# Remove development dependencies to reduce final image size
-RUN npm prune --production
+# Generate schema and build
+RUN npm run generate-schema:force && npm run build && npm prune --production
 
 # ===== DEVELOPMENT STAGE =====
 FROM base as development
