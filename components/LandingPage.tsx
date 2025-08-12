@@ -18,7 +18,7 @@
 
 import { signIn } from 'next-auth/react'
 import { Logo } from './Logo'
-import { isInStagingEnvironment, isInDevelopmentEnvironment } from '../lib/client-environment'
+import { isStaging, isDevelopment } from '../lib/environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -27,7 +27,7 @@ import { isInStagingEnvironment, isInDevelopmentEnvironment } from '../lib/clien
  */
 export function LandingPage() {
   // Check if we're in staging environment
-  const isStaging = isInStagingEnvironment()
+  const stagingMode = isStaging()
   
   /**
    * Handle Google OAuth sign-in with environment-aware routing
@@ -36,13 +36,13 @@ export function LandingPage() {
    * - Production: Triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
-    // Use shared environment detection utility
-    const isDevelopment = isInDevelopmentEnvironment()
+    // Use shared environment detection utilities
+    const devMode = isDevelopment()
     
-    if (isDevelopment || isStaging) {
+    if (devMode || stagingMode) {
       // In development or staging, redirect to mock signin page for testing
       // This allows developers/testers to test the full flow without Google OAuth setup
-      const callbackUrl = isStaging ? '/staging' : '/'
+      const callbackUrl = stagingMode ? '/staging' : '/'
       window.location.href = `/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
     } else {
       // In production, use real Google OAuth with NextAuth
@@ -54,7 +54,7 @@ export function LandingPage() {
   return (
     <div className="min-h-screen bg-neutral-100">
       {/* Staging Environment Banner */}
-      {isStaging && (
+      {stagingMode && (
         <div className="bg-yellow-400 text-black py-2 px-4 text-center font-semibold">
           🎭 STAGING ENVIRONMENT - Test data only, mock authentication enabled
         </div>
@@ -86,7 +86,7 @@ export function LandingPage() {
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            <span>Continue with Google{isStaging ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
+            <span>Continue with Google{stagingMode ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
           </button>
         </div>
 
@@ -199,7 +199,7 @@ export function LandingPage() {
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              <span>Get Started Free{isStaging ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
+              <span>Get Started Free{stagingMode ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
             </button>
           </div>
         </div>
