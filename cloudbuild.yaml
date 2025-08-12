@@ -34,7 +34,6 @@
 timeout: 900s  # 15 minutes for build + deployment (reduced from 20min)
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_HIGHCPU_16'  # Optimized for faster Docker builds
 
 steps:
   # Step 1: Install Dependencies (shared cache for performance)
