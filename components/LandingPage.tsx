@@ -18,6 +18,7 @@
 
 import { signIn } from 'next-auth/react'
 import { Logo } from './Logo'
+import { isInStagingEnvironment, isInDevelopmentEnvironment } from '../lib/client-environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -25,16 +26,17 @@ import { Logo } from './Logo'
  * @returns JSX element for the landing page
  */
 export function LandingPage() {
+  // Check if we're in staging environment
+  const isStaging = isInStagingEnvironment()
+  
   /**
    * Handle Google OAuth sign-in
    * In development, this redirects to mock sign-in page
    * In production, this triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
-    // More reliable environment detection for client-side
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.hostname.includes('localhost')
+    // Use shared environment detection utility
+    const isDevelopment = isInDevelopmentEnvironment()
     
     if (isDevelopment) {
       // In development, redirect to mock signin page for testing
@@ -49,6 +51,13 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-neutral-100">
+      {/* Staging Environment Banner */}
+      {isStaging && (
+        <div className="bg-yellow-400 text-black py-2 px-4 text-center font-semibold">
+          🎭 STAGING ENVIRONMENT - Test data only, mock authentication enabled
+        </div>
+      )}
+      
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
