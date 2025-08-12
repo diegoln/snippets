@@ -9,19 +9,36 @@
  */
 
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '../../components/Logo'
-import { getAllMockUsers } from '../../lib/mock-users'
-
-const mockUsers = getAllMockUsers()
+import { BASE_MOCK_USERS, type MockUser } from '../../lib/mock-users'
+import { getClientEnvironmentMode } from '../../lib/environment'
 
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)
+  const [mockUsers, setMockUsers] = useState<MockUser[]>([])
   const searchParams = useSearchParams()
   
   // Get callback URL from query params, default to home
   const callbackUrl = searchParams.get('callbackUrl') || '/'
+
+  // Generate environment-aware mock users on client side
+  useEffect(() => {
+    const envMode = getClientEnvironmentMode()
+    const userIdPrefix = envMode === 'staging' ? 'staging_' : ''
+    
+    const environmentUsers = BASE_MOCK_USERS.map((user, index) => ({
+      id: `${userIdPrefix}${index + 1}`,
+      name: user.name,
+      email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
+      image: user.image,
+      role: user.role
+    }))
+    
+    console.log('🎭 Mock users for environment:', envMode, environmentUsers)
+    setMockUsers(environmentUsers)
+  }, [])
 
   const handleSignIn = async (userId: string) => {
     try {
@@ -80,7 +97,13 @@ export default function MockSignInPage() {
             </div>
 
             <div className="space-y-4">
-              {mockUsers.map((user) => (
+              {mockUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading mock users...</p>
+                </div>
+              ) : (
+                mockUsers.map((user) => (
                 <button
                   key={user.id}
                   onClick={() => handleSignIn(user.id)}
@@ -114,7 +137,8 @@ export default function MockSignInPage() {
                     </div>
                   )}
                 </button>
-              ))}
+                ))
+              )}
             </div>
 
             <div className="mt-8 pt-6 border-t border-neutral-600/20">
