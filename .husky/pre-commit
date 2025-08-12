@@ -1,48 +1,16 @@
 #!/usr/bin/env sh
 
-# Pre-commit hook to ensure code quality before any commit
-echo "🔍 Running pre-commit checks..."
+# Lightweight pre-commit hook - only checks syntax to prevent broken commits
+# Full validation happens in GitHub Actions CI
 
-# 1. Run TypeScript compilation check
-echo "📦 Checking TypeScript compilation..."
-npx tsc --noEmit --skipLibCheck
+# Quick TypeScript syntax check on modified files only
+echo "⚡ Quick syntax check on modified files..."
+node scripts/quick-typecheck.js
 if [ $? -ne 0 ]; then
-  echo "❌ TypeScript compilation failed. Please fix errors before committing."
+  echo "❌ TypeScript syntax errors found. Please fix before committing."
+  echo "💡 Tip: Run 'npm run check:dev' for full validation"
   exit 1
 fi
 
-# 2. Run linting
-echo "🧹 Running ESLint..."
-npm run lint
-if [ $? -ne 0 ]; then
-  echo "❌ Linting failed. Please fix errors before committing."
-  exit 1
-fi
-
-# 3. Check property consistency across codebase
-echo "🔗 Checking property consistency..."
-node scripts/check-property-consistency.js
-if [ $? -ne 0 ]; then
-  echo "❌ Property consistency check failed. Please fix errors before committing."
-  exit 1
-fi
-
-# 4. Validate API contracts (if TypeScript is available)
-if command -v npm list typescript >/dev/null 2>&1; then
-  echo "📋 Validating API contracts..."
-  node scripts/validate-api-contracts.js
-  if [ $? -ne 0 ]; then
-    echo "❌ API contract validation failed. Please fix errors before committing."
-    exit 1
-  fi
-fi
-
-# 5. Run basic tests
-echo "🧪 Running tests..."
-node run-basic-tests.js
-if [ $? -ne 0 ]; then
-  echo "❌ Tests failed. Please fix errors before committing."
-  exit 1
-fi
-
-echo "✅ All pre-commit checks passed!"
+echo "✅ Syntax check passed!"
+echo "📝 Full validation will run in CI after push"
