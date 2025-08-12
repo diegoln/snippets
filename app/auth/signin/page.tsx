@@ -23,49 +23,53 @@ export default function SignInPage() {
     const referrer = document.referrer
     const callbackUrl = searchParams.get('callbackUrl') || '/'
     
-    // More robust staging detection:
-    // CRITICAL: Check if referrer includes /staging (most reliable indicator)
-    // The middleware rewrites /staging paths, but the referrer still contains the original path
-    const isStaging = referrer.includes('/staging') ||
-                     callbackUrl.includes('/staging') ||
-                     currentPath.startsWith('/staging') ||
-                     currentOrigin.includes('staging')
+    // More robust staging detection with multiple fallbacks:
+    // 1. PRIORITY: Check callbackUrl for /staging (most reliable from NextAuth)
+    // 2. Check referrer for /staging (works when navigating from staging pages)
+    // 3. Check current path for /staging (fallback, though middleware rewrites this)
+    // 4. Check origin for staging subdomain (additional safety check)
+    const callbackHasStaging = callbackUrl.includes('/staging')
+    const referrerHasStaging = referrer.includes('/staging') 
+    const pathHasStaging = currentPath.startsWith('/staging')
+    const originHasStaging = currentOrigin.includes('staging')
+    
+    // CRITICAL: Prioritize callbackUrl check as NextAuth preserves the full callback URL
+    const isStaging = callbackHasStaging || referrerHasStaging || pathHasStaging || originHasStaging
     
     // CRITICAL: If we detect staging, NEVER use Google OAuth
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
     const isDevelopment = process.env.NODE_ENV === 'development'
     
-    // Only log in development to avoid noise and potential info leaks
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Dynamic SignIn - Environment detection:', {
-        currentPath,
-        referrer,
-        callbackUrl,
-        isStaging,
-        isProduction, 
-        isDevelopment,
-        nodeEnv: process.env.NODE_ENV,
-        checks: {
-          callbackHasStaging: callbackUrl.includes('/staging'),
-          referrerHasStaging: referrer.includes('/staging'),
-          pathStartsWithStaging: currentPath.startsWith('/staging'),
-          originHasStaging: currentOrigin.includes('staging')
-        }
-      })
-    }
+    // Enhanced logging for debugging staging detection issues
+    console.log('🔍 SignIn Environment Detection:', {
+      currentPath,
+      referrer: referrer || '(empty)',
+      callbackUrl,
+      isStaging,
+      isProduction, 
+      isDevelopment,
+      nodeEnv: process.env.NODE_ENV,
+      checks: {
+        callbackHasStaging,
+        referrerHasStaging, 
+        pathHasStaging,
+        originHasStaging
+      },
+      // Show which check triggered staging detection
+      stagingTrigger: callbackHasStaging ? 'callbackUrl' : 
+                      referrerHasStaging ? 'referrer' :
+                      pathHasStaging ? 'path' : 
+                      originHasStaging ? 'origin' : 'none'
+    })
     
     // STAGING: Always use mock auth, never Google OAuth
     if (isStaging) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🎭 STAGING environment detected - using mock auth')
-      }
+      console.log('🎭 STAGING environment detected - using mock auth')
       // IMPORTANT: Use /mock-signin (not /staging/mock-signin) since middleware rewrites paths
       // But preserve the staging callback URL so we go back to staging after auth
       const stagingCallbackUrl = callbackUrl.includes('/staging') ? callbackUrl : '/staging'
       const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(stagingCallbackUrl)}`
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Redirecting to mock signin with staging callback:', targetUrl)
-      }
+      console.log('Redirecting to mock signin with staging callback:', targetUrl)
       window.location.href = targetUrl
       return // Exit early to prevent any other logic
     } else if (isDevelopment) {
