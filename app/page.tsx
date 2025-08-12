@@ -143,7 +143,7 @@ export default function Home() {
           setIsLoadingProfile(false)
         })
     }
-  }, [status, session, isLoadingProfile])
+  }, [status, session, isLoadingProfile, profileError, userProfile])
 
   // Show loading while checking authentication or fetching profile
   if (status === 'loading' || (status === 'authenticated' && session && (isLoadingProfile || (!userProfile && !profileError)))) {
