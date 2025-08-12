@@ -516,7 +516,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     } finally {
       setIsConnecting(null)
     }
-  }, [formData.role, formData.customRole, formData.level, formData.customLevel])
+  }, [extractBulletsFromReflection])
 
   // Handle step navigation
   const handleNext = useCallback(async () => {
