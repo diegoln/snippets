@@ -29,8 +29,13 @@ export function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = internalPath
     
-    // Rewrite to internal path while preserving query parameters
-    return NextResponse.rewrite(url)
+    // CRITICAL: Preserve staging context through headers for authentication
+    const response = NextResponse.rewrite(url)
+    response.headers.set('x-environment-mode', 'staging')
+    response.headers.set('x-staging-request', 'true')
+    response.headers.set('x-original-path', pathname) // Preserve original path
+    
+    return response
   }
   
   return response

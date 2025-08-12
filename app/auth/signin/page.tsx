@@ -23,42 +23,79 @@ export default function SignInPage() {
     const referrer = document.referrer
     const callbackUrl = searchParams.get('callbackUrl') || '/'
     
-    const isStaging = currentPath.includes('/staging') || 
-                     referrer.includes('/staging') ||
-                     callbackUrl.includes('/staging')
+    // More robust staging detection:
+    // CRITICAL: Check if referrer includes /staging (most reliable indicator)
+    // The middleware rewrites /staging paths, but the referrer still contains the original path
+    const isStaging = referrer.includes('/staging') ||
+                     callbackUrl.includes('/staging') ||
+                     currentPath.startsWith('/staging') ||
+                     currentOrigin.includes('staging') ||
+                     // Additional check: if we're on production domain but referrer suggests staging
+                     (referrer.includes('advanceweekly.io/staging'))
     
+    // CRITICAL: If we detect staging, NEVER use Google OAuth
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
     const isDevelopment = process.env.NODE_ENV === 'development'
     
-    console.log('Dynamic SignIn - Environment detection:', {
-      currentPath,
-      referrer,
-      callbackUrl,
-      isStaging,
-      isProduction, 
-      isDevelopment,
-      nodeEnv: process.env.NODE_ENV
-    })
+    // Only log in development to avoid noise and potential info leaks
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Dynamic SignIn - Environment detection:', {
+        currentPath,
+        referrer,
+        callbackUrl,
+        isStaging,
+        isProduction, 
+        isDevelopment,
+        nodeEnv: process.env.NODE_ENV,
+        checks: {
+          callbackHasStaging: callbackUrl.includes('/staging'),
+          referrerHasStaging: referrer.includes('/staging'),
+          pathStartsWithStaging: currentPath.startsWith('/staging'),
+          originHasStaging: currentOrigin.includes('staging')
+        }
+      })
+    }
     
-    // Add a small delay to ensure proper environment detection
-    setTimeout(() => {
-      if (isProduction) {
-        // Production: use Google OAuth
-        console.log('🔐 Production environment - using Google OAuth')
-        signIn('google', { 
-          callbackUrl: callbackUrl,
-          redirect: true 
-        })
-      } else {
-        // Development or Staging: use mock auth
-        console.log('🔐 Dev/Staging environment - using mock auth')
-        const stagingPrefix = isStaging ? '/staging' : ''
-        const targetUrl = `${stagingPrefix}/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
-        console.log('Redirecting to:', targetUrl)
-        window.location.href = targetUrl
+    // STAGING: Always use mock auth, never Google OAuth
+    if (isStaging) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎭 STAGING environment detected - using mock auth')
       }
-      setIsLoading(false)
-    }, 100)
+      // IMPORTANT: Use /mock-signin (not /staging/mock-signin) since middleware rewrites paths
+      // But preserve the staging callback URL so we go back to staging after auth
+      const stagingCallbackUrl = callbackUrl.includes('/staging') ? callbackUrl : '/staging'
+      const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(stagingCallbackUrl)}`
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Redirecting to mock signin with staging callback:', targetUrl)
+      }
+      window.location.href = targetUrl
+      return // Exit early to prevent any other logic
+    }
+    
+    // DEVELOPMENT: Use mock auth without /staging prefix
+    if (isDevelopment) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development environment - using mock auth')
+      }
+      const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Redirecting to mock signin:', targetUrl)
+      }
+      window.location.href = targetUrl
+      return // Exit early
+    }
+    
+    // PRODUCTION (non-staging): Use Google OAuth
+    if (isProduction) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Production environment - using Google OAuth')
+      }
+      signIn('google', { 
+        callbackUrl: callbackUrl,
+        redirect: true 
+      })
+    }
+    setIsLoading(false)
     
   }, [searchParams])
 
