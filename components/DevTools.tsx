@@ -1,8 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
+import { signOut } from 'next-auth/react'
 import { setDevSession } from '../lib/dev-auth'
-import { shouldShowDevTools, getClientEnvironmentMode, isStaging } from '../lib/environment'
+import { 
+  shouldShowDevTools, 
+  getClientEnvironmentMode, 
+  isStaging, 
+  isDevelopment,
+  isDevLike 
+} from '../lib/environment'
 
 /**
  * Development Tools Component - Updated with Staging Support
@@ -26,15 +33,34 @@ export function DevTools() {
 
   const envMode = getClientEnvironmentMode()
 
-  const clearSession = () => {
-    // Clear all auth-related data
-    localStorage.removeItem('dev-session')
-    localStorage.removeItem('onboarding-progress')
-    // Clear all user onboarding flags
-    for (let i = 1; i <= 3; i++) {
-      localStorage.removeItem(`user_${i}_onboarded`)
+  const clearSession = async () => {
+    try {
+      // Clear all auth-related localStorage data
+      localStorage.removeItem('dev-session')
+      localStorage.removeItem('onboarding-progress')
+      localStorage.removeItem('onboarding-just-completed')
+      localStorage.removeItem('onboarding-completed-timestamp')
+      // Clear all user onboarding flags
+      for (let i = 1; i <= 5; i++) {
+        localStorage.removeItem(`user_${i}_onboarded`)
+      }
+      
+      // Clear NextAuth session (important for staging JWT cookies)
+      console.log('🔄 Clearing NextAuth session...')
+      const redirectUrl = isStaging() ? '/staging' : '/'
+      await signOut({ 
+        redirect: false,
+        callbackUrl: redirectUrl
+      })
+      
+      // Force reload to ensure clean state
+      console.log('🔄 Reloading page for clean state...')
+      window.location.href = redirectUrl
+    } catch (error) {
+      console.error('Error clearing session:', error)
+      // Fallback: force reload anyway
+      window.location.href = isStaging() ? '/staging' : '/'
     }
-    window.location.href = '/'
   }
 
   const viewSession = async () => {
@@ -60,27 +86,37 @@ export function DevTools() {
 
   const resetOnboarding = async () => {
     try {
-      // Ensure dev session is set for authentication
-      setDevSession()
+      // Only set dev session in development (not in staging)
+      if (isDevelopment()) {
+        setDevSession()
+      }
       
       // Clear onboarding progress from localStorage
       localStorage.removeItem('onboarding-progress')
+      localStorage.removeItem('onboarding-just-completed')
+      localStorage.removeItem('onboarding-completed-timestamp')
       
       // Reset onboarding status in database via API
+      const headers: HeadersInit = { 
+        'Content-Type': 'application/json'
+      }
+      
+      // Only add dev header in development
+      if (isDevelopment()) {
+        headers['X-Dev-User-Id'] = 'dev-user-123'
+      }
+      
       const response = await fetch('/api/user/onboarding', {
         method: 'DELETE',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123'
-        },
-        credentials: 'same-origin',
+        headers,
+        credentials: 'include', // Important for staging cookies
       })
       
       if (response.ok) {
         const data = await response.json()
         const confirmRedirect = confirm('Onboarding reset successfully! Would you like to go to the onboarding wizard now?')
         if (confirmRedirect) {
-          window.location.href = '/onboarding-wizard'
+          window.location.href = isStaging() ? '/staging' : '/onboarding-wizard'
         }
       } else {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }))
@@ -120,7 +156,7 @@ export function DevTools() {
   }
 
   const goToOnboarding = () => {
-    window.location.href = '/onboarding-wizard'
+    window.location.href = isStaging() ? '/staging' : '/onboarding-wizard'
   }
 
   const goToDashboard = () => {
@@ -128,13 +164,13 @@ export function DevTools() {
     // Set flags to ensure we bypass onboarding
     localStorage.setItem('onboarding-just-completed', 'true')
     localStorage.setItem('onboarding-completed-timestamp', Date.now().toString())
-    window.location.href = '/'
+    window.location.href = isStaging() ? '/staging' : '/'
   }
 
   return (
     <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '220px' }}>
       <p className="text-xs font-semibold text-gray-600 mb-2">
-        Dev Tools {envMode === 'staging' && <span className="text-orange-600">(Staging)</span>}
+        Dev Tools {isStaging() && <span className="text-orange-600">(Staging)</span>}
       </p>
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
