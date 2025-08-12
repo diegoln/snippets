@@ -41,9 +41,15 @@ fi
 echo "📦 Installing required dependencies..."
 
 # Install production dependencies including Prisma client
-npm ci --production --silent || npm install --production --silent
+# Skip postinstall scripts (like husky) which aren't needed in deployment
+npm ci --production --silent --ignore-scripts || npm install --production --silent --ignore-scripts
 
-echo "🔧 Generating Prisma client..."
+echo "🔧 Generating Prisma schema and client..."
+
+# First generate the correct schema for production environment
+NODE_ENV=production node scripts/smart-schema-generate.js --force
+
+# Then generate the Prisma client based on that schema
 NODE_ENV=production npx prisma generate
 
 echo "🎭 Initializing staging environment state..."
