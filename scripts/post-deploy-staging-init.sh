@@ -38,7 +38,9 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
                 sleep 5
                 
                 # Convert DATABASE_URL to use TCP connection instead of socket
-                export DATABASE_URL=$(echo "$ORIGINAL_DATABASE_URL" | sed 's|/cloudsql/[^?]*|127.0.0.1:5433/snippets_db|')
+                # Original: postgresql://user:pass@localhost/snippets_db?host=/cloudsql/...
+                # Target:   postgresql://user:pass@127.0.0.1:5433/snippets_db
+                export DATABASE_URL=$(echo "$ORIGINAL_DATABASE_URL" | sed 's|@localhost/\([^?]*\).*|@127.0.0.1:5433/\1|')
                 echo "✅ Cloud SQL Proxy started, using TCP connection"
                 
                 # Setup cleanup on exit
