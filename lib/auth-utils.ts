@@ -38,16 +38,20 @@ export async function getUserIdFromRequest(request: NextRequest): Promise<string
   try {
     let userId: string | null = null
     
-    if (process.env.NODE_ENV === 'development') {
-      // Development: use JWT tokens
-      const token = await getToken({ 
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET || 'development'
-      })
+    // First, always try JWT tokens (works for dev, staging, and as fallback)
+    const token = await getToken({ 
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET || 'development'
+    })
+    
+    // Check if this is a staging mock user (staging_1, staging_2, etc.)
+    const isStagingUser = token?.sub?.startsWith('staging_')
+    
+    if (process.env.NODE_ENV === 'development' || isStagingUser) {
+      // Development or staging mock users: use JWT tokens directly
       userId = token?.sub || null
-    } else {
-      // Production: use database sessions
-      // Extract session token from cookies
+    } else if (process.env.NODE_ENV === 'production') {
+      // Production with real users: try database sessions first
       const cookieHeader = request.headers.get('cookie')
       const sessionToken = extractSessionToken(cookieHeader)
       
@@ -69,19 +73,17 @@ export async function getUserIdFromRequest(request: NextRequest): Promise<string
       
       // Fallback to JWT if database session fails
       if (!userId) {
-        const token = await getToken({ 
-          req: request,
-          secret: process.env.NEXTAUTH_SECRET || 'development'
-        })
         userId = token?.sub || null
       }
     }
     
-    // Debug logging for production troubleshooting
-    if (process.env.NODE_ENV === 'production') {
+    // Debug logging for troubleshooting
+    if (process.env.NODE_ENV === 'production' || isStagingUser) {
       console.log(`🔍 Auth Debug - URL: ${request.url}`)
       console.log(`🔍 Auth Debug - Method: ${request.method}`)
       console.log(`🔍 Auth Debug - User ID: ${userId || 'none'}`)
+      console.log(`🔍 Auth Debug - Is Staging User: ${isStagingUser}`)
+      console.log(`🔍 Auth Debug - Token Sub: ${token?.sub || 'none'}`)
       console.log(`🔍 Auth Debug - Session token found: ${!!extractSessionToken(request.headers.get('cookie'))}`)
     }
     

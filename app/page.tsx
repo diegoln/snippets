@@ -97,12 +97,17 @@ export default function Home() {
         setIsLoadingProfile(false)
       }, 5000) // Reduced to 5 second timeout
       
+      // In staging, we need to handle mock users differently
+      const headers: HeadersInit = {}
+      if (process.env.NODE_ENV === 'development') {
+        headers['X-Dev-User-Id'] = 'dev-user-123'
+      }
+      
       fetch('/api/user/profile', {
         signal: controller.signal,
         cache: 'no-cache', // Ensure we get fresh data
-        headers: {
-          'X-Dev-User-Id': 'dev-user-123' // Add dev auth header
-        }
+        headers,
+        credentials: 'include' // Important: include cookies for session
       })
         .then(response => {
           clearTimeout(timeoutId)
