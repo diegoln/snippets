@@ -59,11 +59,22 @@ jobs:
             --config=cloudbuild.yaml \
             --project=$PROJECT_ID
 
+      - name: Initialize staging environment
+        run: |
+          echo "🎭 Initializing staging environment..."
+          
+          # Make staging init script executable
+          chmod +x scripts/post-deploy-staging-init.sh
+          
+          # Run staging initialization
+          ./scripts/post-deploy-staging-init.sh
+
       - name: Post-deployment verification
         run: |
           echo "✅ Deployment completed successfully!"
           echo ""
           echo "🌐 Application URL: https://advanceweekly.io"
+          echo "🎭 Staging URL: https://advanceweekly.io/staging"
           echo "🔐 OAuth Redirect URI (FIXED): https://advanceweekly.io/api/auth/callback/google"
           echo ""
           echo "📋 Deployment Summary:"
