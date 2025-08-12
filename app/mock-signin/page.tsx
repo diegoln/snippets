@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '../../components/Logo'
 import { BASE_MOCK_USERS, type MockUser } from '../../lib/mock-users'
-import { getClientEnvironmentMode } from '../../lib/environment'
+import { getClientEnvironmentMode, generateUserId, isStaging } from '../../lib/environment'
 
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)
@@ -23,20 +23,21 @@ export default function MockSignInPage() {
   // Get callback URL from query params, default to home
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
-  // Generate environment-aware mock users on client side
+  // Generate environment-aware mock users on client side using shared utilities
   useEffect(() => {
-    const envMode = getClientEnvironmentMode()
-    const userIdPrefix = envMode === 'staging' ? 'staging_' : ''
+    const environmentUsers = BASE_MOCK_USERS.map((user, index) => {
+      const baseId = (index + 1).toString()
+      
+      return {
+        id: generateUserId(baseId), // Uses shared generateUserId utility
+        name: user.name,
+        email: isStaging() ? user.email.replace('@', '+staging@') : user.email,
+        image: user.image,
+        role: user.role
+      }
+    })
     
-    const environmentUsers = BASE_MOCK_USERS.map((user, index) => ({
-      id: `${userIdPrefix}${index + 1}`,
-      name: user.name,
-      email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
-      image: user.image,
-      role: user.role
-    }))
-    
-    console.log('🎭 Mock users for environment:', envMode, environmentUsers)
+    console.log('🎭 Mock users for environment:', getClientEnvironmentMode(), environmentUsers)
     setMockUsers(environmentUsers)
   }, [])
 
