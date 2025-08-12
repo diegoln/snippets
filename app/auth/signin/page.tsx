@@ -41,7 +41,7 @@ export default function SignInPage() {
     const isDevelopment = process.env.NODE_ENV === 'development'
     
     // Enhanced logging for debugging staging detection issues (only in non-production)
-    if (process.env.NODE_ENV !== 'production' || isStaging) {
+    if (!isProduction) {
       console.log('🔍 SignIn Environment Detection:', {
       currentPath,
       referrer: referrer || '(empty)',
