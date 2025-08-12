@@ -38,6 +38,14 @@ else
     echo "✅ Using existing DATABASE_URL"
 fi
 
+echo "📦 Installing required dependencies..."
+
+# Install production dependencies including Prisma client
+npm ci --production --silent || npm install --production --silent
+
+echo "🔧 Generating Prisma client..."
+NODE_ENV=production npx prisma generate
+
 echo "🎭 Initializing staging environment state..."
 
 # Run the staging initialization with production environment settings
