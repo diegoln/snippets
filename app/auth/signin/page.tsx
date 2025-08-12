@@ -40,8 +40,9 @@ export default function SignInPage() {
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
     const isDevelopment = process.env.NODE_ENV === 'development'
     
-    // Enhanced logging for debugging staging detection issues
-    console.log('🔍 SignIn Environment Detection:', {
+    // Enhanced logging for debugging staging detection issues (only in non-production)
+    if (!isProduction) {
+      console.log('🔍 SignIn Environment Detection:', {
       currentPath,
       referrer: referrer || '(empty)',
       callbackUrl,
@@ -60,7 +61,8 @@ export default function SignInPage() {
                       referrerHasStaging ? 'referrer' :
                       pathHasStaging ? 'path' : 
                       originHasStaging ? 'origin' : 'none'
-    })
+      })
+    }
     
     // STAGING: Always use mock auth, never Google OAuth
     if (isStaging) {
