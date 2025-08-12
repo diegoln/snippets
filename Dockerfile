@@ -33,8 +33,9 @@ RUN npm run generate-schema:force && npm run build && npm prune --production
 # ===== DEVELOPMENT STAGE =====
 FROM base as development
 
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
+# Install dependencies for development
+COPY package.json package-lock.json* ./
+RUN npm ci --frozen-lockfile
 
 # Copy source and development files
 COPY . .
