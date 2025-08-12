@@ -127,7 +127,14 @@ export default function Home() {
             // Assume onboarding is needed if we can't verify
             setUserProfile({ onboardingCompleted: false })
           } else {
-            console.error('❌ Failed to fetch user profile:', error)
+            console.error('❌ Failed to fetch user profile:', {
+              error: error.message || 'Unknown error',
+              timestamp: new Date().toISOString()
+            })
+            // In staging, provide more helpful error message
+            if (window.location.pathname.includes('/staging')) {
+              console.log('💡 Tip: If in staging, ensure you are logged in with a staging mock user')
+            }
             setProfileError(true)
           }
         })
