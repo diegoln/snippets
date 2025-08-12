@@ -29,9 +29,7 @@ export default function SignInPage() {
     const isStaging = referrer.includes('/staging') ||
                      callbackUrl.includes('/staging') ||
                      currentPath.startsWith('/staging') ||
-                     currentOrigin.includes('staging') ||
-                     // Additional check: if we're on production domain but referrer suggests staging
-                     (referrer.includes('advanceweekly.io/staging'))
+                     currentOrigin.includes('staging')
     
     // CRITICAL: If we detect staging, NEVER use Google OAuth
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
@@ -70,10 +68,8 @@ export default function SignInPage() {
       }
       window.location.href = targetUrl
       return // Exit early to prevent any other logic
-    }
-    
-    // DEVELOPMENT: Use mock auth without /staging prefix
-    if (isDevelopment) {
+    } else if (isDevelopment) {
+      // DEVELOPMENT: Use mock auth without /staging prefix
       if (process.env.NODE_ENV === 'development') {
         console.log('🔧 Development environment - using mock auth')
       }
@@ -83,10 +79,8 @@ export default function SignInPage() {
       }
       window.location.href = targetUrl
       return // Exit early
-    }
-    
-    // PRODUCTION (non-staging): Use Google OAuth
-    if (isProduction) {
+    } else if (isProduction) {
+      // PRODUCTION (non-staging): Use Google OAuth
       if (process.env.NODE_ENV === 'development') {
         console.log('🔐 Production environment - using Google OAuth')
       }

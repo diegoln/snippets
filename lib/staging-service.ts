@@ -108,8 +108,6 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     console.log('4️⃣ Setting up mock integrations for staging users...')
     
     for (const mockUser of mockUsers) {
-      if (!mockUser.id.startsWith('staging_')) continue
-      
       // Google Calendar integration
       await db.integration.upsert({
         where: {
@@ -179,8 +177,6 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
     const weekNumbers = [currentWeek - 3, currentWeek - 2, currentWeek - 1, currentWeek]
 
     for (const mockUser of mockUsers) {
-      if (!mockUser.id.startsWith('staging_')) continue
-      
       for (const weekNumber of weekNumbers) {
         const { startDate, endDate } = getWeekDates(weekNumber, currentYear)
         
