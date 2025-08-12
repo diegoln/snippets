@@ -54,22 +54,22 @@ export async function initializeStagingData(prisma?: PrismaClient): Promise<void
                              mockUser.role.includes('Staff') ? 'Staff' : 'Mid-level'
       const onboardingCompletedAt = new Date()
       
+      // Common user data for both update and create
+      const userData = {
+        name: mockUser.name,
+        jobTitle,
+        seniorityLevel,
+        onboardingCompletedAt
+      }
+      
       const user = await db.user.upsert({
         where: { email: mockUser.email },
-        update: {
-          name: mockUser.name,
-          jobTitle,
-          seniorityLevel,
-          onboardingCompletedAt
-        },
+        update: userData,
         create: {
           id: mockUser.id,
           email: mockUser.email,
-          name: mockUser.name,
           image: mockUser.image,
-          jobTitle,
-          seniorityLevel,
-          onboardingCompletedAt
+          ...userData
         }
       })
       console.log(`✅ Created staging user: ${user.name} (${user.email})`)

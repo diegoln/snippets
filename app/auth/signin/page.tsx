@@ -36,43 +36,56 @@ export default function SignInPage() {
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
     const isDevelopment = process.env.NODE_ENV === 'development'
     
-    console.log('Dynamic SignIn - Environment detection:', {
-      currentPath,
-      referrer,
-      callbackUrl,
-      isStaging,
-      isProduction, 
-      isDevelopment,
-      nodeEnv: process.env.NODE_ENV,
-      checks: {
-        callbackHasStaging: callbackUrl.includes('/staging'),
-        referrerHasStaging: referrer.includes('/staging'),
-        pathStartsWithStaging: currentPath.startsWith('/staging'),
-        originHasStaging: currentOrigin.includes('staging')
-      }
-    })
+    // Only log in development to avoid noise and potential info leaks
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Dynamic SignIn - Environment detection:', {
+        currentPath,
+        referrer,
+        callbackUrl,
+        isStaging,
+        isProduction, 
+        isDevelopment,
+        nodeEnv: process.env.NODE_ENV,
+        checks: {
+          callbackHasStaging: callbackUrl.includes('/staging'),
+          referrerHasStaging: referrer.includes('/staging'),
+          pathStartsWithStaging: currentPath.startsWith('/staging'),
+          originHasStaging: currentOrigin.includes('staging')
+        }
+      })
+    }
     
     // STAGING: Always use mock auth, never Google OAuth
     if (isStaging) {
-      console.log('🎭 STAGING environment detected - using mock auth')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎭 STAGING environment detected - using mock auth')
+      }
       const targetUrl = `/staging/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      console.log('Redirecting to staging mock signin:', targetUrl)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Redirecting to staging mock signin:', targetUrl)
+      }
       window.location.href = targetUrl
       return // Exit early to prevent any other logic
     }
     
     // DEVELOPMENT: Use mock auth without /staging prefix
     if (isDevelopment) {
-      console.log('🔧 Development environment - using mock auth')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Development environment - using mock auth')
+      }
       const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      console.log('Redirecting to mock signin:', targetUrl)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Redirecting to mock signin:', targetUrl)
+      }
       window.location.href = targetUrl
       return // Exit early
     }
     
     // PRODUCTION (non-staging): Use Google OAuth
     if (isProduction) {
-      console.log('🔐 Production environment - using Google OAuth')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 Production environment - using Google OAuth')
+      }
       signIn('google', { 
         callbackUrl: callbackUrl,
         redirect: true 

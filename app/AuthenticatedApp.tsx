@@ -16,6 +16,7 @@ import { PerformanceAssessment, AssessmentFormData, AssessmentContext, Assessmen
 import { llmProxy } from '../lib/llmproxy'
 import { formatDateRangeWithYear } from '../lib/date-utils'
 import { getCurrentWeekNumber } from '../lib/week-utils'
+import { isInStagingEnvironment } from '../lib/client-environment'
 
 interface WeeklySnippet {
   id: string
@@ -413,7 +414,7 @@ export const AuthenticatedApp = (): JSX.Element => {
   }
 
   // Check if we're in staging environment
-  const isStaging = typeof window !== 'undefined' && window.location.pathname.startsWith('/staging')
+  const isStaging = isInStagingEnvironment()
   
   return (
     <div className="min-h-screen bg-neutral-100">

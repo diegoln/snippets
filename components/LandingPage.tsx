@@ -18,6 +18,7 @@
 
 import { signIn } from 'next-auth/react'
 import { Logo } from './Logo'
+import { isInStagingEnvironment, isInDevelopmentEnvironment } from '../lib/client-environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -26,7 +27,7 @@ import { Logo } from './Logo'
  */
 export function LandingPage() {
   // Check if we're in staging environment
-  const isStaging = typeof window !== 'undefined' && window.location.pathname.startsWith('/staging')
+  const isStaging = isInStagingEnvironment()
   
   /**
    * Handle Google OAuth sign-in
@@ -34,10 +35,8 @@ export function LandingPage() {
    * In production, this triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
-    // More reliable environment detection for client-side
-    const isDevelopment = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' ||
-                         window.location.hostname.includes('localhost')
+    // Use shared environment detection utility
+    const isDevelopment = isInDevelopmentEnvironment()
     
     if (isDevelopment) {
       // In development, redirect to mock signin page for testing
