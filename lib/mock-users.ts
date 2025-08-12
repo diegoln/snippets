@@ -82,6 +82,13 @@ export function getMockUserById(id: string): MockUser | null {
   // FALLBACK: If staging ID not found, try all possible prefixed versions
   // This handles cases where server-side environment detection differs
   if (!id.includes('_')) {
+    // PERFORMANCE: Generate users for all environments only once
+    const allEnvUsers = [
+      ...generateMockUsersForEnvironment('development'),
+      ...generateMockUsersForEnvironment('staging'),
+      // Note: production and development users are identical, so we can skip duplicate generation
+    ]
+    
     // Base ID provided, try with all possible prefixes
     const possibleIds = [
       id,                    // Base ID (development)
@@ -89,13 +96,6 @@ export function getMockUserById(id: string): MockUser | null {
     ]
     
     for (const possibleId of possibleIds) {
-      // Generate users for all environments and check
-      const allEnvUsers = [
-        ...generateMockUsersForEnvironment('development'),
-        ...generateMockUsersForEnvironment('staging'),
-        ...generateMockUsersForEnvironment('production')
-      ]
-      
       user = allEnvUsers.find(u => u.id === possibleId)
       if (user) {
         return user
