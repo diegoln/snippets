@@ -31,6 +31,15 @@ export function LandingPage() {
   const stagingMode = environmentMode === 'staging'
   const devMode = environmentMode === 'development'
   
+  // Debug logging for staging banner issue
+  console.log('🎭 LandingPage Environment Debug:', {
+    environmentMode,
+    stagingMode,
+    devMode,
+    processEnvEnvironmentMode: process.env.ENVIRONMENT_MODE,
+    processEnvNodeEnv: process.env.NODE_ENV
+  })
+  
   /**
    * Handle sign-in with simplified environment routing
    * - Development & Staging: Mock sign-in (each has own domain)
