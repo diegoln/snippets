@@ -11,7 +11,7 @@
 # Run this script once to set up staging environment
 #
 
-set -e
+set -euo pipefail
 
 # Configuration
 PROJECT_ID="advanceweekly-prod"
@@ -63,17 +63,23 @@ else
     echo "✅ Created staging database 'advanceweekly'"
 fi
 
-# Get production database URL for reference
-echo "🔍 Getting production database configuration..."
-PROD_DB_URL=$(gcloud secrets versions access latest --secret="database-url" 2>/dev/null || echo "")
+# Generate unique staging database credentials for security isolation
+echo "🔍 Generating staging database configuration..."
+STAGING_DB_USER="staging_app_user"
+STAGING_DB_PASSWORD=$(openssl rand -base64 24 | tr -d "=+/" | cut -c1-20)
+STAGING_DB_URL="postgresql://$STAGING_DB_USER:$STAGING_DB_PASSWORD@/advanceweekly?host=/cloudsql/advanceweekly-prod:us-central1:advanceweekly-staging-db"
 
-if [ -z "$PROD_DB_URL" ]; then
-    echo "⚠️  Production database URL secret not found. You'll need to create it manually."
-    STAGING_DB_URL="postgresql://username:password@/advanceweekly?host=/cloudsql/advanceweekly-prod:us-central1:advanceweekly-staging-db"
-else
-    # Generate staging database URL based on production
-    STAGING_DB_URL=$(echo "$PROD_DB_URL" | sed "s/$PRODUCTION_DB_NAME/$STAGING_DB_NAME/g")
-fi
+echo "🔐 Staging database credentials generated:"
+echo "   - User: $STAGING_DB_USER"
+echo "   - Password: [HIDDEN] (20 chars)"
+echo "   - Database: advanceweekly"
+
+# Create staging database user
+echo "👤 Creating staging database user..."
+gcloud sql users create $STAGING_DB_USER \
+    --instance=$STAGING_DB_NAME \
+    --password=$STAGING_DB_PASSWORD \
+    --type=built_in 2>/dev/null || echo "ℹ️  User may already exist"
 
 # Create or update staging database URL secret
 echo "🔐 Setting up staging database URL secret..."
@@ -99,12 +105,18 @@ if ! gcloud secrets describe staging-google-client-secret &>/dev/null; then
     echo "⚠️  Update with real staging OAuth client secret after creating Google OAuth app"
 fi
 
-# Create staging-specific OpenAI API key secret
-echo "🤖 Setting up staging OpenAI API key secret..."
-if ! gcloud secrets describe staging-openai-api-key &>/dev/null; then
-    echo "STAGING_OPENAI_API_KEY_PLACEHOLDER" | gcloud secrets create staging-openai-api-key --data-file=-
-    echo "✅ Created staging OpenAI API key secret (placeholder)"
-    echo "⚠️  Update with real staging OpenAI API key for LLM functionality"
+# Create staging-specific Gemini API key secret  
+echo "🤖 Setting up staging Gemini API key secret..."
+if ! gcloud secrets describe staging-gemini-api-key &>/dev/null; then
+    # Use production Gemini key for staging (safe for testing)
+    PROD_GEMINI_KEY=$(gcloud secrets versions access latest --secret="gemini-api-key" 2>/dev/null || echo "")
+    if [ -n "$PROD_GEMINI_KEY" ]; then
+        echo "$PROD_GEMINI_KEY" | gcloud secrets create staging-gemini-api-key --data-file=-
+        echo "✅ Created staging Gemini API key secret (using production key for testing)"
+    else
+        echo "STAGING_GEMINI_API_KEY_PLACEHOLDER" | gcloud secrets create staging-gemini-api-key --data-file=-
+        echo "⚠️  Created staging Gemini API key secret with placeholder - update manually"
+    fi
 fi
 
 # Create staging-specific NextAuth secret
@@ -131,7 +143,7 @@ gcloud secrets add-iam-policy-binding staging-google-client-secret \
     --member="serviceAccount:$SERVICE_ACCOUNT" \
     --role="roles/secretmanager.secretAccessor" &>/dev/null || true
 
-gcloud secrets add-iam-policy-binding staging-openai-api-key \
+gcloud secrets add-iam-policy-binding staging-gemini-api-key \
     --member="serviceAccount:$SERVICE_ACCOUNT" \
     --role="roles/secretmanager.secretAccessor" &>/dev/null || true
 
@@ -150,7 +162,7 @@ echo "2. 🔑 Update Google OAuth app with staging redirect URLs"
 echo "3. 🔐 Update staging secrets with real values:"
 echo "   - gcloud secrets versions add staging-google-client-id --data-file=<client-id-file>"
 echo "   - gcloud secrets versions add staging-google-client-secret --data-file=<client-secret-file>"
-echo "   - gcloud secrets versions add staging-openai-api-key --data-file=<openai-api-key-file>"
+echo "   - gcloud secrets versions add staging-gemini-api-key --data-file=<gemini-api-key-file>"
 echo "4. 🚀 Deploy staging with: gcloud builds submit --config cloudbuild-staging.yaml"
 echo ""
 echo "🎭 Staging will be available at: https://staging.advanceweekly.io"

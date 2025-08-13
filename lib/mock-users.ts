@@ -72,6 +72,24 @@ export function getMockUsers(): MockUser[] {
 export const MOCK_USERS: MockUser[] = getMockUsers()
 
 /**
+ * Helper function to generate all environment users once for efficient lookups
+ */
+function getAllEnvironmentUsers(): MockUser[] {
+  return [
+    ...generateMockUsersForEnvironment('development'),
+    ...generateMockUsersForEnvironment('staging'),
+    // Note: production and development users are identical, so we can skip duplicate generation
+  ]
+}
+
+/**
+ * Helper function to find user by ID in a given user array
+ */
+function findUserInArray(users: MockUser[], id: string): MockUser | null {
+  return users.find(user => user.id === id) || null
+}
+
+/**
  * Get mock user by ID (environment-aware)
  * 
  * CRITICAL: This function handles both environment-prefixed IDs (staging_1) 
@@ -79,8 +97,8 @@ export const MOCK_USERS: MockUser[] = getMockUsers()
  */
 export function getMockUserById(id: string): MockUser | null {
   // First try exact match with environment-aware users
-  const users = getMockUsers()
-  let user = users.find(user => user.id === id)
+  const currentEnvUsers = getMockUsers()
+  const user = findUserInArray(currentEnvUsers, id)
   
   if (user) {
     return user
@@ -89,12 +107,7 @@ export function getMockUserById(id: string): MockUser | null {
   // FALLBACK: If staging ID not found, try all possible prefixed versions
   // This handles cases where server-side environment detection differs
   if (!id.includes('_')) {
-    // PERFORMANCE: Generate users for all environments only once
-    const allEnvUsers = [
-      ...generateMockUsersForEnvironment('development'),
-      ...generateMockUsersForEnvironment('staging'),
-      // Note: production and development users are identical, so we can skip duplicate generation
-    ]
+    const allEnvUsers = getAllEnvironmentUsers()
     
     // Base ID provided, try with all possible prefixes
     const possibleIds = [
@@ -103,9 +116,9 @@ export function getMockUserById(id: string): MockUser | null {
     ]
     
     for (const possibleId of possibleIds) {
-      user = allEnvUsers.find(u => u.id === possibleId)
-      if (user) {
-        return user
+      const foundUser = findUserInArray(allEnvUsers, possibleId)
+      if (foundUser) {
+        return foundUser
       }
     }
   }

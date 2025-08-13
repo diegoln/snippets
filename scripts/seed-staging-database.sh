@@ -10,7 +10,7 @@
 # Run this after setting up staging infrastructure
 #
 
-set -e
+set -euo pipefail
 
 # Configuration
 PROJECT_ID="advanceweekly-prod"
