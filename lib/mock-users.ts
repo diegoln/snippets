@@ -5,7 +5,7 @@
  * Both authentication and UI components should import from here.
  */
 
-import { getEnvironmentMode, generateUserId } from './environment'
+import { getEnvironmentMode } from './environment'
 
 export interface MockUser {
   id: string
@@ -50,7 +50,7 @@ export function getMockUsers(): MockUser[] {
     const baseId = (index + 1).toString()
     
     return {
-      id: generateUserId(baseId),
+      id: envMode === 'staging' ? `staging_${baseId}` : baseId,
       name: user.name,
       email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
       image: user.image,

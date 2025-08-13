@@ -32,21 +32,17 @@ export function LandingPage() {
   const devMode = environmentMode === 'development'
   
   /**
-   * Handle Google OAuth sign-in with environment-aware routing
-   * - Development: Redirects to mock sign-in page
-   * - Staging: Redirects to mock sign-in with /staging callback
-   * - Production: Triggers real Google OAuth flow
+   * Handle sign-in with simplified environment routing
+   * - Development & Staging: Mock sign-in (each has own domain)
+   * - Production: Real Google OAuth
    */
   const handleGoogleSignIn = () => {
-    
     if (devMode || stagingMode) {
-      // In development or staging, redirect to mock signin page for testing
-      // This allows developers/testers to test the full flow without Google OAuth setup
-      const callbackUrl = stagingMode ? '/staging' : '/'
-      window.location.href = `/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      // Development and staging use mock authentication for easy testing
+      // Simple callback to home page - no complex URL manipulation needed!
+      window.location.href = `/mock-signin?callbackUrl=${encodeURIComponent('/')}`
     } else {
-      // In production, use real Google OAuth with NextAuth
-      // NextAuth callbacks will handle redirecting to root page for proper routing
+      // Production uses real Google OAuth
       signIn('google', { callbackUrl: '/' })
     }
   }

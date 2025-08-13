@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isApiStaging } from '../../../../lib/api-environment'
+import { isStaging } from '../../../../lib/environment'
 import { initializeStagingData } from '../../../../lib/staging-service'
 
 /**
@@ -13,7 +13,7 @@ import { initializeStagingData } from '../../../../lib/staging-service'
 export async function POST(request: NextRequest) {
   try {
     // Security check - only allow in staging environment
-    if (!isApiStaging(request)) {
+    if (!isStaging()) {
       return NextResponse.json(
         { error: 'This endpoint is only available in staging environment' },
         { status: 403 }

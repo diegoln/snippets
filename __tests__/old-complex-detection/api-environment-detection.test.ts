@@ -4,7 +4,7 @@
  * This test confirms why the mock users API returns 403 when called from staging.
  */
 
-import { getApiEnvironmentMode } from '../lib/api-environment'
+import { getApiEnvironmentMode } from '../../lib/api-environment-old'
 import { NextRequest } from 'next/server'
 
 describe('API Environment Detection Issue', () => {

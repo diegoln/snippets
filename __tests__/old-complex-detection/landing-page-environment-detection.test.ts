@@ -5,7 +5,7 @@
  * and that environment-specific button labels are correct.
  */
 
-import { getClientEnvironmentMode } from '../lib/environment'
+import { getClientEnvironmentMode } from '../../lib/environment'
 
 // Mock window.location for different scenarios
 const mockLocation = {
