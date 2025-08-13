@@ -63,9 +63,9 @@ export function getClientEnvironmentMode(): EnvironmentMode {
     }
   }
   
-  // Check URL hash or origin for staging context
+  // Check URL hash or origin for staging context  
   if (window.location.href.includes('/staging') || 
-      window.location.hash.includes('staging')) {
+      (window.location.hash && window.location.hash.includes('staging'))) {
     return 'staging'
   }
   
