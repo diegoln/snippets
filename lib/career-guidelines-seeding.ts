@@ -88,7 +88,7 @@ export async function seedCareerGuidelineTemplates(
         created++
       } catch (error) {
         if (!silent) {
-          console.error(`❌ Error creating ${guideline.role} - ${guideline.level}:`, error.message)
+          console.error(`❌ Error creating ${guideline.role} - ${guideline.level}:`, error instanceof Error ? error.message : String(error))
         }
         // Continue with other guidelines even if one fails
       }
