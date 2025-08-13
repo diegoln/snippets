@@ -137,5 +137,5 @@ export function getAllMockUsers(): MockUser[] {
  * Development environment check
  */
 export function isDevelopmentEnvironment(): boolean {
-  return process.env.NODE_ENV === 'development'
+  return getEnvironmentMode() === 'development'
 }

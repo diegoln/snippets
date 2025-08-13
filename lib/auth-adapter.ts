@@ -1,5 +1,6 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { PrismaClient } from '@prisma/client'
+import { getEnvironmentMode } from './environment'
 
 // Reuse global Prisma instance to prevent connection exhaustion
 declare global {
@@ -8,7 +9,7 @@ declare global {
 }
 
 const prisma = globalThis.__globalPrisma ?? new PrismaClient()
-if (process.env.NODE_ENV !== 'production') {
+if (getEnvironmentMode() !== 'production') {
   globalThis.__globalPrisma = prisma
 }
 
@@ -24,7 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
  * that occur when NextAuth can't establish database sessions.
  */
 export function createSafeAdapter() {
-  if (process.env.NODE_ENV === 'development') {
+  if (getEnvironmentMode() === 'development') {
     return undefined // Always use JWT in development
   }
   
@@ -41,5 +42,5 @@ export function createSafeAdapter() {
  * Get the appropriate session strategy based on adapter availability
  */
 export function getSessionStrategy(adapter: any) {
-  return (process.env.NODE_ENV === 'development' || !adapter) ? 'jwt' : 'database'
+  return (getEnvironmentMode() === 'development' || !adapter) ? 'jwt' : 'database'
 }

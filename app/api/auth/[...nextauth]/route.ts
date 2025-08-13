@@ -9,7 +9,7 @@ import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../l
 
 
 // Conditional logging utility
-const isDev = process.env.NODE_ENV === 'development'
+const isDev = getEnvironmentMode() === 'development'
 const isDebugEnabled = process.env.NEXTAUTH_DEBUG === 'true'
 
 const authLog = (message: string, data?: any) => {
@@ -33,7 +33,7 @@ const handleSignIn = async (params: any) => {
     });
     
     // In production, always allow Google OAuth sign-in
-    if (process.env.NODE_ENV === 'production') {
+    if (getEnvironmentMode() === 'production') {
       return true
     }
     
@@ -136,7 +136,7 @@ const providers = [
     async authorize(credentials, req) {
       authLog('Mock auth AUTHORIZE function called');
       authLog('Credentials received:', credentials);
-      authLog('Environment check - NODE_ENV:', process.env.NODE_ENV);
+      authLog('Environment check - NODE_ENV:', getEnvironmentMode());
       
       if (!credentials?.userId) {
         authLog('❌ No userId provided in credentials');
@@ -198,7 +198,7 @@ const providers = [
 
 // Debug environment variables
 authLog('NextAuth Environment Check:');
-authLog('NODE_ENV:', process.env.NODE_ENV);
+authLog('Environment mode:', getEnvironmentMode());
 authLog('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
 authLog('NEXTAUTH_SECRET:', process.env.NEXTAUTH_SECRET ? 'Set' : 'Not set');
 
@@ -206,7 +206,7 @@ const safeAdapter = createSafeAdapter()
 
 // Log adapter and session strategy for debugging
 authLog('Database adapter available:', !!safeAdapter)
-authLog('Session strategy:', (process.env.NODE_ENV === 'development' || !safeAdapter) ? 'jwt' : 'database')
+authLog('Session strategy:', (getEnvironmentMode() === 'development' || !safeAdapter) ? 'jwt' : 'database')
 
 const handler = NextAuth({
   // Use safe adapter that handles database connection failures gracefully

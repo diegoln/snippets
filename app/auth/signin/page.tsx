@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
+import { getClientEnvironmentMode } from '../../../lib/environment'
 
 /**
  * Dynamic Sign-In Page
@@ -15,6 +16,7 @@ import { useSearchParams } from 'next/navigation'
 export default function SignInPage() {
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
+  const [envMode, setEnvMode] = useState<'development' | 'staging' | 'production'>('production')
   
   useEffect(() => {
     // Check multiple sources to determine if this is staging
@@ -42,8 +44,10 @@ export default function SignInPage() {
     const isStaging = callbackHasStaging || referrerHasStaging || pathHasStaging || originHasStaging || urlHasStaging
     
     // CRITICAL: If we detect staging, NEVER use Google OAuth
-    const isProduction = process.env.NODE_ENV === 'production' && !isStaging
-    const isDevelopment = process.env.NODE_ENV === 'development'
+    const currentEnvMode = getClientEnvironmentMode()
+    setEnvMode(currentEnvMode)
+    const isProduction = currentEnvMode === 'production' && !isStaging
+    const isDevelopment = currentEnvMode === 'development'
     
     // Enhanced logging for debugging staging detection issues (only in non-production)
     if (!isProduction) {
@@ -54,7 +58,7 @@ export default function SignInPage() {
       isStaging,
       isProduction, 
       isDevelopment,
-      nodeEnv: process.env.NODE_ENV,
+      nodeEnv: currentEnvMode,
       checks: {
         callbackHasStaging,
         referrerHasStaging, 
@@ -83,20 +87,18 @@ export default function SignInPage() {
       return // Exit early to prevent any other logic
     } else if (isDevelopment) {
       // DEVELOPMENT: Use mock auth without /staging prefix
-      if (process.env.NODE_ENV === 'development') {
+      if (currentEnvMode === 'development') {
         console.log('🔧 Development environment - using mock auth')
       }
       const targetUrl = `/mock-signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
-      if (process.env.NODE_ENV === 'development') {
+      if (currentEnvMode === 'development') {
         console.log('Redirecting to mock signin:', targetUrl)
       }
       window.location.href = targetUrl
       return // Exit early
     } else if (isProduction) {
       // PRODUCTION (non-staging): Use Google OAuth
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔐 Production environment - using Google OAuth')
-      }
+      console.log('🔐 Production environment - using Google OAuth')
       signIn('google', { 
         callbackUrl: callbackUrl,
         redirect: true 
@@ -119,10 +121,10 @@ export default function SignInPage() {
               : 'Redirecting...'
             }
           </p>
-          {process.env.NODE_ENV === 'development' && (
+          {envMode === 'development' && (
             <div className="mt-4 text-xs text-gray-400 space-y-1">
               <div>Path: {typeof window !== 'undefined' ? window.location.pathname : 'unknown'}</div>
-              <div>Environment: {process.env.NODE_ENV}</div>
+              <div>Environment: {envMode}</div>
             </div>
           )}
         </div>

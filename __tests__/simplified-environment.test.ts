@@ -9,6 +9,7 @@
 
 // Mock process.env for testing
 const originalNodeEnv = process.env.NODE_ENV
+const originalEnvironmentMode = process.env.ENVIRONMENT_MODE
 
 describe('Simplified Environment Detection', () => {
   beforeEach(() => {
@@ -18,6 +19,11 @@ describe('Simplified Environment Detection', () => {
 
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv
+    if (originalEnvironmentMode !== undefined) {
+      process.env.ENVIRONMENT_MODE = originalEnvironmentMode
+    } else {
+      delete process.env.ENVIRONMENT_MODE
+    }
   })
 
   describe('Environment Mode Detection', () => {
@@ -53,6 +59,8 @@ describe('Simplified Environment Detection', () => {
   describe('Client Environment Detection', () => {
     it('should work the same as server detection', () => {
       process.env.NODE_ENV = 'staging'
+      // Client detection uses ENVIRONMENT_MODE (set via next.config.js in real app)
+      process.env.ENVIRONMENT_MODE = 'staging'
       const { getClientEnvironmentMode } = require('../lib/environment')
       
       expect(getClientEnvironmentMode()).toBe('staging')
