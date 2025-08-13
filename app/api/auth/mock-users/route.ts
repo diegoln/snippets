@@ -5,9 +5,13 @@ import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 // Create singleton PrismaClient instance for connection reuse in serverless environment
 const prisma = new PrismaClient()
 
-// Constants for allowed development user ID patterns to prevent duplication
+// Constants for validation patterns and prefixes to avoid magic strings/regex
+const PRODUCTION_USER_ID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 const ALLOWED_DEV_NUMERIC_IDS = ['1', '2', '3', '4', '5']
-const ALLOWED_DEV_PREFIXES = ['dev_', 'test_']
+const STAGING_ID_PREFIX = 'staging_'
+const DEV_ID_PREFIX = 'dev_'
+const TEST_ID_PREFIX = 'test_'
+const ALLOWED_DEV_PREFIXES = [DEV_ID_PREFIX, TEST_ID_PREFIX]
 
 /**
  * Helper function to check if a user ID is safe for the given environment
@@ -15,18 +19,18 @@ const ALLOWED_DEV_PREFIXES = ['dev_', 'test_']
  */
 const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
   // Check for production UUID pattern first
-  const productionUserPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
-  if (productionUserPattern.test(id)) {
+  if (PRODUCTION_USER_ID_PATTERN.test(id)) {
     return false;
   }
   
   if (envMode === 'staging') {
-    return id.startsWith('staging_');
+    return id.startsWith(STAGING_ID_PREFIX);
   }
   
   // envMode is 'development'
   return ALLOWED_DEV_NUMERIC_IDS.includes(id) ||
-         ALLOWED_DEV_PREFIXES.some(prefix => id.startsWith(prefix));
+         id.startsWith(DEV_ID_PREFIX) ||
+         id.startsWith(TEST_ID_PREFIX);
 }
 
 /**
@@ -58,7 +62,7 @@ export async function GET(request: NextRequest) {
     if (envMode === 'staging') {
       // Staging: Only return users with 'staging_' prefix
       whereClause = {
-        id: { startsWith: 'staging_' }
+        id: { startsWith: STAGING_ID_PREFIX }
       }
     } else {
       // Development: Only return users with numeric IDs (1, 2, 3, etc.) or dev prefixes

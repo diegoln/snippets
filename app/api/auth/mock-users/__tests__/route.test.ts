@@ -120,8 +120,17 @@ describe('Mock Users API Security Tests', () => {
   })
 
   describe('SECURITY: Production Data Detection', () => {
+    let consoleErrorSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+    })
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore()
+    })
+
     it('MUST reject response containing UUID-like production user IDs', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
       mockGetApiEnvironmentMode.mockReturnValue('staging')
       
       // Simulate database returning production user (UUID format)
@@ -137,12 +146,9 @@ describe('Mock Users API Security Tests', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         '🚨 SECURITY BREACH: Production user data detected in mock users response!'
       )
-      
-      consoleErrorSpy.mockRestore()
     })
 
     it('MUST reject response containing suspicious non-prefixed IDs', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
       mockGetApiEnvironmentMode.mockReturnValue('staging')
       
       // Simulate database returning suspicious user ID
@@ -155,8 +161,6 @@ describe('Mock Users API Security Tests', () => {
 
       expect(response.status).toBe(500)
       expect(data.error).toBe('Security violation: Production data detected')
-      
-      consoleErrorSpy.mockRestore()
     })
 
     it('MUST allow safe staging users with staging_ prefix', async () => {
@@ -192,7 +196,6 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST reject staging users in development environment', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
       mockGetApiEnvironmentMode.mockReturnValue('development')
       
       // Simulate database returning a staging user in a dev environment context
@@ -208,8 +211,6 @@ describe('Mock Users API Security Tests', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         '🚨 SECURITY BREACH: Production user data detected in mock users response!'
       )
-      
-      consoleErrorSpy.mockRestore()
     })
   })
 
