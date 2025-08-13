@@ -105,19 +105,8 @@ if ! gcloud secrets describe staging-google-client-secret &>/dev/null; then
     echo "⚠️  Update with real staging OAuth client secret after creating Google OAuth app"
 fi
 
-# Create staging-specific Gemini API key secret  
-echo "🤖 Setting up staging Gemini API key secret..."
-if ! gcloud secrets describe staging-gemini-api-key &>/dev/null; then
-    # Use production Gemini key for staging (safe for testing)
-    PROD_GEMINI_KEY=$(gcloud secrets versions access latest --secret="gemini-api-key" 2>/dev/null || echo "")
-    if [ -n "$PROD_GEMINI_KEY" ]; then
-        echo "$PROD_GEMINI_KEY" | gcloud secrets create staging-gemini-api-key --data-file=-
-        echo "✅ Created staging Gemini API key secret (using production key for testing)"
-    else
-        echo "STAGING_GEMINI_API_KEY_PLACEHOLDER" | gcloud secrets create staging-gemini-api-key --data-file=-
-        echo "⚠️  Created staging Gemini API key secret with placeholder - update manually"
-    fi
-fi
+# Note: Staging uses production Gemini API key (gemini-api-key secret)
+echo "🤖 Gemini API key: Using production key for staging (shared resource)"
 
 # Create staging-specific NextAuth secret
 echo "🔑 Setting up staging NextAuth secret..."
@@ -143,9 +132,7 @@ gcloud secrets add-iam-policy-binding staging-google-client-secret \
     --member="serviceAccount:$SERVICE_ACCOUNT" \
     --role="roles/secretmanager.secretAccessor" &>/dev/null || true
 
-gcloud secrets add-iam-policy-binding staging-gemini-api-key \
-    --member="serviceAccount:$SERVICE_ACCOUNT" \
-    --role="roles/secretmanager.secretAccessor" &>/dev/null || true
+# Note: Staging uses production gemini-api-key (permissions already granted)
 
 gcloud secrets add-iam-policy-binding staging-nextauth-secret \
     --member="serviceAccount:$SERVICE_ACCOUNT" \
@@ -162,7 +149,7 @@ echo "2. 🔑 Update Google OAuth app with staging redirect URLs"
 echo "3. 🔐 Update staging secrets with real values:"
 echo "   - gcloud secrets versions add staging-google-client-id --data-file=<client-id-file>"
 echo "   - gcloud secrets versions add staging-google-client-secret --data-file=<client-secret-file>"
-echo "   - gcloud secrets versions add staging-gemini-api-key --data-file=<gemini-api-key-file>"
+echo "   - Note: Staging uses production gemini-api-key (no separate staging key needed)"
 echo "4. 🚀 Deploy staging with: gcloud builds submit --config cloudbuild-staging.yaml"
 echo ""
 echo "🎭 Staging will be available at: https://staging.advanceweekly.io"
