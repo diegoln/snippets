@@ -7,20 +7,25 @@
 
 import { NextRequest } from 'next/server'
 
-// Mock PrismaClient
-const mockPrisma = {
-  user: {
-    findMany: jest.fn(),
-  },
-  $disconnect: jest.fn(),
-}
-
-jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma)
-}))
+// Mock PrismaClient before any imports
+jest.mock('@prisma/client', () => {
+  const mockPrisma = {
+    user: {
+      findMany: jest.fn(),
+    },
+    $disconnect: jest.fn(),
+  }
+  return {
+    PrismaClient: jest.fn().mockImplementation(() => mockPrisma)
+  }
+})
 
 // Import the route functions after mocking PrismaClient
 import { GET, POST, PUT, DELETE } from '../route'
+
+// Get reference to the mock
+const { PrismaClient } = require('@prisma/client')
+const mockPrisma = new PrismaClient()
 
 // Mock API environment detection
 jest.mock('../../../../../lib/api-environment')
@@ -33,7 +38,7 @@ describe('Mock Users API Security Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockRequest = new NextRequest('http://localhost:3000/api/auth/mock-users')
-    mockPrisma.$disconnect.mockResolvedValue(undefined)
+    // Note: $disconnect is no longer called in the refactored code
   })
 
   describe('SECURITY: Production Environment Protection', () => {
@@ -244,7 +249,7 @@ describe('Mock Users API Security Tests', () => {
 
       expect(response.status).toBe(500)
       expect(data.error).toBe('Failed to fetch users')
-      expect(mockPrisma.$disconnect).toHaveBeenCalled()
+      // Note: $disconnect is no longer called in the refactored code for better connection pooling
     })
 
     it('should transform user data to MockUser format correctly', async () => {

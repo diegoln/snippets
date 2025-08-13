@@ -2,6 +2,30 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 
+// Create singleton PrismaClient instance for connection reuse in serverless environment
+const prisma = new PrismaClient()
+
+/**
+ * Helper function to check if a user ID is safe for the given environment
+ * Centralizes the logic for environment-specific user ID validation
+ */
+const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
+  // Check for production UUID pattern first
+  const productionUserPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
+  if (productionUserPattern.test(id)) {
+    return false;
+  }
+  
+  if (envMode === 'staging') {
+    return id.startsWith('staging_');
+  }
+  
+  // envMode is 'development'
+  return ['1', '2', '3', '4', '5'].includes(id) ||
+         id.startsWith('dev_') ||
+         id.startsWith('test_');
+}
+
 /**
  * Mock Users API Endpoint - DEVELOPMENT AND STAGING ONLY
  * 
@@ -11,7 +35,6 @@ import { getApiEnvironmentMode } from '../../../../lib/api-environment'
  * Only returns users with specific mock/staging ID prefixes.
  */
 export async function GET(request: NextRequest) {
-  const prisma = new PrismaClient()
   try {
     const envMode = getApiEnvironmentMode(request)
     
@@ -61,21 +84,9 @@ export async function GET(request: NextRequest) {
     })
     
     // SECURITY: Double-check that no production user data is included
-    const productionUserPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i // UUID pattern
-    const hasProductionUsers = users.some(user => {
-      if (productionUserPattern.test(user.id)) {
-        return true;
-      }
-      if (envMode === 'staging') {
-        return !user.id.startsWith('staging_');
-      }
-      // envMode is 'development'
-      const isAllowedDevId = 
-        ['1', '2', '3', '4', '5'].includes(user.id) ||
-        user.id.startsWith('dev_') ||
-        user.id.startsWith('test_');
-      return !isAllowedDevId;
-    })
+    const hasProductionUsers = users.some(user => 
+      !isSafeMockIdForEnvironment(user.id, envMode)
+    )
     
     if (hasProductionUsers) {
       console.error('🚨 SECURITY BREACH: Production user data detected in mock users response!')
@@ -104,8 +115,6 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch users' },
       { status: 500 }
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 
