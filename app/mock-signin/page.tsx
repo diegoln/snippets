@@ -34,9 +34,20 @@ export default function MockSignInPage() {
       setMockUsers([])
       
       // Fetch users from a new API endpoint that will return actual database users
+      // Pass staging context explicitly in headers to ensure API detects environment correctly
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      }
+      
+      // If we're in staging, explicitly tell the API via custom header
+      if (getClientEnvironmentMode() === 'staging') {
+        headers['x-staging-request'] = 'true'
+      }
+      
       const response = await fetch('/api/auth/mock-users', {
         method: 'GET',
-        credentials: 'same-origin'
+        credentials: 'same-origin',
+        headers
       })
       
       if (response.ok) {

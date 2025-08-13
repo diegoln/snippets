@@ -31,7 +31,13 @@ export function getApiEnvironmentMode(request: NextRequest): EnvironmentMode {
     return envHeader
   }
   
-  // Method 3: Check referrer for staging context
+  // Method 3: Check explicit staging request header from client
+  const stagingRequestHeader = request.headers.get('x-staging-request')
+  if (stagingRequestHeader === 'true') {
+    return 'staging'
+  }
+  
+  // Method 4: Check referrer for staging context
   const referrer = request.headers.get('referer') || ''
   if (referrer.includes('/staging')) {
     return 'staging'
