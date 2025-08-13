@@ -28,6 +28,7 @@ jobs:
 
       - name: Setup test database
         run: |
+          DATABASE_URL="file:./test.db" NODE_ENV=test npm run generate-schema:force
           DATABASE_URL="file:./test.db" npx prisma db push --force-reset --accept-data-loss
           DATABASE_URL="file:./test.db" npx prisma generate
         env:
