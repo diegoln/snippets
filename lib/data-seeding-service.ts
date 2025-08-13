@@ -189,7 +189,7 @@ export async function initializeMockData(
       const result = await seedCareerGuidelineTemplates(db, false)
       console.log(`✅ Career guideline templates seeded (${result.created} created, ${result.skipped} skipped)\n`)
     } catch (error) {
-      console.error('⚠️  Failed to seed career guideline templates:', error.message)
+      console.error('⚠️  Failed to seed career guideline templates:', error instanceof Error ? error.message : String(error))
       console.log('Career guideline templates may need to be seeded manually\n')
     }
 
