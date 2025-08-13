@@ -68,7 +68,25 @@ steps:
     waitFor: ['push-staging-images']
     timeout: 120s
 
-  # Step 4: Verify staging deployment
+  # Step 4: Initialize staging database
+  - name: 'gcr.io/cloud-builders/curl'
+    id: 'init-staging-database'
+    args:
+      - '-X'
+      - 'POST'
+      - 'https://staging.advanceweekly.io/api/admin/init-staging'
+      - '-H'
+      - 'Content-Type: application/json'
+      - '--max-time'
+      - '120'
+      - '--retry'
+      - '3'
+      - '--retry-delay'
+      - '10'
+    waitFor: ['deploy-staging']
+    timeout: 180s
+
+  # Step 5: Verify staging deployment
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'verify-staging'
     entrypoint: 'bash'
@@ -79,7 +97,8 @@ steps:
         echo "🎭 https://staging.advanceweekly.io"
         echo "🔄 Staging infrastructure isolated from production"
         echo "📊 Production parity achieved"
-    waitFor: ['deploy-staging']
+        echo "🌱 Database initialized with staging mock users"
+    waitFor: ['init-staging-database']
     timeout: 15s
 
 # Store staging images
