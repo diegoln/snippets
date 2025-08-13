@@ -32,9 +32,9 @@ export async function initializeMockData(
   try {
     // 1. Clean up existing data
     console.log('1️⃣ Cleaning up existing data...')
-    const userIds = config.userIdPrefix 
+    const userIds = config.userIdPrefix
       ? { startsWith: config.userIdPrefix }
-      : { in: ['1', '2', '3'] } // Development user IDs
+      : { in: BASE_MOCK_USERS.map((_, index) => `${index + 1}`) } // Development user IDs
 
     await db.weeklySnippet.deleteMany({
       where: { userId: userIds }
@@ -138,11 +138,11 @@ export async function initializeMockData(
           accessToken: `${envName}-mock-token`,
           refreshToken: null,
           expiresAt: null,
-          metadata: JSON.stringify({
+          metadata: {
             status: `${envName}_mock`,
             note: `${envName} mock integration for ${mockUser.name}`,
             mockData: true
-          }),
+          },
           isActive: true,
           lastSyncAt: new Date()
         }
@@ -168,11 +168,11 @@ export async function initializeMockData(
             accessToken: `${envName}-mock-todoist-token`,
             refreshToken: null,
             expiresAt: null,
-            metadata: JSON.stringify({
+            metadata: {
               status: `${envName}_mock`,
               note: `${envName} mock Todoist integration for ${mockUser.name}`,
               mockData: true
-            }),
+            },
             isActive: true,
             lastSyncAt: new Date()
           }

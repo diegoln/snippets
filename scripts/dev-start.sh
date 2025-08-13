@@ -5,11 +5,16 @@
 
 set -e
 
-# Set required environment variables
-export DATABASE_URL="postgresql://app_user:dev_password@localhost:5433/snippets_db?schema=public"
-export NODE_ENV="development"
-export NEXTAUTH_SECRET="dev-secret-key-for-local-development-change-in-production"
-export NEXTAUTH_URL="http://localhost:3000"
+# Load .env.local if it exists to allow overrides
+if [ -f .env.local ]; then
+  set -o allexport; source .env.local; set +o allexport
+fi
+
+# Set required environment variables with defaults
+export DATABASE_URL=${DATABASE_URL:-"postgresql://app_user:dev_password@localhost:5433/snippets_db?schema=public"}
+export NODE_ENV=${NODE_ENV:-"development"}
+export NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-"dev-secret-key-for-local-development-change-in-production"}
+export NEXTAUTH_URL=${NEXTAUTH_URL:-"http://localhost:3000"}
 
 echo "🚀 Starting AdvanceWeekly development server..."
 echo "📊 Environment: $NODE_ENV"

@@ -72,7 +72,7 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 ```
 
 ## Development Best Practices
-- **PostgreSQL Development**: Use `npm run dev:postgres` for production-like development
+- **PostgreSQL Development**: Use `npm run dev` for production-like development
   * Prevents schema drift between environments
   * Same data types (Json vs String) as production
   * Consistent query behavior and constraints
