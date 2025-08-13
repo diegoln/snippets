@@ -16,14 +16,15 @@ export type EnvironmentMode = 'development' | 'staging' | 'production'
  * Simple, reliable, no URL parsing needed!
  */
 export function getEnvironmentMode(): EnvironmentMode {
-  // Use NODE_ENV directly - standard and reliable
-  const nodeEnv = process.env.NODE_ENV as string
+  // Check for custom runtime environment variable first (Cloud Run sets this)
+  // This avoids Next.js build-time optimization of process.env.NODE_ENV
+  const runtimeEnv = process.env.RUNTIME_ENV || process.env.NODE_ENV
   
-  if (nodeEnv === 'development') {
+  if (runtimeEnv === 'development') {
     return 'development'
   }
   
-  if (nodeEnv === 'staging') {
+  if (runtimeEnv === 'staging') {
     return 'staging'
   }
   
