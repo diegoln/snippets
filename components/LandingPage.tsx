@@ -18,7 +18,7 @@
 
 import { signIn } from 'next-auth/react'
 import { Logo } from './Logo'
-import { isStaging, isDevelopment } from '../lib/environment'
+import { getClientEnvironmentMode } from '../lib/environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -26,8 +26,10 @@ import { isStaging, isDevelopment } from '../lib/environment'
  * @returns JSX element for the landing page
  */
 export function LandingPage() {
-  // Check if we're in staging environment
-  const stagingMode = isStaging()
+  // Get environment mode using client-side detection
+  const environmentMode = getClientEnvironmentMode()
+  const stagingMode = environmentMode === 'staging'
+  const devMode = environmentMode === 'development'
   
   /**
    * Handle Google OAuth sign-in with environment-aware routing
@@ -36,8 +38,6 @@ export function LandingPage() {
    * - Production: Triggers real Google OAuth flow
    */
   const handleGoogleSignIn = () => {
-    // Use shared environment detection utilities
-    const devMode = isDevelopment()
     
     if (devMode || stagingMode) {
       // In development or staging, redirect to mock signin page for testing
@@ -86,7 +86,7 @@ export function LandingPage() {
               <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            <span>Continue with Google{stagingMode ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
+            <span>Continue with Google{stagingMode ? ' (Staging)' : devMode ? ' (Dev)' : ''}</span>
           </button>
         </div>
 
@@ -199,7 +199,7 @@ export function LandingPage() {
                 <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
-              <span>Get Started Free{stagingMode ? ' (Staging)' : process.env.NODE_ENV === 'development' ? ' (Dev)' : ''}</span>
+              <span>Get Started Free{stagingMode ? ' (Staging)' : devMode ? ' (Dev)' : ''}</span>
             </button>
           </div>
         </div>
