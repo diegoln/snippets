@@ -1,80 +1,43 @@
 /**
- * Environment Detection Utilities for AdvanceWeekly
+ * Simplified Environment Detection for AdvanceWeekly
  * 
- * Provides consistent environment detection across client and server components
- * Supports three environment modes:
- * - development: Local dev server (SQLite + mocks)  
- * - staging: Production infrastructure with dev features (Cloud SQL + mocks)
- * - production: Full production (Cloud SQL + real integrations)
+ * ROBUST STAGING ARCHITECTURE:
+ * - development: Local dev server (localhost:3000)
+ * - staging: staging.advanceweekly.io (dedicated infrastructure)
+ * - production: advanceweekly.io (production infrastructure)
+ * 
+ * No more URL parsing or complex detection logic!
  */
 
 export type EnvironmentMode = 'development' | 'staging' | 'production'
 
 /**
- * Get current environment mode on the server side
- * Uses middleware-set header when available, falls back to detection logic
+ * Get current environment mode using standard environment variables
+ * Simple, reliable, no URL parsing needed!
  */
 export function getEnvironmentMode(): EnvironmentMode {
-  // Server-side: Check if we're in development
-  if (process.env.NODE_ENV === 'development') {
+  // Use NODE_ENV directly - standard and reliable
+  const nodeEnv = process.env.NODE_ENV as string
+  
+  if (nodeEnv === 'development') {
     return 'development'
   }
   
-  // For server-side code that can access headers
-  if (typeof window === 'undefined') {
-    try {
-      // Dynamic import to avoid client-side issues
-      const { headers } = require('next/headers')
-      const headersList = headers()
-      const envMode = headersList.get('x-environment-mode') as EnvironmentMode
-      if (envMode && ['development', 'staging', 'production'].includes(envMode)) {
-        return envMode
-      }
-    } catch (error) {
-      // Headers not available (e.g., in API routes or build time), fall back
-    }
+  if (nodeEnv === 'staging') {
+    return 'staging'
   }
   
-  // Default to production for server-side when headers unavailable
+  // Default to production
   return 'production'
 }
 
 /**
- * Get current environment mode on the client side
- * Uses URL path detection and query parameters since headers aren't available
+ * Client-side environment detection using standard env vars
+ * No more complex URL parsing!
  */
 export function getClientEnvironmentMode(): EnvironmentMode {
-  if (typeof window === 'undefined') {
-    // Server-side, use server function
-    return getEnvironmentMode()
-  }
-  
-  // Client-side path detection
-  if (window.location.pathname.startsWith('/staging')) {
-    return 'staging'
-  }
-  
-  // Check if we're on mock-signin page with staging callback
-  if (window.location.pathname === '/mock-signin') {
-    const urlParams = new URLSearchParams(window.location.search)
-    const callbackUrl = urlParams.get('callbackUrl')
-    if (callbackUrl && (callbackUrl.includes('/staging') || callbackUrl === '/staging')) {
-      return 'staging'
-    }
-  }
-  
-  // Check URL hash or origin for staging context  
-  if (window.location.href.includes('/staging') || 
-      (window.location.hash && window.location.hash.includes('staging'))) {
-    return 'staging'
-  }
-  
-  // In development, NODE_ENV should be available on client via Next.js
-  if (process.env.NODE_ENV === 'development') {
-    return 'development'
-  }
-  
-  return 'production'
+  // In Next.js, NODE_ENV is available on client via webpack
+  return getEnvironmentMode()
 }
 
 /**
@@ -85,7 +48,7 @@ export function isDevelopment(): boolean {
 }
 
 export function isStaging(): boolean {
-  return getEnvironmentMode() === 'staging'  
+  return getEnvironmentMode() === 'staging'
 }
 
 export function isProduction(): boolean {
@@ -94,7 +57,7 @@ export function isProduction(): boolean {
 
 /**
  * Combined check for dev-like environments (development + staging)
- * Useful for enabling dev features, mock data, etc.
+ * Useful for enabling mock data, dev tools, etc.
  */
 export function isDevLike(): boolean {
   const mode = getEnvironmentMode()
@@ -110,8 +73,7 @@ export function shouldUseMockAuth(): boolean {
 }
 
 /**
- * Check if we should use mock integration data  
- * True for development and staging, false for production
+ * Check if we should use mock integration data
  */
 export function shouldUseMockIntegrations(): boolean {
   return isDevLike()
@@ -119,7 +81,6 @@ export function shouldUseMockIntegrations(): boolean {
 
 /**
  * Check if dev tools should be available
- * True for development and staging, false for production  
  */
 export function shouldShowDevTools(): boolean {
   return isDevLike()
@@ -127,6 +88,7 @@ export function shouldShowDevTools(): boolean {
 
 /**
  * Get the appropriate base URL for the current environment
+ * Each environment has its own domain - clean and simple!
  */
 export function getBaseUrl(): string {
   const mode = getEnvironmentMode()
@@ -135,7 +97,7 @@ export function getBaseUrl(): string {
     case 'development':
       return process.env.NEXTAUTH_URL || 'http://localhost:3000'
     case 'staging':
-      return 'https://advanceweekly.io/staging'
+      return 'https://staging.advanceweekly.io'
     case 'production':
     default:
       return 'https://advanceweekly.io'
@@ -143,44 +105,27 @@ export function getBaseUrl(): string {
 }
 
 /**
- * Get environment-specific user ID prefix for database isolation
- * Staging users get 'staging_' prefix to separate from production data
- */
-export function getUserIdPrefix(): string {
-  return isStaging() ? 'staging_' : ''
-}
-
-/**
- * Generate environment-specific user ID
- */
-export function generateUserId(baseId: string): string {
-  return `${getUserIdPrefix()}${baseId}`
-}
-
-/**
  * Environment configuration for different features
+ * Much simpler than before!
  */
 export const ENV_CONFIG = {
   development: {
-    database: 'sqlite',
+    database: 'postgresql',  // Now uses PostgreSQL in all environments
     auth: 'mock',
     integrations: 'mock',
-    devTools: true,
-    userIdPrefix: ''
+    devTools: true
   },
   staging: {
     database: 'postgresql',
-    auth: 'mock', 
+    auth: 'mock',  // Staging uses mock auth for easy testing
     integrations: 'mock',
-    devTools: true,
-    userIdPrefix: 'staging_'
+    devTools: true
   },
   production: {
     database: 'postgresql',
-    auth: 'oauth',
+    auth: 'oauth',  // Production uses real OAuth
     integrations: 'real',
-    devTools: false,
-    userIdPrefix: ''
+    devTools: false
   }
 } as const
 
@@ -190,4 +135,19 @@ export const ENV_CONFIG = {
 export function getEnvironmentConfig() {
   const mode = getEnvironmentMode()
   return ENV_CONFIG[mode]
+}
+
+/**
+ * Get environment-specific display information
+ */
+export function getEnvironmentInfo() {
+  const mode = getEnvironmentMode()
+  
+  return {
+    mode,
+    baseUrl: getBaseUrl(),
+    config: getEnvironmentConfig(),
+    isDevLike: isDevLike(),
+    displayName: mode.charAt(0).toUpperCase() + mode.slice(1)
+  }
 }

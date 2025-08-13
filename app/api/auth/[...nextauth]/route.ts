@@ -6,7 +6,6 @@ import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
-import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 
 
 // Conditional logging utility

@@ -27,7 +27,9 @@ if (!fs.existsSync(nextDir)) {
   fs.mkdirSync(nextDir, { recursive: true });
 }
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isStaging = process.env.NODE_ENV === 'staging';
+const isProduction = process.env.NODE_ENV === 'production';
 const forceGenerate = process.argv.includes('--force');
 
 function log(message) {
@@ -78,7 +80,7 @@ function needsRegeneration() {
 
   const cache = loadCache();
   const currentTemplateHash = getFileHash(templatePath);
-  const currentEnv = isDevelopment ? 'development' : 'production';
+  const currentEnv = isDevelopment ? 'development' : (isStaging ? 'staging' : 'production');
   const databaseUrl = process.env.DATABASE_URL || '';
   const isTestEnv = process.env.NODE_ENV === 'test';
   const usesSqlite = databaseUrl.includes('file:') || databaseUrl.includes('sqlite:');
@@ -108,7 +110,8 @@ function needsRegeneration() {
 }
 
 function generateSchema() {
-  log(`🔧 Generating Prisma schema for ${isDevelopment ? 'development' : 'production'} environment...`);
+  const envName = isDevelopment ? 'development' : (isStaging ? 'staging' : 'production');
+  log(`🔧 Generating Prisma schema for ${envName} environment...`);
 
   // Read the template
   let schemaContent = fs.readFileSync(templatePath, 'utf8');
@@ -150,6 +153,11 @@ function generateSchema() {
     
     if (isDevelopment) {
       log('🐘 Development configuration (PostgreSQL):');
+      log('   - Database: PostgreSQL');
+      log('   - Metadata field: Json');
+      log('   - Environment consistency: ✅ Matches production');
+    } else if (isStaging) {
+      log('🎭 Staging configuration (PostgreSQL):');
       log('   - Database: PostgreSQL');
       log('   - Metadata field: Json');
       log('   - Environment consistency: ✅ Matches production');

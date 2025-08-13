@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, Prisma } from '@prisma/client'
-import { getApiEnvironmentMode } from '../../../../lib/api-environment'
+import { getEnvironmentMode } from '../../../../lib/environment'
 
 // Create singleton PrismaClient instance for connection reuse in serverless environment
 const prisma = new PrismaClient()
@@ -43,7 +43,7 @@ const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
  */
 export async function GET(request: NextRequest) {
   try {
-    const envMode = getApiEnvironmentMode(request)
+    const envMode = getEnvironmentMode()
     
     // SECURITY: Only allow access in development or staging environments
     if (envMode === 'production') {

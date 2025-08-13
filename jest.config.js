@@ -58,6 +58,7 @@ const jestConfig = {
     // E2E tests that require running development server
     '/__tests__/integration-reset-onboarding-e2e.test.ts', // Needs localhost:3000 server
     
+    
     // React/JSX component tests that require JSDOM environment
     // These are excluded because they need browser-like environment setup
     '/__tests__/.*\\.tsx$',                        // All .tsx test files (React components)

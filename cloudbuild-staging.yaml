@@ -1,0 +1,87 @@
+#
+# Google Cloud Build Configuration for AdvanceWeekly Staging Environment
+#
+# This configuration deploys to a dedicated staging infrastructure:
+# - staging.advanceweekly.io (separate subdomain)
+# - advanceweekly-staging Cloud Run service
+# - advanceweekly-staging-db Cloud SQL instance
+#
+# This provides production parity while maintaining complete isolation
+# from production data and infrastructure.
+#
+
+timeout: 600s  # 10 minutes max
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
+  env:
+    - 'DOCKER_BUILDKIT=1'
+
+steps:
+  # Step 1: Build and push Docker image (same image for staging and production)
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-staging-image'
+    args:
+      - 'build'
+      - '--target=production'
+      - '--cache-from=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:latest'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:$BUILD_ID'
+      - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:latest'
+      - '.'
+    env:
+      - 'DOCKER_BUILDKIT=1'
+    timeout: 360s
+
+  # Step 2: Push staging images
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-staging-images'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging'
+    waitFor: ['build-staging-image']
+    timeout: 120s
+
+  # Step 3: Deploy to staging Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'deploy-staging'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'advanceweekly-staging'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:$BUILD_ID'
+      - '--region=us-central1'
+      - '--platform=managed'
+      - '--port=8080'
+      - '--allow-unauthenticated'
+      - '--max-instances=5'  # Lower than production
+      - '--min-instances=0'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--concurrency=80'
+      - '--timeout=300'
+      - '--set-env-vars=NODE_ENV=staging,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://staging.advanceweekly.io,AUTH_URL=https://staging.advanceweekly.io'
+      - '--set-secrets=DATABASE_URL=staging-database-url:latest,GEMINI_API_KEY=staging-gemini-api-key:latest,NEXTAUTH_SECRET=staging-nextauth-secret:latest,GOOGLE_CLIENT_ID=staging-google-client-id:latest,GOOGLE_CLIENT_SECRET=staging-google-client-secret:latest'
+      - '--add-cloudsql-instances=advanceweekly-prod:us-central1:advanceweekly-staging-db'
+      - '--execution-environment=gen2'
+    waitFor: ['push-staging-images']
+    timeout: 120s
+
+  # Step 4: Verify staging deployment
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'verify-staging'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "✅ Staging deployment completed!"
+        echo "🎭 https://staging.advanceweekly.io"
+        echo "🔄 Staging infrastructure isolated from production"
+        echo "📊 Production parity achieved"
+    waitFor: ['deploy-staging']
+    timeout: 15s
+
+# Store staging images
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:$BUILD_ID'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:latest'

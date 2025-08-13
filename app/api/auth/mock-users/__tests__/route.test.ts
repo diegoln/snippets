@@ -27,10 +27,10 @@ import { GET, POST, PUT, DELETE } from '../route'
 const { PrismaClient } = require('@prisma/client')
 const mockPrisma = new PrismaClient()
 
-// Mock API environment detection
-jest.mock('../../../../../lib/api-environment')
-import { getApiEnvironmentMode } from '../../../../../lib/api-environment'
-const mockGetApiEnvironmentMode = getApiEnvironmentMode as jest.MockedFunction<typeof getApiEnvironmentMode>
+// Mock simplified environment detection
+jest.mock('../../../../../lib/environment')
+import { getEnvironmentMode } from '../../../../../lib/environment'
+const mockGetEnvironmentMode = getEnvironmentMode as jest.MockedFunction<typeof getEnvironmentMode>
 
 describe('Mock Users API Security Tests', () => {
   let mockRequest: NextRequest
@@ -43,7 +43,7 @@ describe('Mock Users API Security Tests', () => {
 
   describe('SECURITY: Production Environment Protection', () => {
     it('MUST deny access in production environment', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('production')
+      mockGetEnvironmentMode.mockReturnValue('production')
 
       const response = await GET(mockRequest)
       const data = await response.json()
@@ -55,7 +55,7 @@ describe('Mock Users API Security Tests', () => {
 
     it('MUST log security warning when accessed in production', async () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation()
-      mockGetApiEnvironmentMode.mockReturnValue('production')
+      mockGetEnvironmentMode.mockReturnValue('production')
 
       await GET(mockRequest)
 
@@ -68,7 +68,7 @@ describe('Mock Users API Security Tests', () => {
 
   describe('SECURITY: Data Filtering', () => {
     it('MUST only return staging users in staging environment', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       mockPrisma.user.findMany.mockResolvedValue([
         { id: 'staging_1', name: 'Jack', email: 'jack+staging@company.com', image: '', jobTitle: 'Engineer' },
         { id: 'staging_2', name: 'Sarah', email: 'sarah+staging@example.com', image: '', jobTitle: 'Engineer' }
@@ -91,7 +91,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST only return safe dev users in development environment', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('development')
+      mockGetEnvironmentMode.mockReturnValue('development')
       mockPrisma.user.findMany.mockResolvedValue([
         { id: '1', name: 'Jack', email: 'jack@company.com', image: '', jobTitle: 'Engineer' }
       ])
@@ -131,7 +131,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST reject response containing UUID-like production user IDs', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       
       // Simulate database returning production user (UUID format)
       mockPrisma.user.findMany.mockResolvedValue([
@@ -149,7 +149,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST reject response containing suspicious non-prefixed IDs', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       
       // Simulate database returning suspicious user ID
       mockPrisma.user.findMany.mockResolvedValue([
@@ -164,7 +164,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST allow safe staging users with staging_ prefix', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       mockPrisma.user.findMany.mockResolvedValue([
         { id: 'staging_1', name: 'Jack', email: 'jack+staging@company.com', image: '', jobTitle: 'Engineer' },
         { id: 'staging_2', name: 'Sarah', email: 'sarah+staging@example.com', image: '', jobTitle: 'Engineer' }
@@ -180,7 +180,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST allow safe development users with numeric IDs', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('development')
+      mockGetEnvironmentMode.mockReturnValue('development')
       mockPrisma.user.findMany.mockResolvedValue([
         { id: '1', name: 'Jack', email: 'jack@company.com', image: '', jobTitle: 'Engineer' },
         { id: '2', name: 'Sarah', email: 'sarah@example.com', image: '', jobTitle: 'Engineer' }
@@ -196,7 +196,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('MUST reject staging users in development environment', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('development')
+      mockGetEnvironmentMode.mockReturnValue('development')
       
       // Simulate database returning a staging user in a dev environment context
       mockPrisma.user.findMany.mockResolvedValue([
@@ -242,7 +242,7 @@ describe('Mock Users API Security Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('development')
+      mockGetEnvironmentMode.mockReturnValue('development')
       mockPrisma.user.findMany.mockRejectedValue(new Error('Database connection failed'))
 
       const response = await GET(mockRequest)
@@ -254,7 +254,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('should transform user data to MockUser format correctly', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       mockPrisma.user.findMany.mockResolvedValue([
         { 
           id: 'staging_1', 
@@ -280,7 +280,7 @@ describe('Mock Users API Security Tests', () => {
     })
 
     it('should handle null/undefined user fields gracefully', async () => {
-      mockGetApiEnvironmentMode.mockReturnValue('staging')
+      mockGetEnvironmentMode.mockReturnValue('staging')
       mockPrisma.user.findMany.mockResolvedValue([
         { 
           id: 'staging_1', 

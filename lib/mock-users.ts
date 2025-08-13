@@ -5,7 +5,7 @@
  * Both authentication and UI components should import from here.
  */
 
-import { getEnvironmentMode, generateUserId } from './environment'
+import { getEnvironmentMode } from './environment'
 
 export interface MockUser {
   id: string
@@ -41,72 +41,6 @@ export const BASE_MOCK_USERS: Omit<MockUser, 'id'>[] = [
 ]
 
 /**
- * Generate environment-specific mock users with appropriate ID prefixes
- */
-export function getMockUsers(): MockUser[] {
-  const envMode = getEnvironmentMode()
-  
-  return BASE_MOCK_USERS.map((user, index) => {
-    const baseId = (index + 1).toString()
-    
-    return {
-      id: generateUserId(baseId),
-      name: user.name,
-      email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
-      image: user.image,
-      role: user.role
-    }
-  })
-}
-
-/**
- * Legacy export for backward compatibility
- */
-export const MOCK_USERS: MockUser[] = getMockUsers()
-
-/**
- * Get mock user by ID (environment-aware)
- * 
- * CRITICAL: This function handles both environment-prefixed IDs (staging_1) 
- * and base IDs (1) for compatibility across different contexts.
- */
-export function getMockUserById(id: string): MockUser | null {
-  // First try exact match with environment-aware users
-  const users = getMockUsers()
-  let user = users.find(user => user.id === id)
-  
-  if (user) {
-    return user
-  }
-  
-  // FALLBACK: If staging ID not found, try all possible prefixed versions
-  // This handles cases where server-side environment detection differs
-  if (!id.includes('_')) {
-    // PERFORMANCE: Generate users for all environments only once
-    const allEnvUsers = [
-      ...generateMockUsersForEnvironment('development'),
-      ...generateMockUsersForEnvironment('staging'),
-      // Note: production and development users are identical, so we can skip duplicate generation
-    ]
-    
-    // Base ID provided, try with all possible prefixes
-    const possibleIds = [
-      id,                    // Base ID (development)
-      `staging_${id}`,       // Staging prefixed ID
-    ]
-    
-    for (const possibleId of possibleIds) {
-      user = allEnvUsers.find(u => u.id === possibleId)
-      if (user) {
-        return user
-      }
-    }
-  }
-  
-  return null
-}
-
-/**
  * Generate mock users for a specific environment (helper function)
  */
 function generateMockUsersForEnvironment(envMode: 'development' | 'staging' | 'production'): MockUser[] {
@@ -122,6 +56,74 @@ function generateMockUsersForEnvironment(envMode: 'development' | 'staging' | 'p
       role: user.role
     }
   })
+}
+
+/**
+ * Generate environment-specific mock users with appropriate ID prefixes
+ */
+export function getMockUsers(): MockUser[] {
+  const envMode = getEnvironmentMode()
+  return generateMockUsersForEnvironment(envMode)
+}
+
+/**
+ * Legacy export for backward compatibility
+ */
+export const MOCK_USERS: MockUser[] = getMockUsers()
+
+/**
+ * Helper function to generate all environment users once for efficient lookups
+ */
+function getAllEnvironmentUsers(): MockUser[] {
+  return [
+    ...generateMockUsersForEnvironment('development'),
+    ...generateMockUsersForEnvironment('staging'),
+    // Note: production and development users are identical, so we can skip duplicate generation
+  ]
+}
+
+/**
+ * Helper function to find user by ID in a given user array
+ */
+function findUserInArray(users: MockUser[], id: string): MockUser | null {
+  return users.find(user => user.id === id) || null
+}
+
+/**
+ * Get mock user by ID (environment-aware)
+ * 
+ * CRITICAL: This function handles both environment-prefixed IDs (staging_1) 
+ * and base IDs (1) for compatibility across different contexts.
+ */
+export function getMockUserById(id: string): MockUser | null {
+  // First try exact match with environment-aware users
+  const currentEnvUsers = getMockUsers()
+  const user = findUserInArray(currentEnvUsers, id)
+  
+  if (user) {
+    return user
+  }
+  
+  // FALLBACK: If staging ID not found, try all possible prefixed versions
+  // This handles cases where server-side environment detection differs
+  if (!id.includes('_')) {
+    const allEnvUsers = getAllEnvironmentUsers()
+    
+    // Base ID provided, try with all possible prefixes
+    const possibleIds = [
+      id,                    // Base ID (development)
+      `staging_${id}`,       // Staging prefixed ID
+    ]
+    
+    for (const possibleId of possibleIds) {
+      const foundUser = findUserInArray(allEnvUsers, possibleId)
+      if (foundUser) {
+        return foundUser
+      }
+    }
+  }
+  
+  return null
 }
 
 /**
