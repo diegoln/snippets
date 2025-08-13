@@ -20,28 +20,8 @@ export async function GET() {
   try {
     const environment = getEnvironmentMode()
     
-    // Debug logging to understand environment variable detection
-    console.log('🔍 Server Environment Debug:', {
-      environment,
-      processEnvRUNTIME_ENV: process.env.RUNTIME_ENV,
-      processEnvNODE_ENV: process.env.NODE_ENV,
-      runtimeEnvFallback: process.env.RUNTIME_ENV || process.env.NODE_ENV,
-      allEnvVars: {
-        NODE_ENV: process.env.NODE_ENV,
-        RUNTIME_ENV: process.env.RUNTIME_ENV,
-        ENVIRONMENT_MODE: process.env.ENVIRONMENT_MODE
-      }
-    })
-    
     return NextResponse.json(
-      { 
-        environment,
-        debug: {
-          RUNTIME_ENV: process.env.RUNTIME_ENV,
-          NODE_ENV: process.env.NODE_ENV,
-          detected: environment
-        }
-      },
+      { environment },
       { 
         status: 200,
         headers: {
