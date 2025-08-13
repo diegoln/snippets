@@ -7,6 +7,9 @@ import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
 
+// Force dynamic rendering - critical for environment-specific auth behavior
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 // Conditional logging utility
 const isDev = getEnvironmentMode() === 'development'
