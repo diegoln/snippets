@@ -185,6 +185,27 @@ describe('Mock Users API Security Tests', () => {
       expect(data[0].id).toBe('1')
       expect(data[1].id).toBe('2')
     })
+
+    it('MUST reject staging users in development environment', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation()
+      mockGetApiEnvironmentMode.mockReturnValue('development')
+      
+      // Simulate database returning a staging user in a dev environment context
+      mockPrisma.user.findMany.mockResolvedValue([
+        { id: 'staging_1', name: 'Staging User', email: 'staging@user.com', image: '', jobTitle: 'Staging Job' }
+      ])
+
+      const response = await GET(mockRequest)
+      const data = await response.json()
+
+      expect(response.status).toBe(500)
+      expect(data.error).toBe('Security violation: Production data detected')
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '🚨 SECURITY BREACH: Production user data detected in mock users response!'
+      )
+      
+      consoleErrorSpy.mockRestore()
+    })
   })
 
   describe('SECURITY: HTTP Method Restrictions', () => {

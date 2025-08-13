@@ -15,9 +15,12 @@ import { Logo } from '../../components/Logo'
 import { type MockUser } from '../../lib/mock-users'
 import { getClientEnvironmentMode, isStaging } from '../../lib/environment'
 
+type LoadingState = 'loading' | 'loaded' | 'error'
+
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)
   const [mockUsers, setMockUsers] = useState<MockUser[]>([])
+  const [loadingState, setLoadingState] = useState<LoadingState>('loading')
   const searchParams = useSearchParams()
   
   // Get callback URL from query params, default to home
@@ -39,14 +42,14 @@ export default function MockSignInPage() {
           const users = await response.json()
           console.log('✅ Loaded users from database:', users)
           setMockUsers(users)
+          setLoadingState('loaded')
         } else {
           console.error('❌ Failed to load users from database:', response.status)
-          // Fallback to empty array - user will see no options
-          setMockUsers([])
+          setLoadingState('error')
         }
       } catch (error) {
         console.error('❌ Error loading users from database:', error)
-        setMockUsers([])
+        setLoadingState('error')
       }
     }
     
@@ -110,10 +113,55 @@ export default function MockSignInPage() {
             </div>
 
             <div className="space-y-4">
-              {mockUsers.length === 0 ? (
+              {loadingState === 'loading' ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
                   <p className="text-gray-600">Loading mock users...</p>
+                </div>
+              ) : loadingState === 'error' ? (
+                <div className="text-center py-8">
+                  <div className="text-red-500 mb-4">
+                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 19c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <p className="text-red-700 font-medium mb-2">Failed to Load Users</p>
+                  <p className="text-red-600 text-sm mb-4">
+                    Could not connect to the authentication service.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setLoadingState('loading')
+                      setMockUsers([])
+                      // Retry loading
+                      const loadUsersFromDatabase = async () => {
+                        try {
+                          const response = await fetch('/api/auth/mock-users', {
+                            method: 'GET',
+                            credentials: 'same-origin'
+                          })
+                          
+                          if (response.ok) {
+                            const users = await response.json()
+                            setMockUsers(users)
+                            setLoadingState('loaded')
+                          } else {
+                            setLoadingState('error')
+                          }
+                        } catch (error) {
+                          setLoadingState('error')
+                        }
+                      }
+                      loadUsersFromDatabase()
+                    }}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              ) : mockUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No mock users available for this environment.</p>
                 </div>
               ) : (
                 mockUsers.map((user) => (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 
 /**
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     console.log(`🎭 Mock users API accessed in ${envMode} environment`)
     
     // SECURITY: Only return users with safe ID patterns (never production user IDs)
-    let whereClause: any
+    let whereClause: Prisma.UserWhereInput
     
     if (envMode === 'staging') {
       // Staging: Only return users with 'staging_' prefix
@@ -62,10 +62,20 @@ export async function GET(request: NextRequest) {
     
     // SECURITY: Double-check that no production user data is included
     const productionUserPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i // UUID pattern
-    const hasProductionUsers = users.some(user => 
-      productionUserPattern.test(user.id) || 
-      (!user.id.startsWith('staging_') && !user.id.startsWith('dev_') && !user.id.startsWith('test_') && !['1', '2', '3', '4', '5'].includes(user.id))
-    )
+    const hasProductionUsers = users.some(user => {
+      if (productionUserPattern.test(user.id)) {
+        return true;
+      }
+      if (envMode === 'staging') {
+        return !user.id.startsWith('staging_');
+      }
+      // envMode is 'development'
+      const isAllowedDevId = 
+        ['1', '2', '3', '4', '5'].includes(user.id) ||
+        user.id.startsWith('dev_') ||
+        user.id.startsWith('test_');
+      return !isAllowedDevId;
+    })
     
     if (hasProductionUsers) {
       console.error('🚨 SECURITY BREACH: Production user data detected in mock users response!')
