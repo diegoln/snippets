@@ -7,6 +7,29 @@
  * - production: advanceweekly.io (production infrastructure)
  * 
  * No more URL parsing or complex detection logic!
+ * 
+ * CRITICAL: Next.js API Route Caching Warning
+ * ================================================
+ * If you use ANY of these environment detection functions in an API route
+ * (located in app/api/), you MUST add these exports to force runtime execution:
+ * 
+ *   export const dynamic = 'force-dynamic'
+ *   export const revalidate = 0
+ * 
+ * Without these, Next.js will cache/pre-render your API route at BUILD time
+ * with build-time environment values, causing staging to always detect as
+ * 'production'. This is because Next.js optimizes routes for performance by
+ * default, but environment detection requires runtime execution.
+ * 
+ * Affected functions that require dynamic routes:
+ * - getEnvironmentMode()
+ * - isDevelopment()
+ * - isStaging()
+ * - isProduction()
+ * - isDevLike()
+ * - shouldUseMockAuth()
+ * - shouldUseMockIntegrations()
+ * - shouldShowDevTools()
  */
 
 export type EnvironmentMode = 'development' | 'staging' | 'production'

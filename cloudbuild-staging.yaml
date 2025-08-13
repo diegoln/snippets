@@ -24,6 +24,7 @@ steps:
     args:
       - 'build'
       - '--target=production'
+      - '--build-arg=NODE_ENV=staging'
       - '--cache-from=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:latest'
       - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:$BUILD_ID'
       - '--tag=us-central1-docker.pkg.dev/$PROJECT_ID/advanceweekly-repo/advanceweekly-staging:latest'

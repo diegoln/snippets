@@ -10,6 +10,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEnvironmentMode } from '../../../../lib/environment'
 
+// Force dynamic rendering for accurate environment detection
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 let prisma: any = null
 
 async function getPrismaClient() {

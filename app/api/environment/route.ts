@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { getEnvironmentMode } from '../../../lib/environment'
 
+// Force this route to be dynamically rendered at runtime
+// This prevents Next.js from caching/pre-rendering with build-time env values
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Runtime Environment Detection API
  * 

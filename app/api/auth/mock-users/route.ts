@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient, Prisma } from '@prisma/client'
 import { getEnvironmentMode } from '../../../../lib/environment'
 
+// Force dynamic rendering to ensure environment detection works at runtime
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Create singleton PrismaClient instance for connection reuse in serverless environment
 const prisma = new PrismaClient()
 

@@ -39,15 +39,6 @@ export function LandingPage() {
         const runtimeEnvironment = await getClientEnvironmentModeAsync()
         setStagingMode(runtimeEnvironment === 'staging')
         setDevMode(runtimeEnvironment === 'development')
-        
-        console.log('🎭 LandingPage Environment Debug (Runtime API):', {
-          runtimeEnvironment,
-          stagingMode: runtimeEnvironment === 'staging',
-          devMode: runtimeEnvironment === 'development',
-          buildTimeMode: getClientEnvironmentMode(),
-          processEnvEnvironmentMode: process.env.ENVIRONMENT_MODE,
-          processEnvNodeEnv: process.env.NODE_ENV
-        })
       } catch (error) {
         console.error('Failed to detect environment:', error)
         // Fallback to build-time detection
