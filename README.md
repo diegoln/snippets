@@ -72,3 +72,4 @@ npm run deploy             # Deploy to production
 - **AI**: OpenAI API integration with local fallbacks
 - **Infrastructure**: Google Cloud Platform (Cloud Run, Cloud SQL)
 - **Environment Management**: Automatic schema generation for dev/prod# Trigger deployment with Secret Manager permissions fix
+# Trigger deployment with Cloud SQL permissions granted
