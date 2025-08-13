@@ -73,3 +73,4 @@ npm run deploy             # Deploy to production
 - **Infrastructure**: Google Cloud Platform (Cloud Run, Cloud SQL)
 - **Environment Management**: Automatic schema generation for dev/prod# Trigger deployment with Secret Manager permissions fix
 # Trigger deployment with Cloud SQL permissions granted
+# trigger deployment
