@@ -78,13 +78,13 @@ git push origin main
 ## 🎭 Staging Environment Features
 
 ### **Mock Authentication**
-- 5 test users: `staging_jack`, `staging_sarah`, `staging_mike`, `staging_lisa`, `staging_alex`
+- 3 test users: `staging_1` (Jack Thompson), `staging_2` (Sarah Engineer), `staging_3` (Alex Designer)
 - Access via `/mock-signin` (no Google OAuth needed)
 - Consistent test data for reliable testing
 
 ### **Test Data**
-- **260 snippets**: 52 weeks × 5 users (full year of data)
-- **5 career check-ins**: Sample assessment data
+- **Sample snippets**: Generated for past 6 months per user
+- **Career check-ins**: Sample assessment data
 - **Career guidelines**: Template testing data
 
 ### **Visual Indicators**
@@ -110,7 +110,7 @@ graph LR
 
 1. **Access**: https://staging.advanceweekly.io
 2. **Verify Banner**: Yellow "🎭 STAGING ENVIRONMENT" banner visible
-3. **Mock Sign-In**: Click "Sign In" → Choose from 5 test users
+3. **Mock Sign-In**: Click "Sign In" → Choose from 3 test users
 4. **Test Features**: Create snippets, run assessments, test integrations
 5. **Verify Isolation**: Data separate from production
 
