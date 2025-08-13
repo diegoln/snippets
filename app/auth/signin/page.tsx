@@ -28,13 +28,18 @@ export default function SignInPage() {
     // 2. Check referrer for /staging (works when navigating from staging pages)
     // 3. Check current path for /staging (fallback, though middleware rewrites this)
     // 4. Check origin for staging subdomain (additional safety check)
-    const callbackHasStaging = callbackUrl.includes('/staging')
+    // 5. Check if current URL has staging context
+    
+    // Handle URL-encoded callback URLs (e.g., %2Fstaging becomes /staging)
+    const decodedCallbackUrl = decodeURIComponent(callbackUrl)
+    const callbackHasStaging = callbackUrl.includes('/staging') || decodedCallbackUrl.includes('/staging')
     const referrerHasStaging = referrer.includes('/staging') 
     const pathHasStaging = currentPath.startsWith('/staging')
     const originHasStaging = currentOrigin.includes('staging')
+    const urlHasStaging = window.location.href.includes('/staging')
     
     // CRITICAL: Prioritize callbackUrl check as NextAuth preserves the full callback URL
-    const isStaging = callbackHasStaging || referrerHasStaging || pathHasStaging || originHasStaging
+    const isStaging = callbackHasStaging || referrerHasStaging || pathHasStaging || originHasStaging || urlHasStaging
     
     // CRITICAL: If we detect staging, NEVER use Google OAuth
     const isProduction = process.env.NODE_ENV === 'production' && !isStaging
@@ -54,13 +59,15 @@ export default function SignInPage() {
         callbackHasStaging,
         referrerHasStaging, 
         pathHasStaging,
-        originHasStaging
+        originHasStaging,
+        urlHasStaging
       },
       // Show which check triggered staging detection
       stagingTrigger: callbackHasStaging ? 'callbackUrl' : 
                       referrerHasStaging ? 'referrer' :
                       pathHasStaging ? 'path' : 
-                      originHasStaging ? 'origin' : 'none'
+                      originHasStaging ? 'origin' : 
+                      urlHasStaging ? 'url' : 'none'
       })
     }
     
