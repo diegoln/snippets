@@ -18,7 +18,7 @@
 
 import { signIn } from 'next-auth/react'
 import { Logo } from './Logo'
-import { getClientEnvironmentMode } from '../lib/environment'
+import { getClientEnvironmentMode, isStaging, isDevelopment } from '../lib/environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -26,16 +26,18 @@ import { getClientEnvironmentMode } from '../lib/environment'
  * @returns JSX element for the landing page
  */
 export function LandingPage() {
-  // Get environment mode using client-side detection
-  const environmentMode = getClientEnvironmentMode()
-  const stagingMode = environmentMode === 'staging'
-  const devMode = environmentMode === 'development'
+  // Use the same environment detection as DevTools (which works)
+  const stagingMode = isStaging()
+  const devMode = isDevelopment()
+  const environmentMode = getClientEnvironmentMode() // Keep for debugging
   
   // Debug logging for staging banner issue
-  console.log('🎭 LandingPage Environment Debug:', {
-    environmentMode,
-    stagingMode,
-    devMode,
+  console.log('🎭 LandingPage Environment Debug (Updated):', {
+    environmentMode: environmentMode, // client-side detection (broken)
+    stagingMode: stagingMode, // server-side detection via isStaging() (working?)
+    devMode: devMode, // server-side detection via isDevelopment()
+    isStaging: isStaging(),
+    isDevelopment: isDevelopment(),
     processEnvEnvironmentMode: process.env.ENVIRONMENT_MODE,
     processEnvNodeEnv: process.env.NODE_ENV
   })
