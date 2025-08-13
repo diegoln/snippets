@@ -19,16 +19,22 @@ else
   echo "⚠️  Career guideline seeding script not found, skipping"
 fi
 
-# Initialize environment-specific mock data for dev-like environments
-if [ "$NODE_ENV" = "staging" ] || [ "$RUNTIME_ENV" = "staging" ]; then
-  echo "🎭 Staging environment detected - initializing mock data..."
+# Initialize environment-specific mock data for dev-like environments  
+echo "🔍 Detecting environment using shared logic..."
+ENV_MODE=$(node scripts/get-environment.js 2>/dev/null || echo "unknown")
+echo "📍 Environment detected: $ENV_MODE"
+
+if [ "$ENV_MODE" = "staging" ]; then
+  echo "🎭 Staging environment - initializing mock data..."
   if [ -f "scripts/init-staging-environment.js" ]; then
     NODE_ENV=production node scripts/init-staging-environment.js || echo "⚠️  Staging data initialization failed, continuing..."
   else
     echo "⚠️  Staging initialization script not found"
   fi
-elif [ "$NODE_ENV" = "development" ]; then
-  echo "🐘 Development environment detected - mock data handled separately"
+elif [ "$ENV_MODE" = "development" ]; then
+  echo "🐘 Development environment - mock data handled separately"
+else
+  echo "🏭 Production or unknown environment - skipping mock data initialization"
 fi
 
 # Start the custom Next.js server
