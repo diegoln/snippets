@@ -9,8 +9,8 @@ const nextConfig = {
     TODOIST_CLIENT_ID: process.env.TODOIST_CLIENT_ID,
     TODOIST_CLIENT_SECRET: process.env.TODOIST_CLIENT_SECRET,
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-    // Explicitly expose NODE_ENV to client for environment detection
-    NODE_ENV: process.env.NODE_ENV,
+    // Use a custom env var for environment detection since NODE_ENV is reserved
+    ENVIRONMENT_MODE: process.env.NODE_ENV,
   },
   // Skip database operations during build time
   skipTrailingSlashRedirect: true

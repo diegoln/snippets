@@ -32,12 +32,23 @@ export function getEnvironmentMode(): EnvironmentMode {
 }
 
 /**
- * Client-side environment detection using standard env vars
- * No more complex URL parsing!
+ * Client-side environment detection using custom env var
+ * NODE_ENV is not allowed in next.config.js, so we use ENVIRONMENT_MODE
  */
 export function getClientEnvironmentMode(): EnvironmentMode {
-  // In Next.js, NODE_ENV is available on client via webpack
-  return getEnvironmentMode()
+  // Use the custom ENVIRONMENT_MODE variable exposed via next.config.js
+  const environmentMode = process.env.ENVIRONMENT_MODE as string
+  
+  if (environmentMode === 'development') {
+    return 'development'
+  }
+  
+  if (environmentMode === 'staging') {
+    return 'staging'
+  }
+  
+  // Default to production
+  return 'production'
 }
 
 /**
