@@ -302,12 +302,13 @@ jobs:
           echo "🔍 Validating environment variable usage..."
           
           # Check that environment variables are properly referenced
+          # Updated to validate new environment library usage
           if grep -r "process.env.NEXTAUTH_URL" app/api/auth/ && \
              grep -r "process.env.NEXTAUTH_SECRET" app/api/auth/ && \
-             grep -r "process.env.NODE_ENV" app/api/auth/; then
-            echo "✅ Environment variables properly referenced"
+             grep -r "getEnvironmentMode" app/api/auth/; then
+            echo "✅ Environment variables properly referenced using environment library"
           else
-            echo "❌ Missing required environment variable references"
+            echo "❌ Missing required environment variable references or environment library usage"
             exit 1
           fi
 

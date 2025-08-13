@@ -60,7 +60,7 @@ steps:
       - '--cpu=1'
       - '--concurrency=80'
       - '--timeout=300'
-      - '--set-env-vars=NODE_ENV=staging,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://staging.advanceweekly.io,AUTH_URL=https://staging.advanceweekly.io'
+      - '--set-env-vars=NODE_ENV=staging,RUNTIME_ENV=staging,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://staging.advanceweekly.io,AUTH_URL=https://staging.advanceweekly.io'
       - '--set-secrets=DATABASE_URL=staging-database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,NEXTAUTH_SECRET=staging-nextauth-secret:latest,GOOGLE_CLIENT_ID=staging-google-client-id:latest,GOOGLE_CLIENT_SECRET=staging-google-client-secret:latest'
       - '--add-cloudsql-instances=advanceweekly-prod:us-central1:advanceweekly-staging-db'
       - '--execution-environment=gen2'

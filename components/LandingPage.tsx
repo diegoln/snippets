@@ -17,8 +17,9 @@
  */
 
 import { signIn } from 'next-auth/react'
+import { useEffect, useState } from 'react'
 import { Logo } from './Logo'
-import { getClientEnvironmentMode } from '../lib/environment'
+import { getClientEnvironmentMode, getClientEnvironmentModeAsync } from '../lib/environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
@@ -26,10 +27,40 @@ import { getClientEnvironmentMode } from '../lib/environment'
  * @returns JSX element for the landing page
  */
 export function LandingPage() {
-  // Get environment mode using client-side detection
-  const environmentMode = getClientEnvironmentMode()
-  const stagingMode = environmentMode === 'staging'
-  const devMode = environmentMode === 'development'
+  // State for runtime environment detection
+  const [stagingMode, setStagingMode] = useState(false)
+  const [devMode, setDevMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  
+  // Fetch runtime environment on component mount
+  useEffect(() => {
+    async function detectEnvironment() {
+      try {
+        const runtimeEnvironment = await getClientEnvironmentModeAsync()
+        setStagingMode(runtimeEnvironment === 'staging')
+        setDevMode(runtimeEnvironment === 'development')
+        
+        console.log('🎭 LandingPage Environment Debug (Runtime API):', {
+          runtimeEnvironment,
+          stagingMode: runtimeEnvironment === 'staging',
+          devMode: runtimeEnvironment === 'development',
+          buildTimeMode: getClientEnvironmentMode(),
+          processEnvEnvironmentMode: process.env.ENVIRONMENT_MODE,
+          processEnvNodeEnv: process.env.NODE_ENV
+        })
+      } catch (error) {
+        console.error('Failed to detect environment:', error)
+        // Fallback to build-time detection
+        const fallbackMode = getClientEnvironmentMode()
+        setStagingMode(fallbackMode === 'staging')
+        setDevMode(fallbackMode === 'development')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    detectEnvironment()
+  }, [])
   
   /**
    * Handle sign-in with simplified environment routing

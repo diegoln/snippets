@@ -32,6 +32,15 @@ export function DevTools() {
   }
 
   const envMode = getClientEnvironmentMode()
+  
+  // Debug logging for environment detection comparison
+  console.log('🛠️ DevTools Environment Debug:', {
+    envMode,
+    isStaging: isStaging(),
+    getClientEnvironmentMode: getClientEnvironmentMode(),
+    processEnvEnvironmentMode: process.env.ENVIRONMENT_MODE,
+    processEnvNodeEnv: process.env.NODE_ENV
+  })
 
   const clearSession = async () => {
     try {
