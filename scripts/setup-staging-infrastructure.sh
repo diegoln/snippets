@@ -100,6 +100,22 @@ if ! gcloud secrets describe staging-google-client-secret &>/dev/null; then
     echo "⚠️  Update with real staging OAuth client secret after creating Google OAuth app"
 fi
 
+# Create staging-specific OpenAI API key secret
+echo "🤖 Setting up staging OpenAI API key secret..."
+if ! gcloud secrets describe staging-openai-api-key &>/dev/null; then
+    echo "STAGING_OPENAI_API_KEY_PLACEHOLDER" | gcloud secrets create staging-openai-api-key --data-file=-
+    echo "✅ Created staging OpenAI API key secret (placeholder)"
+    echo "⚠️  Update with real staging OpenAI API key for LLM functionality"
+fi
+
+# Create staging-specific NextAuth secret
+echo "🔑 Setting up staging NextAuth secret..."
+if ! gcloud secrets describe staging-nextauth-secret &>/dev/null; then
+    # Generate a random secret for staging
+    openssl rand -base64 32 | gcloud secrets create staging-nextauth-secret --data-file=-
+    echo "✅ Created staging NextAuth secret with random value"
+fi
+
 # Ensure Cloud Run service account has access to secrets
 echo "🔐 Setting up service account permissions..."
 SERVICE_ACCOUNT="$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
@@ -116,6 +132,14 @@ gcloud secrets add-iam-policy-binding staging-google-client-secret \
     --member="serviceAccount:$SERVICE_ACCOUNT" \
     --role="roles/secretmanager.secretAccessor" &>/dev/null || true
 
+gcloud secrets add-iam-policy-binding staging-openai-api-key \
+    --member="serviceAccount:$SERVICE_ACCOUNT" \
+    --role="roles/secretmanager.secretAccessor" &>/dev/null || true
+
+gcloud secrets add-iam-policy-binding staging-nextauth-secret \
+    --member="serviceAccount:$SERVICE_ACCOUNT" \
+    --role="roles/secretmanager.secretAccessor" &>/dev/null || true
+
 echo "✅ Service account permissions configured"
 
 echo ""
@@ -124,9 +148,10 @@ echo ""
 echo "📋 Next steps:"
 echo "1. 🌐 Configure DNS: staging.advanceweekly.io → Cloud Run"
 echo "2. 🔑 Update Google OAuth app with staging redirect URLs"
-echo "3. 🔐 Update staging OAuth secrets with real values:"
+echo "3. 🔐 Update staging secrets with real values:"
 echo "   - gcloud secrets versions add staging-google-client-id --data-file=<client-id-file>"
 echo "   - gcloud secrets versions add staging-google-client-secret --data-file=<client-secret-file>"
+echo "   - gcloud secrets versions add staging-openai-api-key --data-file=<openai-api-key-file>"
 echo "4. 🚀 Deploy staging with: gcloud builds submit --config cloudbuild-staging.yaml"
 echo ""
 echo "🎭 Staging will be available at: https://staging.advanceweekly.io"
