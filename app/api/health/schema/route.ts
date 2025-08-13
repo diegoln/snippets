@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getEnvironmentMode } from '../../../../lib/environment'
 
 let prisma: any = null
 
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
   const result: HealthCheckResult = {
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'unknown',
+    environment: getEnvironmentMode(),
     database: {
       provider: 'unknown',
       connection: 'failed'
@@ -143,7 +144,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<HealthChec
     }
 
     // Environment validation
-    const expectedProvider = process.env.NODE_ENV === 'production' ? 'postgresql' : 'sqlite'
+    const envMode = getEnvironmentMode()
+    const expectedProvider = (envMode === 'production' || envMode === 'staging') ? 'postgresql' : 'sqlite'
     if (result.database.provider !== expectedProvider && result.database.provider !== 'unknown') {
       result.status = 'warning'
       if (!result.schema.issues) result.schema.issues = []
