@@ -5,6 +5,10 @@ import { getApiEnvironmentMode } from '../../../../lib/api-environment'
 // Create singleton PrismaClient instance for connection reuse in serverless environment
 const prisma = new PrismaClient()
 
+// Constants for allowed development user ID patterns to prevent duplication
+const ALLOWED_DEV_NUMERIC_IDS = ['1', '2', '3', '4', '5']
+const ALLOWED_DEV_PREFIXES = ['dev_', 'test_']
+
 /**
  * Helper function to check if a user ID is safe for the given environment
  * Centralizes the logic for environment-specific user ID validation
@@ -21,9 +25,8 @@ const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
   }
   
   // envMode is 'development'
-  return ['1', '2', '3', '4', '5'].includes(id) ||
-         id.startsWith('dev_') ||
-         id.startsWith('test_');
+  return ALLOWED_DEV_NUMERIC_IDS.includes(id) ||
+         ALLOWED_DEV_PREFIXES.some(prefix => id.startsWith(prefix));
 }
 
 /**
@@ -61,9 +64,8 @@ export async function GET(request: NextRequest) {
       // Development: Only return users with numeric IDs (1, 2, 3, etc.) or dev prefixes
       whereClause = {
         OR: [
-          { id: { in: ['1', '2', '3', '4', '5'] } }, // Standard dev user IDs
-          { id: { startsWith: 'dev_' } },            // Dev prefixed IDs
-          { id: { startsWith: 'test_' } }            // Test prefixed IDs
+          { id: { in: ALLOWED_DEV_NUMERIC_IDS } }, // Standard dev user IDs
+          ...ALLOWED_DEV_PREFIXES.map(prefix => ({ id: { startsWith: prefix } })) // Dev/test prefixed IDs
         ]
       }
     }

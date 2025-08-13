@@ -9,7 +9,7 @@
  */
 
 import { signIn } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '../../components/Logo'
 import { type MockUser } from '../../lib/mock-users'
@@ -27,34 +27,36 @@ export default function MockSignInPage() {
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
   // Load actual users from database instead of generating static users
-  useEffect(() => {
-    const loadUsersFromDatabase = async () => {
-      try {
-        console.log('🎭 Loading users from database for environment:', getClientEnvironmentMode())
-        
-        // Fetch users from a new API endpoint that will return actual database users
-        const response = await fetch('/api/auth/mock-users', {
-          method: 'GET',
-          credentials: 'same-origin'
-        })
-        
-        if (response.ok) {
-          const users = await response.json()
-          console.log('✅ Loaded users from database:', users)
-          setMockUsers(users)
-          setLoadingState('loaded')
-        } else {
-          console.error('❌ Failed to load users from database:', response.status)
-          setLoadingState('error')
-        }
-      } catch (error) {
-        console.error('❌ Error loading users from database:', error)
+  const loadUsersFromDatabase = useCallback(async () => {
+    try {
+      console.log('🎭 Loading users from database for environment:', getClientEnvironmentMode())
+      setLoadingState('loading')
+      setMockUsers([])
+      
+      // Fetch users from a new API endpoint that will return actual database users
+      const response = await fetch('/api/auth/mock-users', {
+        method: 'GET',
+        credentials: 'same-origin'
+      })
+      
+      if (response.ok) {
+        const users = await response.json()
+        console.log('✅ Loaded users from database:', users)
+        setMockUsers(users)
+        setLoadingState('loaded')
+      } else {
+        console.error('❌ Failed to load users from database:', response.status)
         setLoadingState('error')
       }
+    } catch (error) {
+      console.error('❌ Error loading users from database:', error)
+      setLoadingState('error')
     }
-    
-    loadUsersFromDatabase()
   }, [])
+
+  useEffect(() => {
+    loadUsersFromDatabase()
+  }, [loadUsersFromDatabase])
 
   const handleSignIn = async (userId: string) => {
     try {
@@ -130,30 +132,7 @@ export default function MockSignInPage() {
                     Could not connect to the authentication service.
                   </p>
                   <button
-                    onClick={() => {
-                      setLoadingState('loading')
-                      setMockUsers([])
-                      // Retry loading
-                      const loadUsersFromDatabase = async () => {
-                        try {
-                          const response = await fetch('/api/auth/mock-users', {
-                            method: 'GET',
-                            credentials: 'same-origin'
-                          })
-                          
-                          if (response.ok) {
-                            const users = await response.json()
-                            setMockUsers(users)
-                            setLoadingState('loaded')
-                          } else {
-                            setLoadingState('error')
-                          }
-                        } catch (error) {
-                          setLoadingState('error')
-                        }
-                      }
-                      loadUsersFromDatabase()
-                    }}
+                    onClick={loadUsersFromDatabase}
                     className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
                   >
                     Try Again
