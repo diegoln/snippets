@@ -32,24 +32,61 @@ export function getEnvironmentMode(): EnvironmentMode {
   return 'production'
 }
 
+// Cache for runtime environment detection
+let runtimeEnvironmentCache: EnvironmentMode | null = null
+
 /**
- * Client-side environment detection using custom env var
- * NODE_ENV is not allowed in next.config.js, so we use ENVIRONMENT_MODE
+ * Client-side environment detection using runtime API
+ * Falls back to build-time detection if API fails
  */
 export function getClientEnvironmentMode(): EnvironmentMode {
-  // Use the custom ENVIRONMENT_MODE variable exposed via next.config.js
-  const environmentMode = process.env.ENVIRONMENT_MODE as string
+  // Return cached value if available (synchronous)
+  if (runtimeEnvironmentCache) {
+    return runtimeEnvironmentCache
+  }
+
+  // Fallback to build-time detection (will be 'production' in staging)
+  const buildTimeMode = process.env.ENVIRONMENT_MODE as string
   
-  if (environmentMode === 'development') {
+  if (buildTimeMode === 'development') {
     return 'development'
   }
   
-  if (environmentMode === 'staging') {
+  if (buildTimeMode === 'staging') {
     return 'staging'
   }
   
   // Default to production
   return 'production'
+}
+
+/**
+ * Async client-side environment detection using runtime API
+ * This fetches the correct environment from the server
+ */
+export async function getClientEnvironmentModeAsync(): Promise<EnvironmentMode> {
+  try {
+    const response = await fetch('/api/environment', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      const environment = data.environment as EnvironmentMode
+      
+      // Cache the result for future synchronous calls
+      runtimeEnvironmentCache = environment
+      
+      return environment
+    } else {
+      console.warn('Failed to fetch runtime environment, using build-time fallback')
+      return getClientEnvironmentMode()
+    }
+  } catch (error) {
+    console.warn('Error fetching runtime environment:', error)
+    return getClientEnvironmentMode()
+  }
 }
 
 /**
