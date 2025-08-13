@@ -19,7 +19,7 @@
 import { signIn } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { Logo } from './Logo'
-import { getClientEnvironmentMode, getClientEnvironmentModeAsync, isStaging, isDevelopment } from '../lib/environment'
+import { getClientEnvironmentMode, getClientEnvironmentModeAsync } from '../lib/environment'
 
 /**
  * Landing page component that showcases the product and handles initial authentication
