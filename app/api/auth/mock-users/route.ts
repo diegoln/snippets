@@ -43,6 +43,11 @@ const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Debug logging to understand environment detection issue
+    console.log('🔍 DEBUG Environment Detection:')
+    console.log('  process.env.NODE_ENV:', process.env.NODE_ENV)
+    console.log('  getEnvironmentMode():', getEnvironmentMode())
+    
     const envMode = getEnvironmentMode()
     
     // SECURITY: Only allow access in development or staging environments
