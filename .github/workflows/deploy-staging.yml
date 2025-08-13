@@ -58,6 +58,16 @@ jobs:
           
           echo "✅ Staging deployment completed!"
 
+      - name: Initialize Staging Data
+        run: |
+          echo "🎭 Initializing staging environment data..."
+          
+          # Make staging init script executable
+          chmod +x scripts/post-deploy-staging-init.sh
+          
+          # Run staging initialization (creates mock users and test data)
+          ./scripts/post-deploy-staging-init.sh || echo "⚠️ Staging initialization may have completed already"
+
       - name: Verify Staging Deployment
         run: |
           echo "🔍 Verifying staging deployment..."
