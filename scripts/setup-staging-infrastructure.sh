@@ -106,7 +106,7 @@ if ! gcloud secrets describe staging-google-client-secret &>/dev/null; then
 fi
 
 # Note: Staging uses production Gemini API key (gemini-api-key secret)
-echo "🤖 Gemini API key: Using production key for staging (shared resource)"
+echo "🤖 Gemini API key: Using production gemini-api-key for staging (shared resource)"
 
 # Create staging-specific NextAuth secret
 echo "🔑 Setting up staging NextAuth secret..."

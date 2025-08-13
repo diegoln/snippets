@@ -82,7 +82,7 @@ steps:
       - '--concurrency=80'
       - '--timeout=300'
       - '--set-env-vars=NODE_ENV=production,NEXT_TELEMETRY_DISABLED=1,NEXTAUTH_URL=https://advanceweekly.io,AUTH_URL=https://advanceweekly.io'
-      - '--set-secrets=DATABASE_URL=database-url:latest,OPENAI_API_KEY=openai-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
+      - '--set-secrets=DATABASE_URL=database-url:latest,GEMINI_API_KEY=gemini-api-key:latest,NEXTAUTH_SECRET=nextauth-secret:latest,GOOGLE_CLIENT_ID=google-client-id:latest,GOOGLE_CLIENT_SECRET=google-client-secret:latest'
       - '--add-cloudsql-instances=advanceweekly-prod:us-central1:advanceweekly-db'
       - '--execution-environment=gen2'
     waitFor: ['push-images']
