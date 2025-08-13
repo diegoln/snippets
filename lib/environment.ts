@@ -41,7 +41,7 @@ export function getEnvironmentMode(): EnvironmentMode {
 
 /**
  * Get current environment mode on the client side
- * Uses URL path detection since headers aren't available
+ * Uses URL path detection and query parameters since headers aren't available
  */
 export function getClientEnvironmentMode(): EnvironmentMode {
   if (typeof window === 'undefined') {
@@ -51,6 +51,21 @@ export function getClientEnvironmentMode(): EnvironmentMode {
   
   // Client-side path detection
   if (window.location.pathname.startsWith('/staging')) {
+    return 'staging'
+  }
+  
+  // Check if we're on mock-signin page with staging callback
+  if (window.location.pathname === '/mock-signin') {
+    const urlParams = new URLSearchParams(window.location.search)
+    const callbackUrl = urlParams.get('callbackUrl')
+    if (callbackUrl && (callbackUrl.includes('/staging') || callbackUrl === '/staging')) {
+      return 'staging'
+    }
+  }
+  
+  // Check URL hash or origin for staging context
+  if (window.location.href.includes('/staging') || 
+      window.location.hash.includes('staging')) {
     return 'staging'
   }
   
