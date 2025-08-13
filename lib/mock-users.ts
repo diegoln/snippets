@@ -41,22 +41,29 @@ export const BASE_MOCK_USERS: Omit<MockUser, 'id'>[] = [
 ]
 
 /**
- * Generate environment-specific mock users with appropriate ID prefixes
+ * Generate mock users for a specific environment (helper function)
  */
-export function getMockUsers(): MockUser[] {
-  const envMode = getEnvironmentMode()
-  
+function generateMockUsersForEnvironment(envMode: 'development' | 'staging' | 'production'): MockUser[] {
   return BASE_MOCK_USERS.map((user, index) => {
     const baseId = (index + 1).toString()
+    const prefix = envMode === 'staging' ? 'staging_' : ''
     
     return {
-      id: envMode === 'staging' ? `staging_${baseId}` : baseId,
+      id: `${prefix}${baseId}`,
       name: user.name,
       email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
       image: user.image,
       role: user.role
     }
   })
+}
+
+/**
+ * Generate environment-specific mock users with appropriate ID prefixes
+ */
+export function getMockUsers(): MockUser[] {
+  const envMode = getEnvironmentMode()
+  return generateMockUsersForEnvironment(envMode)
 }
 
 /**
@@ -104,24 +111,6 @@ export function getMockUserById(id: string): MockUser | null {
   }
   
   return null
-}
-
-/**
- * Generate mock users for a specific environment (helper function)
- */
-function generateMockUsersForEnvironment(envMode: 'development' | 'staging' | 'production'): MockUser[] {
-  return BASE_MOCK_USERS.map((user, index) => {
-    const baseId = (index + 1).toString()
-    const prefix = envMode === 'staging' ? 'staging_' : ''
-    
-    return {
-      id: `${prefix}${baseId}`,
-      name: user.name,
-      email: envMode === 'staging' ? user.email.replace('@', '+staging@') : user.email,
-      image: user.image,
-      role: user.role
-    }
-  })
 }
 
 /**

@@ -36,9 +36,18 @@ DB_CONNECTION_NAME="$PROJECT_ID:us-central1:$STAGING_DB_INSTANCE"
 echo "📡 Connection: $DB_CONNECTION_NAME"
 
 echo "🗄️  Applying database schema..."
+
+# Validate required environment variables
+if [ -z "$DATABASE_URL" ]; then
+    echo "❌ ERROR: DATABASE_URL environment variable must be set"
+    echo "🔧 Set it to: postgresql://username:password@/advanceweekly?host=/cloudsql/$DB_CONNECTION_NAME"
+    exit 1
+fi
+
+echo "📡 Using DATABASE_URL: ${DATABASE_URL%%password*}[REDACTED]"
+
 # Apply database schema only - no seed data needed
-DATABASE_URL="postgresql://username:password@/advanceweekly?host=/cloudsql/$DB_CONNECTION_NAME" \
-  npx prisma db push
+npx prisma db push
 
 echo ""
 echo "✅ Staging database schema applied successfully!"

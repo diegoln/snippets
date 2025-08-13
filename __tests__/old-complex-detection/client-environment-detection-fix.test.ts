@@ -39,7 +39,7 @@ describe('Client Environment Detection Fix', () => {
     mockLocation.href = 'https://advanceweekly.io/mock-signin?callbackUrl=%2Fstaging'
 
     // Import after setting up mocks
-    const { getClientEnvironmentMode } = require('../lib/environment')
+    const { getClientEnvironmentMode } = require('../../lib/environment-old')
     
     const result = getClientEnvironmentMode()
     
@@ -51,7 +51,7 @@ describe('Client Environment Detection Fix', () => {
     mockLocation.search = '?callbackUrl=/staging'
     mockLocation.href = 'https://advanceweekly.io/mock-signin?callbackUrl=/staging'
 
-    const { getClientEnvironmentMode } = require('../lib/environment')
+    const { getClientEnvironmentMode } = require('../../lib/environment-old')
     
     const result = getClientEnvironmentMode()
     
@@ -62,7 +62,7 @@ describe('Client Environment Detection Fix', () => {
     mockLocation.pathname = '/staging'
     mockLocation.href = 'https://advanceweekly.io/staging'
 
-    const { getClientEnvironmentMode } = require('../lib/environment')
+    const { getClientEnvironmentMode } = require('../../lib/environment-old')
     
     const result = getClientEnvironmentMode()
     
@@ -74,7 +74,7 @@ describe('Client Environment Detection Fix', () => {
     mockLocation.search = '?callbackUrl=%2F'
     mockLocation.href = 'https://advanceweekly.io/mock-signin?callbackUrl=%2F'
 
-    const { getClientEnvironmentMode } = require('../lib/environment')
+    const { getClientEnvironmentMode } = require('../../lib/environment-old')
     
     const result = getClientEnvironmentMode()
     
@@ -86,7 +86,7 @@ describe('Client Environment Detection Fix', () => {
     mockLocation.pathname = '/mock-signin'
     mockLocation.href = 'http://localhost:3000/mock-signin'
 
-    const { getClientEnvironmentMode } = require('../lib/environment')
+    const { getClientEnvironmentMode } = require('../../lib/environment-old')
     
     const result = getClientEnvironmentMode()
     
