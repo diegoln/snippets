@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isStaging } from '../../../../lib/environment'
 import { initializeStagingData } from '../../../../lib/staging-service'
 
+// Force dynamic rendering - critical for environment-specific behavior
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Staging Data Reset API Endpoint
  * 

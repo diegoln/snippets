@@ -7,6 +7,29 @@
  * - production: advanceweekly.io (production infrastructure)
  * 
  * No more URL parsing or complex detection logic!
+ * 
+ * CRITICAL: Next.js API Route Caching Warning
+ * ================================================
+ * If you use ANY of these environment detection functions in an API route
+ * (located in app/api/), you MUST add these exports to force runtime execution:
+ * 
+ *   export const dynamic = 'force-dynamic'
+ *   export const revalidate = 0
+ * 
+ * Without these, Next.js will cache/pre-render your API route at BUILD time
+ * with build-time environment values, causing staging to always detect as
+ * 'production'. This is because Next.js optimizes routes for performance by
+ * default, but environment detection requires runtime execution.
+ * 
+ * Affected functions that require dynamic routes:
+ * - getEnvironmentMode()
+ * - isDevelopment()
+ * - isStaging()
+ * - isProduction()
+ * - isDevLike()
+ * - shouldUseMockAuth()
+ * - shouldUseMockIntegrations()
+ * - shouldShowDevTools()
  */
 
 export type EnvironmentMode = 'development' | 'staging' | 'production'
@@ -16,14 +39,44 @@ export type EnvironmentMode = 'development' | 'staging' | 'production'
  * Simple, reliable, no URL parsing needed!
  */
 export function getEnvironmentMode(): EnvironmentMode {
-  // Use NODE_ENV directly - standard and reliable
-  const nodeEnv = process.env.NODE_ENV as string
+  // Check for custom runtime environment variable first (Cloud Run sets this)
+  // This avoids Next.js build-time optimization of process.env.NODE_ENV
+  const runtimeEnv = process.env.RUNTIME_ENV || process.env.NODE_ENV
   
-  if (nodeEnv === 'development') {
+  if (runtimeEnv === 'development') {
     return 'development'
   }
   
-  if (nodeEnv === 'staging') {
+  if (runtimeEnv === 'staging') {
+    return 'staging'
+  }
+  
+  // Default to production
+  return 'production'
+}
+
+// Cache for runtime environment detection
+let runtimeEnvironmentCache: EnvironmentMode | null = null
+let runtimeEnvironmentPromise: Promise<EnvironmentMode> | null = null
+
+/**
+ * Client-side environment detection using runtime API
+ * Falls back to build-time detection if API fails
+ */
+export function getClientEnvironmentMode(): EnvironmentMode {
+  // Return cached value if available (synchronous)
+  if (runtimeEnvironmentCache) {
+    return runtimeEnvironmentCache
+  }
+
+  // Fallback to build-time detection (will be 'production' in staging)
+  const buildTimeMode = process.env.ENVIRONMENT_MODE as string
+  
+  if (buildTimeMode === 'development') {
+    return 'development'
+  }
+  
+  if (buildTimeMode === 'staging') {
     return 'staging'
   }
   
@@ -32,23 +85,50 @@ export function getEnvironmentMode(): EnvironmentMode {
 }
 
 /**
- * Client-side environment detection using custom env var
- * NODE_ENV is not allowed in next.config.js, so we use ENVIRONMENT_MODE
+ * Async client-side environment detection using runtime API
+ * This fetches the correct environment from the server with race condition prevention
  */
-export function getClientEnvironmentMode(): EnvironmentMode {
-  // Use the custom ENVIRONMENT_MODE variable exposed via next.config.js
-  const environmentMode = process.env.ENVIRONMENT_MODE as string
-  
-  if (environmentMode === 'development') {
-    return 'development'
+export async function getClientEnvironmentModeAsync(): Promise<EnvironmentMode> {
+  // Return cached value if available
+  if (runtimeEnvironmentCache) {
+    return runtimeEnvironmentCache
   }
   
-  if (environmentMode === 'staging') {
-    return 'staging'
+  // Return existing promise if one is already in flight
+  if (runtimeEnvironmentPromise) {
+    return runtimeEnvironmentPromise
   }
   
-  // Default to production
-  return 'production'
+  // Create and cache the promise to prevent multiple concurrent requests
+  runtimeEnvironmentPromise = (async () => {
+    try {
+      const response = await fetch('/api/environment', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const environment = data.environment as EnvironmentMode
+        
+        // Cache the result for future calls
+        runtimeEnvironmentCache = environment
+        
+        return environment
+      } else {
+        console.warn('Failed to fetch runtime environment, using build-time fallback')
+        return getClientEnvironmentMode()
+      }
+    } catch (error) {
+      console.warn('Error fetching runtime environment:', error)
+      return getClientEnvironmentMode()
+    } finally {
+      // Clear the promise so future calls can create a new one if needed
+      runtimeEnvironmentPromise = null
+    }
+  })()
+  
+  return runtimeEnvironmentPromise
 }
 
 /**
