@@ -58,8 +58,6 @@ const jestConfig = {
     // E2E tests that require running development server
     '/__tests__/integration-reset-onboarding-e2e.test.ts', // Needs localhost:3000 server
     
-    // Tests with infinite loop/hanging issues (need investigation)  
-    '/__tests__/integration-edge-cases.test.ts',   // Hanging in test runner
     
     // React/JSX component tests that require JSDOM environment
     // These are excluded because they need browser-like environment setup
