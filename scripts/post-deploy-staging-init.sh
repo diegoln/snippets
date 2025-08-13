@@ -19,19 +19,20 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     echo "🔐 Loading DATABASE_URL from Secret Manager..."
     
     if command -v gcloud >/dev/null 2>&1; then
-        ORIGINAL_DATABASE_URL=$(gcloud secrets versions access latest --secret="database-url" --project=advanceweekly-prod)
+        # For staging, use the staging database URL
+        ORIGINAL_DATABASE_URL=$(gcloud secrets versions access latest --secret="staging-database-url" --project=advanceweekly-prod)
         
         if [[ -n "${ORIGINAL_DATABASE_URL}" ]]; then
             # GitHub Actions needs Cloud SQL Proxy, Cloud Run can use socket directly
             if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-                echo "🔗 Setting up Cloud SQL Proxy for GitHub Actions..."
+                echo "🔗 Setting up Cloud SQL Proxy for GitHub Actions (staging database)..."
                 
                 # Download Cloud SQL Proxy
                 curl -s -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
                 chmod +x cloud_sql_proxy
                 
-                # Start proxy in background on port 5433
-                ./cloud_sql_proxy -instances=advanceweekly-prod:us-central1:advanceweekly-db=tcp:5433 &
+                # Start proxy in background on port 5433 for STAGING database
+                ./cloud_sql_proxy -instances=advanceweekly-prod:us-central1:advanceweekly-staging-db=tcp:5433 &
                 PROXY_PID=$!
                 
                 # Wait for proxy to initialize
