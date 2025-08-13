@@ -20,16 +20,16 @@ export async function GET() {
   try {
     const environment = getEnvironmentMode()
     
-    return NextResponse.json(
+    const response = NextResponse.json(
       { environment },
-      { 
-        status: 200,
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Content-Type': 'application/json'
-        }
-      }
+      { status: 200 }
     )
+    
+    // Explicitly set headers after creating the response
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Content-Type', 'application/json')
+    
+    return response
   } catch (error) {
     console.error('Error getting environment mode:', error)
     return NextResponse.json(

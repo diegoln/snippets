@@ -27,56 +27,96 @@ export async function seedCareerGuidelineTemplates(
   const db = prisma || new PrismaClient()
   const shouldDisconnect = !prisma
   
+  if (!silent) {
+    console.log('📋 Seeding career guideline templates...')
+  }
+
   try {
-    const { execSync } = require('child_process')
-    const path = require('path')
+    // Parse the pre-generated guidelines file
+    const guidelinesPath = path.join(__dirname, '..', 'pregen-guidelines.txt')
     
-    // Use the existing working seed script directly
-    const seedScriptPath = path.join(__dirname, '..', 'prisma', 'seed-career-guidelines.js')
+    if (!fs.existsSync(guidelinesPath)) {
+      if (!silent) {
+        console.log('⚠️  pregen-guidelines.txt not found, skipping career guidelines seed')
+      }
+      return { created: 0, skipped: 0, total: 0 }
+    }
+
+    const content = fs.readFileSync(guidelinesPath, 'utf-8')
+    const guidelines = parseCareerGuidelines(content)
     
     if (!silent) {
-      console.log('📋 Seeding career guideline templates...')
+      console.log(`📊 Parsed ${guidelines.length} career guideline combinations`)
     }
     
-    // Close our connection temporarily since the seed script creates its own
-    if (shouldDisconnect) {
-      await db.$disconnect()
+    let created = 0
+    let skipped = 0
+    
+    for (const guideline of guidelines) {
+      try {
+        // Check if template already exists
+        const existing = await db.careerGuidelineTemplate.findUnique({
+          where: {
+            role_level: {
+              role: guideline.role,
+              level: guideline.level
+            }
+          }
+        })
+        
+        if (existing) {
+          if (!silent) {
+            console.log(`⏭️  Skipping existing: ${guideline.role} - ${guideline.level}`)
+          }
+          skipped++
+          continue
+        }
+        
+        // Create new template
+        await db.careerGuidelineTemplate.create({
+          data: {
+            role: guideline.role,
+            level: guideline.level,
+            currentLevelPlan: guideline.currentLevelPlan,
+            nextLevelExpectations: guideline.nextLevelExpectations
+          }
+        })
+        
+        if (!silent) {
+          console.log(`✅ Created: ${guideline.role} - ${guideline.level}`)
+        }
+        created++
+      } catch (error) {
+        if (!silent) {
+          console.error(`❌ Error creating ${guideline.role} - ${guideline.level}:`, error instanceof Error ? error.message : String(error))
+        }
+        // Continue with other guidelines even if one fails
+      }
     }
-    
-    // Run the existing seed script with proper environment
-    const stdio = silent ? 'ignore' : 'inherit'
-    execSync(`node ${seedScriptPath}`, { 
-      stdio,
-      env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL }
-    })
-    
-    // Reconnect to get the count
-    const dbForCount = new PrismaClient()
-    const templateCount = await dbForCount.careerGuidelineTemplate.count()
-    await dbForCount.$disconnect()
     
     if (!silent) {
-      console.log(`✅ Career guideline templates seeded (${templateCount} total in database)`)
+      console.log(`🎉 Career guidelines seed completed!`)
+      console.log(`   Created: ${created}`)
+      console.log(`   Skipped: ${skipped}`)
     }
     
-    return { created: 0, skipped: templateCount, total: templateCount }
+    return { created, skipped, total: guidelines.length }
     
   } catch (error) {
     if (!silent) {
-      console.error('❌ Error during career guidelines seeding:', error.message)
+      console.error('❌ Error during career guidelines seeding:', error)
     }
-    // Don't throw, just return empty result - the system can work without templates
-    return { created: 0, skipped: 0, total: 0 }
+    throw error
   } finally {
     if (shouldDisconnect) {
-      // No need to disconnect since we already did it above
+      await db.$disconnect()
     }
   }
 }
 
 /**
  * Parse the pre-generated guidelines text file into structured data
- * (Extracted from existing seed-career-guidelines.js for consistency)
+ * Format: ### **Role**, #### **Level**, then content until next header
  */
 function parseCareerGuidelines(content: string) {
   // Role mappings to match our constants
@@ -100,106 +140,81 @@ function parseCareerGuidelines(content: string) {
   }
   
   const lines = content.split('\n')
-  const intermediate = {}
-  let currentRole = null
-  let currentLevel = null
-  let currentSection = null
-  let currentContent = []
+  const levelData: { [key: string]: string } = {}
+  let currentRole: string | null = null
+  let currentLevel: string | null = null
+  let currentContent: string[] = []
   
-  // Pass 1: Parse content into intermediate structure
+  // Parse content - everything under a level header is the current level plan
   for (const line of lines) {
     const trimmedLine = line.trim()
     
-    // Skip empty lines and separators
-    if (!trimmedLine || trimmedLine === '---') {
-      continue
-    }
-    
-    // Check if this is a role header
-    if (Object.keys(roleMap).some(role => trimmedLine.includes(role))) {
-      // Finalize previous section if exists
-      if (currentRole && currentLevel && currentSection) {
+    // Check if this is a role header (### **Role Name**)
+    if (trimmedLine.startsWith('### **') && trimmedLine.endsWith('**')) {
+      // Save previous level content
+      if (currentRole && currentLevel && currentContent.length > 0) {
         const key = `${currentRole}-${currentLevel}`
-        if (!intermediate[key]) intermediate[key] = {}
-        intermediate[key][currentSection] = currentContent.join('\n').trim()
-        currentContent = []
+        levelData[key] = currentContent.join('\n').trim()
       }
       
-      // Extract role
+      // Extract new role
+      const roleText = trimmedLine.replace('### **', '').replace('**', '').trim()
       currentRole = null
       for (const [displayRole, internalRole] of Object.entries(roleMap)) {
-        if (trimmedLine.includes(displayRole)) {
+        if (roleText === displayRole) {
           currentRole = internalRole
           break
         }
       }
+      currentLevel = null
+      currentContent = []
       continue
     }
     
-    // Check if this is a level header
-    if (Object.keys(levelMap).some(level => trimmedLine.includes(level))) {
-      // Finalize previous section if exists
-      if (currentRole && currentLevel && currentSection) {
+    // Check if this is a level header (#### **Level Name**)
+    if (trimmedLine.startsWith('#### **') && trimmedLine.endsWith('**')) {
+      // Save previous level content
+      if (currentRole && currentLevel && currentContent.length > 0) {
         const key = `${currentRole}-${currentLevel}`
-        if (!intermediate[key]) intermediate[key] = {}
-        intermediate[key][currentSection] = currentContent.join('\n').trim()
-        currentContent = []
+        levelData[key] = currentContent.join('\n').trim()
       }
       
-      // Extract level
+      // Extract new level
+      const levelText = trimmedLine.replace('#### **', '').replace('**', '').trim()
       currentLevel = null
       for (const [displayLevel, internalLevel] of Object.entries(levelMap)) {
-        if (trimmedLine.includes(displayLevel)) {
+        if (levelText === displayLevel) {
           currentLevel = internalLevel
           break
         }
       }
+      currentContent = []
       continue
     }
     
-    // Check if this is a section header
-    if (trimmedLine.startsWith('Current Level Plan:')) {
-      // Finalize previous section if exists
-      if (currentRole && currentLevel && currentSection) {
-        const key = `${currentRole}-${currentLevel}`
-        if (!intermediate[key]) intermediate[key] = {}
-        intermediate[key][currentSection] = currentContent.join('\n').trim()
-        currentContent = []
-      }
-      currentSection = 'currentLevelPlan'
-      continue
-    }
-    
-    if (trimmedLine.startsWith('Next Level Expectations:')) {
-      // Finalize previous section if exists
-      if (currentRole && currentLevel && currentSection) {
-        const key = `${currentRole}-${currentLevel}`
-        if (!intermediate[key]) intermediate[key] = {}
-        intermediate[key][currentSection] = currentContent.join('\n').trim()
-        currentContent = []
-      }
-      currentSection = 'nextLevelExpectations'
-      continue
-    }
-    
-    // Add content line
-    if (currentRole && currentLevel && currentSection) {
+    // Add content line if we're in a valid role/level context
+    if (currentRole && currentLevel) {
       currentContent.push(line)
     }
   }
   
-  // Finalize last section
-  if (currentRole && currentLevel && currentSection) {
+  // Save final level content
+  if (currentRole && currentLevel && currentContent.length > 0) {
     const key = `${currentRole}-${currentLevel}`
-    if (!intermediate[key]) intermediate[key] = {}
-    intermediate[key][currentSection] = currentContent.join('\n').trim()
+    levelData[key] = currentContent.join('\n').trim()
   }
   
-  // Pass 2: Convert to final guidelines array
-  const guidelines = []
+  // Convert to final guidelines array with next level expectations
+  const guidelines: Array<{
+    role: string
+    level: string
+    currentLevelPlan: string
+    nextLevelExpectations: string
+  }> = []
+  
   const levelOrder = Object.values(levelMap)
   
-  for (const [key, sections] of Object.entries(intermediate)) {
+  for (const [key, currentLevelPlan] of Object.entries(levelData)) {
     const [role, level] = key.split('-')
     
     // Get next level for expectations
@@ -208,21 +223,18 @@ function parseCareerGuidelines(content: string) {
       ? levelOrder[currentLevelIndex + 1] 
       : null
     
-    // Find next level expectations (look for next level's current plan)
-    let nextLevelExpectations = sections.nextLevelExpectations || ''
-    if (!nextLevelExpectations && nextLevel) {
+    // Next level expectations are the next level's current plan
+    let nextLevelExpectations = ''
+    if (nextLevel) {
       const nextKey = `${role}-${nextLevel}`
-      const nextSections = intermediate[nextKey]
-      if (nextSections && nextSections.currentLevelPlan) {
-        nextLevelExpectations = nextSections.currentLevelPlan
-      }
+      nextLevelExpectations = levelData[nextKey] || ''
     }
     
     guidelines.push({
       role,
       level,
-      currentLevelPlan: sections.currentLevelPlan || '',
-      nextLevelExpectations: nextLevelExpectations
+      currentLevelPlan,
+      nextLevelExpectations
     })
   }
   
