@@ -61,8 +61,7 @@ const jestConfig = {
     // Old complex environment detection tests (obsolete after NODE_ENV simplification)
     '/__tests__/old-complex-detection/',           // Replaced by simplified environment detection
     
-    // Tests with infinite loop/hanging issues (need investigation)
-    '/__tests__/llm-proxy-verification.test.ts',   // Hanging in test runner
+    // Tests with infinite loop/hanging issues (need investigation)  
     '/__tests__/integration-edge-cases.test.ts',   // Hanging in test runner
     
     // React/JSX component tests that require JSDOM environment
