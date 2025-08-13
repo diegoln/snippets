@@ -24,7 +24,9 @@ RUN npm ci --frozen-lockfile --include=dev
 COPY . .
 
 # Set build environment
-ENV NODE_ENV=production
+# NODE_ENV can be overridden via build args for different environments
+ARG NODE_ENV=production
+ENV NODE_ENV=$NODE_ENV
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Generate schema and build
