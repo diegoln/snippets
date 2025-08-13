@@ -99,7 +99,7 @@ RUN chmod +x start.sh
 USER nextjs
 
 # Configure runtime environment
-ENV NODE_ENV=production
+# NODE_ENV is set by Cloud Run deployment (production/staging)
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=8080
 
