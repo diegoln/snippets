@@ -28,10 +28,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Generate schema and build
-RUN npm run generate-schema:force && npm run build
-# Keep essential TypeScript dependencies for staging environment
-# Staging uses NODE_ENV=staging which Next.js treats as needing TypeScript support
-RUN npm prune --production && npm install --save @types/node typescript
+RUN npm run generate-schema:force && npm run build && npm prune --production
 
 # ===== DEVELOPMENT STAGE =====
 FROM base as development
@@ -66,8 +63,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
-COPY --from=builder --chown=nextjs:nodejs /app/app ./app
-COPY --from=builder --chown=nextjs:nodejs /app/lib ./lib
 COPY --from=builder --chown=nextjs:nodejs /app/next.config.js ./next.config.js
 
 # Copy startup scripts
