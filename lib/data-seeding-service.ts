@@ -182,11 +182,23 @@ export async function initializeMockData(
     }
     console.log()
 
+    // 5. Seed career guideline templates (needed for all environments)
+    console.log('5️⃣ Seeding career guideline templates...')
+    try {
+      const { seedCareerGuidelineTemplates } = require('./career-guidelines-seeding')
+      const result = await seedCareerGuidelineTemplates(db, false)
+      console.log(`✅ Career guideline templates seeded (${result.created} created, ${result.skipped} skipped)\n`)
+    } catch (error) {
+      console.error('⚠️  Failed to seed career guideline templates:', error.message)
+      console.log('Career guideline templates may need to be seeded manually\n')
+    }
+
     console.log(`🎉 ${envName} database initialized successfully!`)
     console.log('📊 Summary:')
     console.log(`   - ${mockUsers.length} ${envName} users created`)
     console.log('   - Mock integrations (Google Calendar, Todoist) configured')
     console.log(`   - Career guidelines populated for ${mockUsers[0].name}`)
+    console.log('   - Career guideline templates seeded globally')
     console.log()
     
     const accessUrl = config.environment === 'staging' 
