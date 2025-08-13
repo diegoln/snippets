@@ -3,8 +3,9 @@
 #
 # Staging Database Seeding Script for AdvanceWeekly
 #
-# This script applies the database schema for staging environment
-# Mock users are handled by the application code in lib/mock-users.ts
+# This script seeds the staging database using the existing seed scripts
+# to create the same test data as development for consistent testing.
+# Uses staging-specific user IDs (staging_1, staging_2, staging_3).
 #
 # Run this after setting up staging infrastructure
 #
@@ -46,15 +47,28 @@ fi
 
 echo "📡 Using DATABASE_URL: ${DATABASE_URL%%password*}[REDACTED]"
 
-# Apply database schema only - no seed data needed
+# Apply database schema
 npx prisma db push
 
+echo "🌱 Initializing staging data with mock users and integrations..."
+# Use the staging service to create proper staging data
+NODE_ENV=staging npx tsx -e "
+import { initializeStagingData } from './lib/staging-service.js'
+await initializeStagingData()
+console.log('✅ Staging initialization completed!')
+process.exit(0)
+"
+
 echo ""
-echo "✅ Staging database schema applied successfully!"
+echo "✅ Staging database initialized successfully!"
+echo ""
+echo "📊 Staging Test Data Created:"
+echo "👥 3 mock users with staging IDs (staging_1, staging_2, staging_3)"
+echo "🔗 Mock integration data for calendar/todos testing"
+echo "📝 Ready for users to create snippets and reflections"
 echo ""
 echo "🎭 Ready for staging testing at: https://staging.advanceweekly.io"
-echo "🔐 Mock authentication available with staging_1, staging_2, staging_3"
-echo "📊 Mock users handled by application code (lib/mock-users.ts)"
+echo "🔐 Mock authentication available with staging users"
 echo ""
 echo "🚀 Next steps:"
 echo "1. Configure DNS: staging.advanceweekly.io → Cloud Run"

@@ -83,9 +83,9 @@ git push origin main
 - Consistent test data for reliable testing
 
 ### **Test Data**
-- **Sample snippets**: Generated for past 6 months per user
-- **Career check-ins**: Sample assessment data
-- **Career guidelines**: Template testing data
+- **Sample snippets**: Generated for past 6 months per user (using existing seed scripts)
+- **Career guidelines**: Template testing data for onboarding flows
+- **Mock users**: 3 test users with realistic profiles for authentication testing
 
 ### **Visual Indicators**
 - 🎭 **Yellow staging banner**: "STAGING ENVIRONMENT - Test data only"

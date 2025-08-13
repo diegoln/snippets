@@ -49,7 +49,6 @@ else
         --storage-size=10GB \
         --storage-auto-increase \
         --backup-start-time=03:00 \
-        --enable-bin-log \
         --deletion-protection
     
     echo "✅ Staging database created: $STAGING_DB_NAME"

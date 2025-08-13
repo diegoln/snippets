@@ -15,9 +15,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging';
 
-console.log(`🔧 Generating Prisma schema for ${isDevelopment ? 'development' : 'production'} environment...`);
+console.log(`🔧 Generating Prisma schema for ${isDevelopment ? 'development' : (process.env.NODE_ENV === 'staging' ? 'staging' : 'production')} environment...`);
 
 // Read the template
 const templatePath = path.join(__dirname, '../prisma/schema.template.prisma');
@@ -62,13 +63,13 @@ if (isDevelopment) {
   console.log('📱 Development configuration:');
   console.log('   - Database: SQLite');
   console.log('   - Metadata field: String');
-} else {
-  // Production: PostgreSQL configuration
+} else if (isProduction) {
+  // Production/Staging: PostgreSQL configuration
   schemaContent = schemaContent
     .replace(/__DB_PROVIDER__/g, 'postgresql')
     .replace(/__METADATA_TYPE__/g, 'Json');
   
-  console.log('🏭 Production configuration:');
+  console.log(`🏭 ${process.env.NODE_ENV === 'staging' ? 'Staging' : 'Production'} configuration:`);
   console.log('   - Database: PostgreSQL');
   console.log('   - Metadata field: Json');
 }
