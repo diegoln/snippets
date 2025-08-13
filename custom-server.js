@@ -17,7 +17,11 @@ const { parse } = require('url')
 const next = require('next')
 
 // Configuration from environment
-const dev = process.env.NODE_ENV !== 'production'
+// CRITICAL: Next.js treats any non-'production' NODE_ENV as development mode
+// Development mode requires app/ or pages/ directories to exist at runtime
+// Staging uses NODE_ENV='staging' for mock auth, but needs production-like behavior
+// Therefore, we treat both 'production' AND 'staging' as production for Next.js
+const dev = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'staging'
 const hostname = process.env.HOSTNAME || 'localhost'
 const port = parseInt(process.env.PORT || '3000', 10)
 

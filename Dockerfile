@@ -55,9 +55,34 @@ RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
 # Copy production node_modules (pruned)
+# These are production-only dependencies after npm prune --production
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Copy built application and necessary files
+# IMPORTANT: Production Docker image file structure
+# 
+# What we DO copy:
+# - .next/          : Compiled Next.js application (all JavaScript, no TypeScript)
+# - public/         : Static assets served directly
+# - package.json    : Required by Next.js at runtime for version checks
+# - prisma/         : Database schema and seed scripts
+# - scripts/        : Utility scripts for runtime operations
+# - next.config.js  : Next.js configuration needed at runtime
+#
+# What we DON'T copy (and why):
+# - app/            : TypeScript source files - NOT needed, compiled into .next/
+#                     When present with NODE_ENV!=production, Next.js tries to
+#                     install TypeScript dependencies at runtime, causing failures
+# - lib/            : TypeScript utility files - NOT needed, compiled into .next/
+# - pages/          : We use App Router (app/), not Pages Router
+# - components/     : TypeScript components - compiled into .next/
+# - *.ts, *.tsx     : No TypeScript files should be in production
+#
+# Critical behavior with NODE_ENV:
+# - NODE_ENV=production: Next.js runs in production mode, skips directory checks
+# - NODE_ENV=staging: Would normally trigger dev mode, but custom-server.js handles this
+# - NODE_ENV=development: Full dev mode, requires source directories
+#
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
