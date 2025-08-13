@@ -117,21 +117,17 @@ function generateSchema() {
     process.exit(1);
   }
 
+  // Always use PostgreSQL configuration for consistency
+  schemaContent = schemaContent
+    .replace(/__DB_PROVIDER__/g, 'postgresql')
+    .replace(/__METADATA_TYPE__/g, 'Json');
+  
   if (isDevelopment) {
-    // Development: SQLite configuration
-    schemaContent = schemaContent
-      .replace(/__DB_PROVIDER__/g, 'sqlite')
-      .replace(/__METADATA_TYPE__/g, 'String');
-    
-    log('📱 Development configuration:');
-    log('   - Database: SQLite');
-    log('   - Metadata field: String');
+    log('🐘 Development configuration (PostgreSQL):');
+    log('   - Database: PostgreSQL');
+    log('   - Metadata field: Json');
+    log('   - Environment consistency: ✅ Matches production');
   } else {
-    // Production: PostgreSQL configuration
-    schemaContent = schemaContent
-      .replace(/__DB_PROVIDER__/g, 'postgresql')
-      .replace(/__METADATA_TYPE__/g, 'Json');
-    
     log('🏭 Production configuration:');
     log('   - Database: PostgreSQL');
     log('   - Metadata field: Json');
@@ -171,7 +167,7 @@ function generateSchema() {
     log('Next steps:');
     log('  npx prisma generate    # Generate Prisma client');
     if (isDevelopment) {
-      log('  npx prisma db push     # Apply schema to SQLite');
+      log('  npx prisma db push     # Apply schema to PostgreSQL');
     } else {
       log('  npx prisma migrate deploy  # Apply migrations to PostgreSQL');
     }
