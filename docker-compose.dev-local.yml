@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Local PostgreSQL for development - mirrors production setup
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: snippets-postgres-dev
+    environment:
+      POSTGRES_DB: snippets_db
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: dev_password
+      # Enable logging for development debugging
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflicts with system PostgreSQL
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      # Optional: Add init scripts if needed
+      # - ./scripts/init-dev-db.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app_user -d snippets_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_dev_data:
+    driver: local

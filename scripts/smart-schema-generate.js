@@ -27,7 +27,9 @@ if (!fs.existsSync(nextDir)) {
   fs.mkdirSync(nextDir, { recursive: true });
 }
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
+const isDevelopment = process.env.NODE_ENV === 'development';
+const isStaging = process.env.NODE_ENV === 'staging';
+const isProduction = process.env.NODE_ENV === 'production';
 const forceGenerate = process.argv.includes('--force');
 
 function log(message) {
@@ -78,11 +80,21 @@ function needsRegeneration() {
 
   const cache = loadCache();
   const currentTemplateHash = getFileHash(templatePath);
-  const currentEnv = isDevelopment ? 'development' : 'production';
+  const currentEnv = isDevelopment ? 'development' : (isStaging ? 'staging' : 'production');
+  const databaseUrl = process.env.DATABASE_URL || '';
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  const usesSqlite = databaseUrl.includes('file:') || databaseUrl.includes('sqlite:');
+  const currentDbType = (isTestEnv && usesSqlite) ? 'sqlite' : 'postgresql';
 
   // Environment changed
   if (cache.environment !== currentEnv) {
     log(`🔄 Environment changed (${cache.environment} → ${currentEnv}) - regenerating schema`);
+    return true;
+  }
+
+  // Database type changed
+  if (cache.databaseType !== currentDbType) {
+    log(`🔄 Database type changed (${cache.databaseType} → ${currentDbType}) - regenerating schema`);
     return true;
   }
 
@@ -98,7 +110,8 @@ function needsRegeneration() {
 }
 
 function generateSchema() {
-  log(`🔧 Generating Prisma schema for ${isDevelopment ? 'development' : 'production'} environment...`);
+  const envName = isDevelopment ? 'development' : (isStaging ? 'staging' : 'production');
+  log(`🔧 Generating Prisma schema for ${envName} environment...`);
 
   // Read the template
   let schemaContent = fs.readFileSync(templatePath, 'utf8');
@@ -117,24 +130,42 @@ function generateSchema() {
     process.exit(1);
   }
 
-  if (isDevelopment) {
-    // Development: SQLite configuration
+  // Detect environment and database type
+  const databaseUrl = process.env.DATABASE_URL || '';
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  const usesSqlite = databaseUrl.includes('file:') || databaseUrl.includes('sqlite:');
+  
+  if (isTestEnv && usesSqlite) {
+    // Test environment with SQLite (for CI/testing compatibility)
     schemaContent = schemaContent
       .replace(/__DB_PROVIDER__/g, 'sqlite')
       .replace(/__METADATA_TYPE__/g, 'String');
     
-    log('📱 Development configuration:');
+    log('🧪 Test configuration (SQLite):');
     log('   - Database: SQLite');
     log('   - Metadata field: String');
+    log('   - Environment: Testing (SQLite compatibility)');
   } else {
-    // Production: PostgreSQL configuration
+    // Development and Production: PostgreSQL
     schemaContent = schemaContent
       .replace(/__DB_PROVIDER__/g, 'postgresql')
       .replace(/__METADATA_TYPE__/g, 'Json');
     
-    log('🏭 Production configuration:');
-    log('   - Database: PostgreSQL');
-    log('   - Metadata field: Json');
+    if (isDevelopment) {
+      log('🐘 Development configuration (PostgreSQL):');
+      log('   - Database: PostgreSQL');
+      log('   - Metadata field: Json');
+      log('   - Environment consistency: ✅ Matches production');
+    } else if (isStaging) {
+      log('🎭 Staging configuration (PostgreSQL):');
+      log('   - Database: PostgreSQL');
+      log('   - Metadata field: Json');
+      log('   - Environment consistency: ✅ Matches production');
+    } else {
+      log('🏭 Production configuration:');
+      log('   - Database: PostgreSQL');
+      log('   - Metadata field: Json');
+    }
   }
 
   // Validate all placeholders were replaced
@@ -156,9 +187,15 @@ function generateSchema() {
   }
 
   // Update cache
+  const cacheDbUrl = process.env.DATABASE_URL || '';
+  const cacheIsTestEnv = process.env.NODE_ENV === 'test';
+  const cacheUsesSqlite = cacheDbUrl.includes('file:') || cacheDbUrl.includes('sqlite:');
+  const cacheDbType = (cacheIsTestEnv && cacheUsesSqlite) ? 'sqlite' : 'postgresql';
+  
   const cache = {
     templateHash: getFileHash(templatePath),
     environment: isDevelopment ? 'development' : 'production',
+    databaseType: cacheDbType,
     generatedAt: new Date().toISOString()
   };
   saveCache(cache);
@@ -170,8 +207,15 @@ function generateSchema() {
     log('');
     log('Next steps:');
     log('  npx prisma generate    # Generate Prisma client');
-    if (isDevelopment) {
-      log('  npx prisma db push     # Apply schema to SQLite');
+    
+    const nextStepDbUrl = process.env.DATABASE_URL || '';
+    const nextStepIsTestEnv = process.env.NODE_ENV === 'test';
+    const nextStepUsesSqlite = nextStepDbUrl.includes('file:') || nextStepDbUrl.includes('sqlite:');
+    
+    if (nextStepIsTestEnv && nextStepUsesSqlite) {
+      log('  npx prisma db push     # Apply schema to SQLite (test)');
+    } else if (isDevelopment) {
+      log('  npx prisma db push     # Apply schema to PostgreSQL');
     } else {
       log('  npx prisma migrate deploy  # Apply migrations to PostgreSQL');
     }

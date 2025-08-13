@@ -1,5 +1,5 @@
 /**
- * Unit Tests for generate-schema.js
+ * Unit Tests for smart-schema-generate.js
  * 
  * Tests the schema generation script in isolation
  */
@@ -28,16 +28,16 @@ function createTestTemplate(content) {
   const templatePath = path.join(prismaDir, 'schema.template.prisma');
   fs.writeFileSync(templatePath, content);
   
-  // Copy the generate-schema.js script to test directory
-  const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
-  const testScript = path.join(scriptsDir, 'generate-schema.js');
+  // Copy the smart-schema-generate.js script to test directory
+  const originalScript = path.join(__dirname, '../scripts/smart-schema-generate.js');
+  const testScript = path.join(scriptsDir, 'smart-schema-generate.js');
   fs.copyFileSync(originalScript, testScript);
   
   return { testDir, templatePath, scriptPath: testScript };
 }
 
 function runSchemaGeneration(testDir, nodeEnv = 'development') {
-  const scriptPath = path.join(testDir, 'scripts/generate-schema.js');
+  const scriptPath = path.join(testDir, 'scripts/smart-schema-generate.js');
   
   try {
     // Run the script with specified environment from test directory
@@ -131,7 +131,7 @@ model Integration {
 ];
 
 // Jest test suite
-describe('generate-schema.js', () => {
+describe('smart-schema-generate.js', () => {
   let testDirCounter = 0;
   
   beforeEach(() => {
@@ -166,15 +166,15 @@ describe('generate-schema.js', () => {
     const templatePath = path.join(prismaDir, 'schema.template.prisma');
     fs.writeFileSync(templatePath, content);
     
-    // Copy the generate-schema.js script to test directory
-    const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
-    const testScript = path.join(scriptsDir, 'generate-schema.js');
+    // Copy the smart-schema-generate.js script to test directory
+    const originalScript = path.join(__dirname, '../scripts/smart-schema-generate.js');
+    const testScript = path.join(scriptsDir, 'smart-schema-generate.js');
     fs.copyFileSync(originalScript, testScript);
     
     return { testDir, templatePath, scriptPath: testScript };
   }
   
-  test('should generate SQLite schema for development environment', () => {
+  test('should generate PostgreSQL schema for development environment (new unified behavior)', () => {
     const template = `
 datasource db {
   provider = "__DB_PROVIDER__"
@@ -194,11 +194,45 @@ model Integration {
     expect(fs.existsSync(schemaPath)).toBe(true);
     
     const generatedSchema = fs.readFileSync(schemaPath, 'utf8');
-    expect(generatedSchema).toContain('provider = "sqlite"');
-    expect(generatedSchema).toContain('metadata String');
+    expect(generatedSchema).toContain('provider = "postgresql"');
+    expect(generatedSchema).toContain('metadata Json');
     expect(generatedSchema).not.toMatch(/__[A-Z_]+__/g);
   });
   
+  test('should generate SQLite schema for test environment with SQLite URL', () => {
+    const template = `
+datasource db {
+  provider = "__DB_PROVIDER__"
+  url      = env("DATABASE_URL")
+}
+
+model Integration {
+  metadata __METADATA_TYPE__ @default("{}")
+}`;
+    
+    const { testDir } = createUniqueTestTemplate(template);
+    
+    // Run with test environment AND SQLite DATABASE_URL to trigger SQLite generation
+    const scriptPath = path.join(testDir, 'scripts/smart-schema-generate.js');
+    try {
+      const result = execSync(`NODE_ENV=test DATABASE_URL=file:./test.db node ${scriptPath}`, {
+        cwd: testDir,
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+      
+      const schemaPath = path.join(testDir, 'prisma/schema.prisma');
+      expect(fs.existsSync(schemaPath)).toBe(true);
+      
+      const generatedSchema = fs.readFileSync(schemaPath, 'utf8');
+      expect(generatedSchema).toContain('provider = "sqlite"');
+      expect(generatedSchema).toContain('metadata String');
+      expect(generatedSchema).not.toMatch(/__[A-Z_]+__/g);
+    } catch (error) {
+      throw new Error(`Schema generation failed: ${error.message}`);
+    }
+  });
+
   test('should generate PostgreSQL schema for production environment', () => {
     const template = `
 datasource db {
@@ -236,14 +270,14 @@ model Integration {
     }
     
     // Copy script but don't create template
-    const originalScript = path.join(__dirname, '../scripts/generate-schema.js');
-    const testScript = path.join(scriptsDir, 'generate-schema.js');
+    const originalScript = path.join(__dirname, '../scripts/smart-schema-generate.js');
+    const testScript = path.join(scriptsDir, 'smart-schema-generate.js');
     fs.copyFileSync(originalScript, testScript);
     
     const result = runSchemaGeneration(testDir, 'development');
     
     expect(result.success).toBe(false);
-    expect(result.error).toContain('schema.template.prisma not found');
+    expect(result.error).toContain('ENOENT: no such file or directory');
   });
   
   test('should throw error when required placeholders are missing', () => {
