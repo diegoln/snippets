@@ -34,6 +34,7 @@ export function getEnvironmentMode(): EnvironmentMode {
 
 // Cache for runtime environment detection
 let runtimeEnvironmentCache: EnvironmentMode | null = null
+let runtimeEnvironmentPromise: Promise<EnvironmentMode> | null = null
 
 /**
  * Client-side environment detection using runtime API
@@ -62,31 +63,49 @@ export function getClientEnvironmentMode(): EnvironmentMode {
 
 /**
  * Async client-side environment detection using runtime API
- * This fetches the correct environment from the server
+ * This fetches the correct environment from the server with race condition prevention
  */
 export async function getClientEnvironmentModeAsync(): Promise<EnvironmentMode> {
-  try {
-    const response = await fetch('/api/environment', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      const environment = data.environment as EnvironmentMode
-      
-      // Cache the result for future synchronous calls
-      runtimeEnvironmentCache = environment
-      
-      return environment
-    } else {
-      console.warn('Failed to fetch runtime environment, using build-time fallback')
-      return getClientEnvironmentMode()
-    }
-  } catch (error) {
-    console.warn('Error fetching runtime environment:', error)
-    return getClientEnvironmentMode()
+  // Return cached value if available
+  if (runtimeEnvironmentCache) {
+    return runtimeEnvironmentCache
   }
+  
+  // Return existing promise if one is already in flight
+  if (runtimeEnvironmentPromise) {
+    return runtimeEnvironmentPromise
+  }
+  
+  // Create and cache the promise to prevent multiple concurrent requests
+  runtimeEnvironmentPromise = (async () => {
+    try {
+      const response = await fetch('/api/environment', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const environment = data.environment as EnvironmentMode
+        
+        // Cache the result for future calls
+        runtimeEnvironmentCache = environment
+        
+        return environment
+      } else {
+        console.warn('Failed to fetch runtime environment, using build-time fallback')
+        return getClientEnvironmentMode()
+      }
+    } catch (error) {
+      console.warn('Error fetching runtime environment:', error)
+      return getClientEnvironmentMode()
+    } finally {
+      // Clear the promise so future calls can create a new one if needed
+      runtimeEnvironmentPromise = null
+    }
+  })()
+  
+  return runtimeEnvironmentPromise
 }
 
 /**
