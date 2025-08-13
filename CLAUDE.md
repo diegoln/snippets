@@ -8,13 +8,24 @@
 
 ### 🚀 Quick Start
 ```bash
-npm run dev                 # Start development (auto-generates schema)
-npm run check:dev          # Quick validation before commit (~5s, includes API tests)
-npm run test               # Run all tests before push
+npm run dev                # Start development (auto-starts PostgreSQL)
+npm run check:dev          # Quick validation before commit (~5s)
+```
+
+**First time setup:**
+```bash
+npm run dev:db:start       # Start PostgreSQL container (if not already running)
+npm run dev                # Initialize and start development
 ```
 
 ### 🔧 Common Tasks
 ```bash
+# Database management
+npm run dev:db:start          # Start local PostgreSQL container
+npm run dev:db:stop           # Stop local PostgreSQL container  
+npm run dev:db:reset          # Reset PostgreSQL data (destructive)
+
+# Development
 npm run generate-schema:force  # Fix Prisma issues
 npm run db:studio             # Open database browser
 npm run deploy               # Deploy to production
@@ -40,8 +51,10 @@ Git hooks automatically run checks, but for manual validation:
 
 ## Environment Context
 | Feature | Development | Production |
-|---------|------------|------------|
+|---------|-------------|------------|
 | Database | PostgreSQL (Docker) | Cloud SQL |
+| Schema | ✅ Matches production | PostgreSQL |
+| Data | Rich mock data | Real user data |
 | Auth | Mock (localStorage) | Google OAuth |
 | LLM | Mock/Local | OpenAI API |
 
@@ -59,6 +72,11 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
 ```
 
 ## Development Best Practices
+- **PostgreSQL Development**: Use `npm run dev` for production-like development
+  * Prevents schema drift between environments
+  * Same data types (Json vs String) as production
+  * Consistent query behavior and constraints
+  * Rich mock data matching staging patterns
 - For any mock behavior that would connect to a database or remote service in production:
   * Abstract the interface between production and dev environments
   * Always fetch data from the back-end 
@@ -66,10 +84,12 @@ export function ComponentName({ props }: ComponentProps): JSX.Element {
   * Avoid using static mock content from the front-end
   * Minimize potential environment-specific bugs by keeping data fetching consistent
 
-## Observations and Insights
-- Dev server PostgreSQL configuration:
-  * Noted that dev server is NOT using a local Docker-initialized PostgreSQL server
-  * This deviates from the expected setup where dev and prod environments should have consistent data interface to prevent deployment errors
+## Schema Generation & Environment Parity
+- **Unified PostgreSQL**: All environments use PostgreSQL with identical schema
+- **Maximum Code Reuse**: Same Prisma models, same business logic, same API contracts
+- **Zero Environment-Specific Code**: Database abstraction handled entirely at the Prisma layer
+- **Unified Seeding Service**: Single reusable function seeds both development and staging
+- **Clean Development Start**: No pre-created reflections, start with a fresh workspace
 
 ## Error Handling and Quality Assurance
 - For every bug found, implement tests that would have caught them and add the tests to the development routine
