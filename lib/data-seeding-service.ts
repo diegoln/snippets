@@ -7,6 +7,7 @@
 
 import { PrismaClient } from '@prisma/client'
 import { BASE_MOCK_USERS } from './mock-users'
+import { seedCareerGuidelineTemplates } from './career-guidelines-seeding'
 
 export interface SeedingConfig {
   environment: 'development' | 'staging'
@@ -185,7 +186,6 @@ export async function initializeMockData(
     // 5. Seed career guideline templates (needed for all environments)
     console.log('5️⃣ Seeding career guideline templates...')
     try {
-      const { seedCareerGuidelineTemplates } = require('./career-guidelines-seeding')
       const result = await seedCareerGuidelineTemplates(db, false)
       console.log(`✅ Career guideline templates seeded (${result.created} created, ${result.skipped} skipped)\n`)
     } catch (error) {

@@ -15,6 +15,17 @@ if [[ -z "${DATABASE_URL:-}" && -z "${PRODUCTION:-}" ]]; then
     exit 1
 fi
 
-# Use the proven seed script directly (same as other environments use internally)
-echo "📋 Running career guidelines seed..."
-NODE_ENV=production node prisma/seed-career-guidelines.js
+# Use the unified seeding function for true consistency
+echo "📋 Running unified career guidelines seed..."
+
+# Create a simple inline script that uses the unified function
+NODE_ENV=production npx tsx -e "
+import { seedCareerGuidelineTemplates } from './lib/career-guidelines-seeding';
+seedCareerGuidelineTemplates().then(result => {
+  console.log(\`✅ Production career guideline templates seeded successfully!\`);
+  console.log(\`   Created: \${result.created}, Skipped: \${result.skipped}\`);
+}).catch(error => {
+  console.error('❌ Failed:', error);
+  process.exit(1);
+});
+"
