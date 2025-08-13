@@ -12,8 +12,8 @@ import { signIn } from 'next-auth/react'
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Logo } from '../../components/Logo'
-import { BASE_MOCK_USERS, type MockUser } from '../../lib/mock-users'
-import { getClientEnvironmentMode, generateUserId, isStaging } from '../../lib/environment'
+import { type MockUser } from '../../lib/mock-users'
+import { getClientEnvironmentMode, isStaging } from '../../lib/environment'
 
 export default function MockSignInPage() {
   const [signingIn, setSigningIn] = useState<string | null>(null)
@@ -23,22 +23,34 @@ export default function MockSignInPage() {
   // Get callback URL from query params, default to home
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
-  // Generate environment-aware mock users on client side using shared utilities
+  // Load actual users from database instead of generating static users
   useEffect(() => {
-    const environmentUsers = BASE_MOCK_USERS.map((user, index) => {
-      const baseId = (index + 1).toString()
-      
-      return {
-        id: generateUserId(baseId), // Uses shared generateUserId utility
-        name: user.name,
-        email: isStaging() ? user.email.replace('@', '+staging@') : user.email,
-        image: user.image,
-        role: user.role
+    const loadUsersFromDatabase = async () => {
+      try {
+        console.log('🎭 Loading users from database for environment:', getClientEnvironmentMode())
+        
+        // Fetch users from a new API endpoint that will return actual database users
+        const response = await fetch('/api/auth/mock-users', {
+          method: 'GET',
+          credentials: 'same-origin'
+        })
+        
+        if (response.ok) {
+          const users = await response.json()
+          console.log('✅ Loaded users from database:', users)
+          setMockUsers(users)
+        } else {
+          console.error('❌ Failed to load users from database:', response.status)
+          // Fallback to empty array - user will see no options
+          setMockUsers([])
+        }
+      } catch (error) {
+        console.error('❌ Error loading users from database:', error)
+        setMockUsers([])
       }
-    })
+    }
     
-    console.log('🎭 Mock users for environment:', getClientEnvironmentMode(), environmentUsers)
-    setMockUsers(environmentUsers)
+    loadUsersFromDatabase()
   }, [])
 
   const handleSignIn = async (userId: string) => {
