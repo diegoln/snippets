@@ -54,8 +54,7 @@ jobs:
       - name: Deploy to Staging
         run: |
           echo "🚀 Starting staging deployment..."
-          gcloud builds submit --config cloudbuild-staging.yaml \
-            --substitutions=_SERVICE_NAME=$SERVICE_NAME
+          gcloud builds submit --config cloudbuild-staging.yaml
           
           echo "✅ Staging deployment completed!"
 
