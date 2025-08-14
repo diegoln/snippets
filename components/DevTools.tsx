@@ -210,6 +210,109 @@ export function DevTools() {
     window.location.href = '/'
   }
 
+  const testWeeklyReflection = async () => {
+    const confirm = window.confirm(
+      'This will trigger the complete weekly reflection automation flow:\n\n' +
+      '1. Collect integration data (uses latest mock data)\n' +
+      '2. Consolidate into themes and insights\n' +
+      '3. Generate reflection draft with AI\n' +
+      '4. Save as draft for review\n\n' +
+      'Continue?'
+    )
+    if (!confirm) return
+
+    // Get button reference once at the start
+    const button = document.querySelector('[data-test="weekly-reflection"]') as HTMLButtonElement
+    
+    try {
+      // Show loading state
+      if (button) {
+        button.disabled = true
+        button.textContent = 'Processing...'
+      }
+
+      const response = await fetch('/api/jobs/weekly-reflection', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(envMode === 'development' ? { 'X-Dev-User-Id': 'dev-user-123' } : {})
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          manual: true,
+          includePreviousContext: true,
+          includeIntegrations: ['google_calendar'],
+          testMode: true // Signal this is a test run using mock data
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Start polling for completion
+        const operationId = data.operationId
+        let attempts = 0
+        const maxAttempts = 30 // 5 minutes max
+        
+        const poll = async () => {
+          attempts++
+          const statusResponse = await fetch(`/api/jobs/weekly-reflection?operationId=${operationId}`, {
+            credentials: 'same-origin'
+          })
+          
+          if (statusResponse.ok) {
+            const status = await statusResponse.json()
+            
+            if (status.status === 'completed') {
+              alert(`✅ Weekly reflection generated successfully!\n\nOperation ID: ${operationId}\n\nCheck the Friday Reflections tab to see your new draft.`)
+              
+              // Optionally navigate to reflections
+              const goToReflections = window.confirm('Would you like to go to the Friday Reflections tab now?')
+              if (goToReflections) {
+                window.location.href = '/'
+              }
+              return
+            } else if (status.status === 'error') {
+              alert(`❌ Weekly reflection generation failed:\n\n${status.errorMessage || 'Unknown error'}`)
+              return
+            } else if (attempts >= maxAttempts) {
+              alert(`⏱️ Weekly reflection is taking longer than expected.\n\nOperation ID: ${operationId}\n\nCheck the Friday Reflections tab later or contact support.`)
+              return
+            } else {
+              // Still processing, continue polling
+              setTimeout(poll, 10000) // Poll every 10 seconds
+              
+              // Update button with progress
+              if (button) {
+                const progress = status.progress || 0
+                button.textContent = `Processing... ${progress}%`
+              }
+            }
+          } else {
+            alert('Failed to check reflection status. Please try again.')
+            return
+          }
+        }
+        
+        // Start polling after a short delay
+        setTimeout(poll, 2000)
+        
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }))
+        alert(`Failed to start weekly reflection:\n\n${error.error || error.details || 'Unknown error'}`)
+      }
+    } catch (err) {
+      console.error('Weekly reflection test error:', err)
+      alert('Failed to test weekly reflection. Check console for details.')
+    } finally {
+      // Reset button state (using the button reference from the start)
+      if (button) {
+        button.disabled = false
+        button.textContent = '📝 Test Reflection'
+      }
+    }
+  }
+
   return (
     <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '220px' }}>
       <p className="text-xs font-semibold text-gray-600 mb-2">
@@ -257,6 +360,18 @@ export function DevTools() {
             Dashboard
           </button>
         </div>
+        {/* Testing Tools */}
+        <div className="flex gap-2 border-t pt-2">
+          <button
+            onClick={testWeeklyReflection}
+            data-test="weekly-reflection"
+            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 w-full"
+            title="Test complete weekly reflection automation flow"
+          >
+            📝 Test Reflection
+          </button>
+        </div>
+        
         {envMode === 'staging' && (
           <div className="flex gap-2 border-t pt-2">
             <button

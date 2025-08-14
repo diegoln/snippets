@@ -70,21 +70,21 @@ const markdownComponents = {
   }) => {
     if (inline) {
       return (
-        <code className="bg-neutral-100 text-neutral-900 px-1.5 py-0.5 rounded text-mono font-mono">
+        <code className="bg-neutral-100 text-neutral-900 px-1.5 py-0.5 rounded text-mono font-mono break-words">
           {children}
         </code>
       )
     }
     
     return (
-      <code className={`${className || ''} block bg-neutral-100 p-3 rounded-card text-mono font-mono overflow-x-auto`}>
+      <code className={`${className || ''} block bg-neutral-100 p-3 rounded-card text-mono font-mono overflow-x-auto whitespace-pre-wrap break-words`}>
         {children}
       </code>
     )
   },
   
   pre: ({ children }: { children: React.ReactNode }) => (
-    <pre className="bg-neutral-100 border border-neutral-600/20 text-neutral-900 p-4 rounded-card overflow-x-auto mb-4">
+    <pre className="bg-neutral-100 border border-neutral-600/20 text-neutral-900 p-4 rounded-card overflow-x-auto whitespace-pre-wrap break-words mb-4">
       {children}
     </pre>
   ),
@@ -158,7 +158,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
   const processedContent = content.replace(/\\n/g, '\n')
   
   return (
-    <div className={`prose prose-sm max-w-none ${className}`}>
+    <div className={`prose prose-sm max-w-none overflow-hidden ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}

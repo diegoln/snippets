@@ -22,6 +22,7 @@ export interface SnippetInput {
   startDate: Date
   endDate: Date
   content: string
+  aiSuggestions?: string
 }
 
 export interface AssessmentInput {
@@ -90,20 +91,40 @@ export interface UserProfile {
 
 /**
  * Prisma client singleton with lazy initialization
+ * Fixed for Next.js development mode with hot reloading
  */
 let prisma: PrismaClient | null = null
 
+// In development, use a global variable to persist the client between hot reloads
+const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined }
+
 function getPrismaClient(): PrismaClient {
-  if (!prisma) {
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL
+  if (process.env.NODE_ENV === 'production') {
+    // Production: Create a single instance
+    if (!prisma) {
+      prisma = new PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.DATABASE_URL
+          }
         }
-      }
-    })
+      })
+    }
+    return prisma
+  } else {
+    // Development: Use global to persist across hot reloads
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = new PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.DATABASE_URL
+          }
+        },
+        log: ['error', 'warn'] // Add logging in development
+      })
+    }
+    return globalForPrisma.prisma
   }
-  return prisma
 }
 
 export class UserScopedDataService {
@@ -816,6 +837,31 @@ export class UserScopedDataService {
     } catch (error) {
       console.error('Error updating integration consolidation status:', error)
       throw new Error('Failed to update consolidation status')
+    }
+  }
+
+  /**
+   * Get user's OAuth accounts (for integrations)
+   */
+  async getUserAccounts() {
+    try {
+      const accounts = await this.prisma.account.findMany({
+        where: { userId: this.userId },
+        select: {
+          id: true,
+          provider: true,
+          access_token: true,
+          refresh_token: true,
+          expires_at: true,
+          token_type: true,
+          scope: true
+        }
+      })
+
+      return accounts
+    } catch (error) {
+      console.error('Error fetching user accounts:', error)
+      throw new Error('Failed to fetch user accounts')
     }
   }
 

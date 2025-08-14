@@ -7,7 +7,8 @@ export enum AsyncOperationType {
   WEEKLY_ANALYSIS = 'weekly_analysis',
   PERFORMANCE_ASSESSMENT = 'performance_assessment',
   INTEGRATION_SYNC = 'integration_sync',
-  BULK_DATA_EXPORT = 'bulk_data_export'
+  BULK_DATA_EXPORT = 'bulk_data_export',
+  WEEKLY_REFLECTION = 'weekly_reflection_generation'
 }
 
 export enum AsyncOperationStatus {
