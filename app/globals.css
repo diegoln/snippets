@@ -112,7 +112,7 @@
     border-radius: var(--radius-card);
     box-shadow: 0 4px 12px rgba(23, 78, 122, 0.08), 0 2px 4px rgba(23, 78, 122, 0.04);
     border: 1px solid rgba(23, 78, 122, 0.06);
-    transition: all var(--duration-fast) var(--easing-advance);
+    transition: box-shadow var(--duration-fast) var(--easing-advance), transform var(--duration-fast) var(--easing-advance), border-color var(--duration-fast) var(--easing-advance);
   }
   
   .card:hover {
@@ -182,7 +182,7 @@
   }
   
   .bg-neutral-100 {
-    background-color: #F8F9FA; /* Fallback */
+    background-color: #F7F9FC; /* Fallback */
     background-color: var(--color-neutral-100);
   }
   
