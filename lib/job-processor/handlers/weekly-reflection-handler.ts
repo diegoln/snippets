@@ -1,0 +1,473 @@
+/**
+ * Weekly Reflection Job Handler
+ * 
+ * Automatically generates weekly reflections by:
+ * 1. Collecting integration data for the week
+ * 2. Consolidating the data into themes
+ * 3. Retrieving previous context (last week's reflection, insights)
+ * 4. Generating a reflection draft with LLM
+ * 5. Saving as draft for user review
+ */
+
+import { JobHandler, JobContext } from '../types'
+import { createUserDataService } from '../../user-scoped-data'
+import { integrationConsolidationService } from '../../integration-consolidation-service'
+import { GoogleCalendarService } from '../../calendar-integration'
+import { llmProxy } from '../../llmproxy'
+import { startOfWeek, endOfWeek, subWeeks, format } from 'date-fns'
+
+export interface WeeklyReflectionInput {
+  userId: string
+  weekStart?: Date
+  weekEnd?: Date
+  includeIntegrations?: string[]
+  includePreviousContext?: boolean
+}
+
+export interface WeeklyReflectionResult {
+  reflectionId: string
+  weekNumber: number
+  year: number
+  status: 'draft' | 'error'
+  content?: string
+  consolidationId?: string
+  error?: string
+}
+
+export class WeeklyReflectionHandler implements JobHandler {
+  jobType = 'weekly_reflection_generation'
+  estimatedDuration = 180 // 3 minutes estimate
+
+  async process(
+    inputData: WeeklyReflectionInput,
+    context: JobContext
+  ): Promise<WeeklyReflectionResult> {
+    const { userId, includePreviousContext = true } = inputData
+    
+    // Determine week range (default to current week)
+    const weekEnd = inputData.weekEnd || endOfWeek(new Date(), { weekStartsOn: 1 })
+    const weekStart = inputData.weekStart || startOfWeek(weekEnd, { weekStartsOn: 1 })
+    const weekNumber = this.getWeekNumber(weekStart)
+    const year = weekStart.getFullYear()
+
+    try {
+      // Step 1: Validate user and get profile
+      await context.updateProgress(5, 'Loading user profile')
+      const dataService = createUserDataService(userId)
+      
+      const userProfile = await dataService.getUserProfile()
+      if (!userProfile) {
+        throw new Error('User profile not found')
+      }
+
+      // Check if reflection already exists for this week
+      const existingReflection = await this.checkExistingReflection(
+        dataService,
+        weekNumber,
+        year
+      )
+      if (existingReflection) {
+        await dataService.disconnect()
+        return {
+          reflectionId: existingReflection.id,
+          weekNumber,
+          year,
+          status: 'draft',
+          content: existingReflection.content
+        }
+      }
+
+      // Step 2: Collect integration data
+      await context.updateProgress(20, 'Fetching integration data')
+      const integrationData = await this.collectIntegrationData(
+        userId,
+        weekStart,
+        weekEnd,
+        inputData.includeIntegrations
+      )
+
+      if (!integrationData || Object.keys(integrationData).length === 0) {
+        await dataService.disconnect()
+        throw new Error('No integration data available for this week')
+      }
+
+      // Step 3: Consolidate data
+      await context.updateProgress(40, 'Consolidating weekly activities')
+      const consolidation = await this.consolidateData(
+        userId,
+        weekStart,
+        weekEnd,
+        integrationData,
+        userProfile
+      )
+
+      // Step 4: Get previous context if requested
+      let previousContext = null
+      if (includePreviousContext) {
+        await context.updateProgress(55, 'Retrieving previous insights')
+        previousContext = await this.getPreviousContext(
+          dataService,
+          weekStart
+        )
+      }
+
+      // Step 5: Generate reflection with LLM
+      await context.updateProgress(70, 'Generating reflection with AI')
+      const reflectionContent = await this.generateReflection(
+        consolidation,
+        previousContext,
+        userProfile
+      )
+
+      // Step 6: Save as draft
+      await context.updateProgress(90, 'Saving reflection draft')
+      const savedReflection = await this.saveReflectionDraft(
+        dataService,
+        {
+          weekNumber,
+          year,
+          weekStart,
+          weekEnd,
+          content: reflectionContent,
+          consolidationId: consolidation.id
+        }
+      )
+
+      await dataService.disconnect()
+
+      return {
+        reflectionId: savedReflection.id,
+        weekNumber,
+        year,
+        status: 'draft',
+        content: reflectionContent,
+        consolidationId: consolidation.id
+      }
+
+    } catch (error) {
+      console.error('Weekly reflection generation failed:', error)
+      return {
+        reflectionId: '',
+        weekNumber,
+        year,
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  /**
+   * Check if a reflection already exists for the week
+   */
+  private async checkExistingReflection(
+    dataService: any,
+    weekNumber: number,
+    year: number
+  ) {
+    const snippets = await dataService.getSnippets()
+    return snippets.find((s: any) => 
+      s.weekNumber === weekNumber && 
+      s.year === year
+    )
+  }
+
+  /**
+   * Collect data from all connected integrations
+   */
+  private async collectIntegrationData(
+    userId: string,
+    weekStart: Date,
+    weekEnd: Date,
+    includeIntegrations?: string[]
+  ): Promise<any> {
+    const integrationData: any = {}
+    
+    // For now, focus on Google Calendar
+    // TODO: Add Todoist, GitHub, etc.
+    if (!includeIntegrations || includeIntegrations.includes('google_calendar')) {
+      try {
+        const calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd)
+        if (calendarData) {
+          integrationData.google_calendar = calendarData
+        }
+      } catch (error) {
+        console.error('Failed to fetch calendar data:', error)
+      }
+    }
+
+    return integrationData
+  }
+
+  /**
+   * Fetch calendar data for the week
+   */
+  private async fetchCalendarData(
+    userId: string,
+    weekStart: Date,
+    weekEnd: Date
+  ) {
+    const dataService = createUserDataService(userId)
+    
+    try {
+      // Get user's Google account
+      const accounts = await dataService.getUserAccounts()
+      const googleAccount = accounts.find((a: any) => a.provider === 'google')
+      
+      if (!googleAccount || !googleAccount.access_token) {
+        console.log('No Google Calendar integration found for user')
+        return null
+      }
+
+      // Fetch calendar data
+      const calendarService = await GoogleCalendarService.create()
+      // Convert account format for calendar service
+      const accountForCalendar = {
+        id: googleAccount.id,
+        userId,
+        type: 'oauth',
+        provider: googleAccount.provider,
+        providerAccountId: googleAccount.id,
+        access_token: googleAccount.access_token,
+        refresh_token: googleAccount.refresh_token,
+        expires_at: googleAccount.expires_at
+      }
+      
+      const calendarData = await calendarService.fetchWeeklyData(
+        { weekStart, weekEnd, userId },
+        accountForCalendar
+      )
+
+      return calendarData
+    } finally {
+      await dataService.disconnect()
+    }
+  }
+
+  /**
+   * Consolidate integration data into themes
+   */
+  private async consolidateData(
+    userId: string,
+    weekStart: Date,
+    weekEnd: Date,
+    integrationData: any,
+    userProfile: any
+  ) {
+    // Use existing consolidation service
+    const consolidatedData = await integrationConsolidationService.consolidateWeeklyData({
+      userId,
+      integrationType: 'google_calendar',
+      weekStart,
+      weekEnd,
+      rawIntegrationData: integrationData.google_calendar,
+      userProfile: {
+        name: userProfile.name || 'User',
+        jobTitle: userProfile.jobTitle || '',
+        seniorityLevel: userProfile.seniorityLevel || ''
+      },
+      careerGuidelines: userProfile.careerProgressionPlan || ''
+    })
+
+    // Store consolidation
+    const consolidationId = await integrationConsolidationService.storeConsolidation(
+      userId,
+      {
+        userId,
+        integrationType: 'google_calendar',
+        weekStart,
+        weekEnd,
+        rawIntegrationData: integrationData.google_calendar,
+        userProfile: {
+          name: userProfile.name || 'User',
+          jobTitle: userProfile.jobTitle || '',
+          seniorityLevel: userProfile.seniorityLevel || ''
+        },
+        careerGuidelines: userProfile.careerProgressionPlan || ''
+      },
+      consolidatedData,
+      'Weekly reflection automation',
+      'gemini-pro'
+    )
+
+    return { ...consolidatedData, id: consolidationId }
+  }
+
+  /**
+   * Get previous week's reflection and recent insights
+   */
+  private async getPreviousContext(
+    dataService: any,
+    currentWeekStart: Date
+  ) {
+    const previousWeekStart = subWeeks(currentWeekStart, 1)
+    const previousWeekEnd = endOfWeek(previousWeekStart, { weekStartsOn: 1 })
+
+    // Get previous week's reflection
+    const previousReflections = await dataService.getSnippetsInDateRange(
+      previousWeekStart,
+      previousWeekEnd
+    )
+    
+    const previousReflection = previousReflections?.[0]
+
+    // Get recent performance assessments
+    const assessments = await dataService.getPerformanceAssessments()
+    const recentAssessment = assessments?.[0]
+
+    return {
+      previousReflection: previousReflection?.content || null,
+      previousWeek: previousReflection ? {
+        weekNumber: previousReflection.weekNumber,
+        year: previousReflection.year
+      } : null,
+      recentInsights: recentAssessment?.keyInsights || null,
+      assessmentDate: recentAssessment?.createdAt || null
+    }
+  }
+
+  /**
+   * Generate reflection using LLM with context
+   */
+  private async generateReflection(
+    consolidation: any,
+    previousContext: any,
+    userProfile: any
+  ): Promise<string> {
+    const prompt = this.buildReflectionPrompt(
+      consolidation,
+      previousContext,
+      userProfile
+    )
+
+    const response = await llmProxy.request({
+      prompt,
+      temperature: 0.7,
+      maxTokens: 1500,
+      context: {
+        type: 'weekly_reflection_automation',
+        userId: userProfile.id
+      }
+    })
+
+    return this.parseReflectionResponse(response.content)
+  }
+
+  /**
+   * Build comprehensive prompt for reflection generation
+   */
+  private buildReflectionPrompt(
+    consolidation: any,
+    previousContext: any,
+    userProfile: any
+  ): string {
+    let prompt = `Generate a weekly reflection for a ${userProfile.seniorityLevel || 'professional'} ${userProfile.jobTitle || 'team member'}.
+
+CONSOLIDATED WEEKLY DATA:
+${consolidation.summary}
+
+KEY THEMES AND ACTIVITIES:
+`
+    // Add themes and evidence
+    for (const theme of consolidation.themes || []) {
+      prompt += `\n### ${theme.name}\n`
+      for (const category of theme.categories || []) {
+        prompt += `**${category.name}:**\n`
+        for (const evidence of category.evidence || []) {
+          prompt += `- ${evidence.statement}\n`
+        }
+      }
+    }
+
+    // Add previous context if available
+    if (previousContext?.previousReflection) {
+      prompt += `\n\nPREVIOUS WEEK'S REFLECTION (for continuity):
+${previousContext.previousReflection.substring(0, 500)}...
+`
+    }
+
+    if (previousContext?.recentInsights) {
+      prompt += `\n\nRECENT PERFORMANCE INSIGHTS:
+${previousContext.recentInsights}
+`
+    }
+
+    prompt += `\n\nREQUIREMENTS:
+1. Create a structured reflection in the format: ## Done, ## Next, ## Notes
+2. Under "Done" - List 3-5 specific accomplishments based on the actual activities
+3. Under "Next" - Identify 2-3 concrete next steps based on current priorities
+4. Under "Notes" - Include observations about challenges, learnings, or important context
+5. Write in first person, using action verbs
+6. Maintain continuity with previous week if context provided
+7. Be authentic and honest while maintaining a professional tone
+8. Focus on impact and outcomes, not just activities
+
+FORMAT:
+Return as markdown text with clear sections.`
+
+    return prompt
+  }
+
+  /**
+   * Parse LLM response to extract reflection content
+   */
+  private parseReflectionResponse(response: string): string {
+    // Clean up the response if needed
+    const content = response.trim()
+    
+    // Ensure it has the expected sections
+    if (!content.includes('## Done') || !content.includes('## Next')) {
+      // If missing sections, add basic structure
+      return `## Done\n\n${content}\n\n## Next\n\n- Continue with current priorities\n\n## Notes\n\n*Generated reflection - please review and edit as needed*`
+    }
+    
+    return content
+  }
+
+  /**
+   * Save reflection as draft
+   */
+  private async saveReflectionDraft(
+    dataService: any,
+    reflection: {
+      weekNumber: number
+      year: number
+      weekStart: Date
+      weekEnd: Date
+      content: string
+      consolidationId?: string
+    }
+  ): Promise<any> {
+    // Store metadata in aiSuggestions field as JSON
+    const metadata = {
+      generatedAutomatically: true,
+      generatedAt: new Date().toISOString(),
+      consolidationId: reflection.consolidationId,
+      status: 'draft'
+    }
+
+    const snippet = await dataService.createSnippet({
+      weekNumber: reflection.weekNumber,
+      year: reflection.year,
+      startDate: reflection.weekStart,
+      endDate: reflection.weekEnd,
+      content: reflection.content,
+      aiSuggestions: JSON.stringify(metadata)
+    })
+
+    return snippet
+  }
+
+  /**
+   * Calculate ISO week number
+   */
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+    const dayNum = d.getUTCDay() || 7
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+  }
+}
+
+// Register the handler
+export const weeklyReflectionHandler = new WeeklyReflectionHandler()

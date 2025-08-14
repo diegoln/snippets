@@ -141,3 +141,7 @@ export class SimpleJobHandlerRegistry implements JobHandlerRegistry {
 // Create singleton instances
 export const jobHandlerRegistry = new SimpleJobHandlerRegistry()
 export const jobService = new JobService(jobHandlerRegistry)
+
+// Register handlers
+import { weeklyReflectionHandler } from './handlers/weekly-reflection-handler'
+jobHandlerRegistry.register(weeklyReflectionHandler)

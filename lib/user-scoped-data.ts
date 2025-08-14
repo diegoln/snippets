@@ -22,6 +22,7 @@ export interface SnippetInput {
   startDate: Date
   endDate: Date
   content: string
+  aiSuggestions?: string
 }
 
 export interface AssessmentInput {
@@ -816,6 +817,31 @@ export class UserScopedDataService {
     } catch (error) {
       console.error('Error updating integration consolidation status:', error)
       throw new Error('Failed to update consolidation status')
+    }
+  }
+
+  /**
+   * Get user's OAuth accounts (for integrations)
+   */
+  async getUserAccounts() {
+    try {
+      const accounts = await this.prisma.account.findMany({
+        where: { userId: this.userId },
+        select: {
+          id: true,
+          provider: true,
+          access_token: true,
+          refresh_token: true,
+          expires_at: true,
+          token_type: true,
+          scope: true
+        }
+      })
+
+      return accounts
+    } catch (error) {
+      console.error('Error fetching user accounts:', error)
+      throw new Error('Failed to fetch user accounts')
     }
   }
 
