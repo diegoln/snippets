@@ -103,6 +103,7 @@ describe('Mock Users API Security Tests', () => {
           OR: [
             { id: { in: ['1', '2', '3', '4', '5'] } },
             { id: { startsWith: 'dev_' } },
+            { id: { startsWith: 'dev-' } },
             { id: { startsWith: 'test_' } }
           ]
         },
