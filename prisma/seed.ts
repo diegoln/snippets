@@ -4,10 +4,10 @@ import { generatePast6MonthsWeeks } from '../lib/date-utils'
 const prisma = new PrismaClient()
 
 /**
- * Generate realistic weekly snippets for the past 6 months
- * Each snippet has Done/Next format with 3-5 list items per section
+ * Generate realistic weekly reflection content for the past 6 months
+ * Each reflection has Done/Next format with 3-5 list items per section
  */
-function generateWeeklySnippet(weekNumber: number, startDate: Date): string {
+function generateWeeklyReflectionContent(weekNumber: number, startDate: Date): string {
   // Sample activities rotating through different areas
   const doneActivities = [
     "Completed user authentication system with OAuth integration and role-based access control",
@@ -105,33 +105,38 @@ async function main() {
   const weekData = generatePast6MonthsWeeks()
   const snippetsData: any[] = []
 
-  console.log(`📝 Generating ${weekData.length} weeks of realistic snippet data with proper calendar weeks...`)
+  console.log(`📝 Generating ${weekData.length} weeks of realistic reflection data with proper calendar weeks...`)
 
   weekData.forEach((week, index) => {
-    const content = generateWeeklySnippet(week.weekNumber, week.startDate)
+    const content = generateWeeklyReflectionContent(week.weekNumber, week.startDate)
     
     snippetsData.push({
       userId: testUser.id,
       weekNumber: week.weekNumber,
+      year: week.startDate.getFullYear(),
       startDate: week.startDate,
       endDate: week.endDate,
       content: content
     })
   })
 
-  // Insert all snippets
-  const result = await prisma.weeklySnippet.createMany({
-    data: snippetsData,
+  // Insert all reflections
+  const result = await prisma.reflection.createMany({
+    data: snippetsData.map(snippet => ({
+      ...snippet,
+      type: 'weekly',
+      generatedFromConsolidation: false
+    })),
     skipDuplicates: true
   })
 
-  console.log(`✅ Created ${result.count} weekly snippets`)
+  console.log(`✅ Created ${result.count} weekly reflections`)
   
   if (weekData.length > 0) {
     console.log(`📅 Date range: ${weekData[weekData.length - 1].startDate.toISOString().split('T')[0]} to ${weekData[0].endDate.toISOString().split('T')[0]}`)
     console.log(`🗓️  Week numbers: ${weekData[weekData.length - 1].weekNumber} to ${weekData[0].weekNumber}`)
     
-    console.log('\n📊 Sample snippet preview (most recent week):')
+    console.log('\n📊 Sample reflection preview (most recent week):')
     console.log('─'.repeat(60))
     console.log(`Week ${weekData[0].weekNumber}: ${snippetsData[0].content.substring(0, 200)}...`)
     console.log('─'.repeat(60))
