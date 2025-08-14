@@ -40,7 +40,6 @@ const customJestConfig = {
   coverageReporters: ['text', 'lcov', 'html'],
   
   // Environment variables for testing
-  testEnvironment: 'node',
   
   // Module file extensions
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
