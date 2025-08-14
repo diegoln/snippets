@@ -1,15 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { setDevSession } from '../lib/dev-auth'
-import { 
-  shouldShowDevTools, 
-  getClientEnvironmentMode, 
-  isStaging, 
-  isDevelopment,
-  isDevLike 
-} from '../lib/environment'
+// No longer need these imports since we're doing environment detection directly
 
 /**
  * Development Tools Component - Updated with Staging Support
@@ -20,18 +14,59 @@ import {
  */
 
 export function DevTools() {
-  // Initialize dev session on component mount for dev-like environments
+  const [envMode, setEnvMode] = useState<'development' | 'staging' | 'production'>('production')
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // Initialize environment detection and dev session
   useEffect(() => {
-    if (shouldShowDevTools()) {
-      setDevSession()
+    async function initializeEnvironment() {
+      try {
+        // First check if we're on staging domain
+        if (typeof window !== 'undefined' && window.location.hostname === 'staging.advanceweekly.io') {
+          setEnvMode('staging')
+          setIsInitialized(true)
+          setDevSession()
+          return
+        }
+
+        // For development, check directly
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          setEnvMode('development')
+          setIsInitialized(true)
+          setDevSession()
+          return
+        }
+
+        // For other cases, fetch from API
+        const response = await fetch('/api/environment')
+        if (response.ok) {
+          const data = await response.json()
+          setEnvMode(data.environment)
+          if (data.environment === 'staging' || data.environment === 'development') {
+            setDevSession()
+          }
+        }
+      } catch (error) {
+        console.error('Failed to detect environment:', error)
+        // Fallback to production
+        setEnvMode('production')
+      } finally {
+        setIsInitialized(true)
+      }
     }
+
+    initializeEnvironment()
   }, [])
 
-  if (!shouldShowDevTools()) {
+  // Don't render until we've detected the environment
+  if (!isInitialized) {
     return null
   }
 
-  const envMode = getClientEnvironmentMode()
+  // Only show dev tools in development and staging
+  if (envMode !== 'development' && envMode !== 'staging') {
+    return null
+  }
 
   const clearSession = async () => {
     try {
@@ -47,7 +82,7 @@ export function DevTools() {
       
       // Clear NextAuth session (important for staging JWT cookies)
       console.log('🔄 Clearing NextAuth session...')
-      const redirectUrl = isStaging() ? '/staging' : '/'
+      const redirectUrl = envMode === 'staging' ? '/staging' : '/'
       await signOut({ 
         redirect: false,
         callbackUrl: redirectUrl
@@ -59,7 +94,7 @@ export function DevTools() {
     } catch (error) {
       console.error('Error clearing session:', error)
       // Fallback: force reload anyway
-      window.location.href = isStaging() ? '/staging' : '/'
+      window.location.href = envMode === 'staging' ? '/staging' : '/'
     }
   }
 
@@ -87,7 +122,7 @@ export function DevTools() {
   const resetOnboarding = async () => {
     try {
       // Only set dev session in development (not in staging)
-      if (isDevelopment()) {
+      if (envMode === 'development') {
         setDevSession()
       }
       
@@ -102,7 +137,7 @@ export function DevTools() {
       }
       
       // Only add dev header in development
-      if (isDevelopment()) {
+      if (envMode === 'development') {
         headers['X-Dev-User-Id'] = 'dev-user-123'
       }
       
@@ -116,7 +151,7 @@ export function DevTools() {
         const data = await response.json()
         const confirmRedirect = confirm('Onboarding reset successfully! Would you like to go to the onboarding wizard now?')
         if (confirmRedirect) {
-          window.location.href = isStaging() ? '/staging' : '/onboarding-wizard'
+          window.location.href = envMode === 'staging' ? '/staging' : '/onboarding-wizard'
         }
       } else {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }))
@@ -128,7 +163,7 @@ export function DevTools() {
   }
 
   const resetStagingData = async () => {
-    if (!isStaging()) {
+    if (envMode !== 'staging') {
       alert('This function is only available in staging environment')
       return
     }
@@ -156,7 +191,7 @@ export function DevTools() {
   }
 
   const goToOnboarding = () => {
-    window.location.href = isStaging() ? '/staging' : '/onboarding-wizard'
+    window.location.href = envMode === 'staging' ? '/staging' : '/onboarding-wizard'
   }
 
   const goToDashboard = () => {
@@ -164,13 +199,13 @@ export function DevTools() {
     // Set flags to ensure we bypass onboarding
     localStorage.setItem('onboarding-just-completed', 'true')
     localStorage.setItem('onboarding-completed-timestamp', Date.now().toString())
-    window.location.href = isStaging() ? '/staging' : '/'
+    window.location.href = envMode === 'staging' ? '/staging' : '/'
   }
 
   return (
     <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200 z-50" style={{ width: '220px' }}>
       <p className="text-xs font-semibold text-gray-600 mb-2">
-        Dev Tools {isStaging() && <span className="text-orange-600">(Staging)</span>}
+        Dev Tools {envMode === 'staging' && <span className="text-orange-600">(Staging)</span>}
       </p>
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
