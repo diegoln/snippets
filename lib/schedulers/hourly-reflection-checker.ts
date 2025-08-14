@@ -6,14 +6,27 @@
  * ensures users only get one reflection per week.
  */
 
-import { createUserDataService } from '../user-scoped-data'
+import { createUserDataService, UserScopedDataService } from '../user-scoped-data'
 import { jobService } from '../job-processor/job-service'
-import { AsyncOperationType, AsyncOperationStatus } from '../../types/async-operations'
+import { AsyncOperationType, AsyncOperationStatus, AsyncOperation } from '../../types/async-operations'
 import { startOfWeek, endOfWeek, getISOWeek } from 'date-fns'
 import { toZonedTime, format } from 'date-fns-tz'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+// Use singleton Prisma client to avoid multiple connections
+let prismaClient: PrismaClient | null = null
+
+function getPrismaClient(): PrismaClient {
+  if (!prismaClient) {
+    prismaClient = new PrismaClient()
+  }
+  return prismaClient
+}
+
+interface User {
+  id: string
+  email: string
+}
 
 export interface UserReflectionPreferences {
   autoGenerate: boolean
@@ -72,13 +85,15 @@ export class HourlyReflectionChecker {
   async processUser(userId: string): Promise<void> {
     console.log(`📝 Processing reflection for user ${userId}`)
     
-    const dataService = createUserDataService(userId)
+    let dataService: UserScopedDataService | null = null
     
     try {
+      dataService = createUserDataService(userId)
+      
       // Check if already processing
       const existingOps = await dataService.getAsyncOperations()
       const inProgress = existingOps.find(
-        (op: any) => 
+        (op: AsyncOperation) => 
           op.operationType === AsyncOperationType.WEEKLY_REFLECTION &&
           op.status === AsyncOperationStatus.PROCESSING
       )
@@ -136,16 +151,19 @@ export class HourlyReflectionChecker {
       }
       
     } finally {
-      await dataService.disconnect()
+      if (dataService) {
+        await dataService.disconnect()
+      }
     }
   }
 
   /**
    * Get all users with auto-generation enabled
    */
-  private async getUsersWithAutoGeneration(): Promise<any[]> {
+  private async getUsersWithAutoGeneration(): Promise<User[]> {
     // For now, return all users since we use default preferences
     // TODO: In future, filter based on user preferences stored in separate table
+    const prisma = getPrismaClient()
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -159,7 +177,7 @@ export class HourlyReflectionChecker {
   /**
    * Check if user should be processed at current time
    */
-  private async shouldProcessUser(user: any): Promise<boolean> {
+  private async shouldProcessUser(user: User): Promise<boolean> {
     const preferences = DEFAULT_PREFERENCES // Use default preferences for now
     
     // Check if it's the right day and time
@@ -216,6 +234,7 @@ export class HourlyReflectionChecker {
     const currentWeek = getISOWeek(new Date())
     const currentYear = new Date().getFullYear()
     
+    const prisma = getPrismaClient()
     const reflection = await prisma.weeklySnippet.findUnique({
       where: {
         userId_year_weekNumber: {

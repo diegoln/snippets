@@ -12,9 +12,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
-import { createUserDataService } from '../../../../lib/user-scoped-data'
+import { createUserDataService, UserScopedDataService } from '../../../../lib/user-scoped-data'
 import { jobService } from '../../../../lib/job-processor/job-service'
-import { AsyncOperationStatus, AsyncOperationType } from '../../../../types/async-operations'
+import { AsyncOperationStatus, AsyncOperationType, AsyncOperation } from '../../../../types/async-operations'
 import { startOfWeek, endOfWeek } from 'date-fns'
 
 // Input validation schema
@@ -33,6 +33,8 @@ const WeeklyReflectionJobSchema = z.object({
  * Trigger weekly reflection generation for a user
  */
 export async function POST(request: NextRequest) {
+  let dataService: UserScopedDataService | null = null
+
   try {
     // Get authenticated user
     let userId = await getUserIdFromRequest(request)
@@ -71,98 +73,94 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user exists and has necessary data
-    const dataService = createUserDataService(targetUserId)
-    try {
-      const userProfile = await dataService.getUserProfile()
-      if (!userProfile) {
-        return NextResponse.json(
-          { error: 'User profile not found' },
-          { status: 404 }
-        )
-      }
-
-      // Check for existing in-progress operation
-      const existingOps = await dataService.getAsyncOperations()
-      const inProgress = existingOps.find(
-        (op: any) => 
-          op.operationType === AsyncOperationType.WEEKLY_REFLECTION &&
-          op.status === AsyncOperationStatus.PROCESSING
+    dataService = createUserDataService(targetUserId)
+    
+    const userProfile = await dataService.getUserProfile()
+    if (!userProfile) {
+      return NextResponse.json(
+        { error: 'User profile not found' },
+        { status: 404 }
       )
+    }
 
-      if (inProgress) {
-        return NextResponse.json({
-          operationId: inProgress.id,
-          status: 'already_processing',
-          message: 'A weekly reflection is already being generated'
-        })
-      }
+    // Check for existing in-progress operation
+    const existingOps = await dataService.getAsyncOperations()
+    const inProgress = existingOps.find(
+      (op: AsyncOperation) => 
+        op.operationType === AsyncOperationType.WEEKLY_REFLECTION &&
+        op.status === AsyncOperationStatus.PROCESSING
+    )
 
-      // Determine week range
-      const weekEnd = input.weekEnd 
-        ? new Date(input.weekEnd) 
-        : endOfWeek(new Date(), { weekStartsOn: 1 })
-      const weekStart = input.weekStart 
-        ? new Date(input.weekStart)
-        : startOfWeek(weekEnd, { weekStartsOn: 1 })
-
-      // Create async operation for tracking
-      const operation = await dataService.createAsyncOperation({
-        operationType: AsyncOperationType.WEEKLY_REFLECTION,
-        status: AsyncOperationStatus.QUEUED,
-        inputData: {
-          weekStart: weekStart.toISOString(),
-          weekEnd: weekEnd.toISOString(),
-          includeIntegrations: input.includeIntegrations,
-          includePreviousContext: input.includePreviousContext,
-          manual: input.manual
-        },
-        metadata: {
-          triggerType: input.manual ? 'manual' : 'scheduled',
-          requestedAt: new Date().toISOString()
-        }
-      })
-
-      // Process the job
-      // In production, this would be enqueued to Cloud Tasks
-      // For now, process directly
-      const jobPromise = jobService.processJob(
-        'weekly_reflection_generation',
-        targetUserId,
-        operation.id,
-        {
-          userId: targetUserId,
-          weekStart,
-          weekEnd,
-          includeIntegrations: input.includeIntegrations,
-          includePreviousContext: input.includePreviousContext
-        }
-      )
-
-      // Don't wait for completion in production
-      if (process.env.NODE_ENV === 'production') {
-        // Fire and forget
-        jobPromise.catch(error => {
-          console.error('Weekly reflection job failed:', error)
-        })
-      } else {
-        // In development, optionally wait
-        if (request.headers.get('X-Wait-For-Completion') === 'true') {
-          await jobPromise
-        }
-      }
-
+    if (inProgress) {
       return NextResponse.json({
-        success: true,
-        operationId: operation.id,
-        status: 'processing',
+        operationId: inProgress.id,
+        status: 'already_processing',
+        message: 'A weekly reflection is already being generated'
+      })
+    }
+
+    // Determine week range
+    const weekEnd = input.weekEnd 
+      ? new Date(input.weekEnd) 
+      : endOfWeek(new Date(), { weekStartsOn: 1 })
+    const weekStart = input.weekStart 
+      ? new Date(input.weekStart)
+      : startOfWeek(weekEnd, { weekStartsOn: 1 })
+
+    // Create async operation for tracking
+    const operation = await dataService.createAsyncOperation({
+      operationType: AsyncOperationType.WEEKLY_REFLECTION,
+      status: AsyncOperationStatus.QUEUED,
+      inputData: {
         weekStart: weekStart.toISOString(),
         weekEnd: weekEnd.toISOString(),
-        message: 'Weekly reflection generation started'
-      })
+        includeIntegrations: input.includeIntegrations,
+        includePreviousContext: input.includePreviousContext,
+        manual: input.manual
+      },
+      metadata: {
+        triggerType: input.manual ? 'manual' : 'scheduled',
+        requestedAt: new Date().toISOString()
+      }
+    })
 
-    } finally {
-      await dataService.disconnect()
+    // Process the job
+    // In production, this would be enqueued to Cloud Tasks
+    // For now, process directly
+    const jobPromise = jobService.processJob(
+      'weekly_reflection_generation',
+      targetUserId,
+      operation.id,
+      {
+        userId: targetUserId,
+        weekStart,
+        weekEnd,
+        includeIntegrations: input.includeIntegrations,
+        includePreviousContext: input.includePreviousContext
+      }
+    )
+
+    // Don't wait for completion in production
+    if (process.env.NODE_ENV === 'production') {
+      // Fire and forget
+      jobPromise.catch(error => {
+        console.error('Weekly reflection job failed:', error)
+      })
+    } else {
+      // In development, optionally wait
+      if (request.headers.get('X-Wait-For-Completion') === 'true') {
+        await jobPromise
+      }
     }
+
+    return NextResponse.json({
+      success: true,
+      operationId: operation.id,
+      status: 'processing',
+      weekStart: weekStart.toISOString(),
+      weekEnd: weekEnd.toISOString(),
+      message: 'Weekly reflection generation started'
+    })
 
   } catch (error) {
     console.error('Failed to start weekly reflection job:', error)
@@ -173,6 +171,10 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     )
+  } finally {
+    if (dataService) {
+      await dataService.disconnect()
+    }
   }
 }
 
@@ -182,6 +184,8 @@ export async function POST(request: NextRequest) {
  * Check status of weekly reflection jobs
  */
 export async function GET(request: NextRequest) {
+  let dataService: UserScopedDataService | null = null
+
   try {
     // Get authenticated user
     let userId = await getUserIdFromRequest(request)
@@ -200,47 +204,67 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const operationId = searchParams.get('operationId')
 
-    const dataService = createUserDataService(userId)
-    try {
-      if (operationId) {
-        // Get specific operation
-        const operation = await dataService.getAsyncOperation(operationId)
-        if (!operation) {
-          return NextResponse.json(
-            { error: 'Operation not found' },
-            { status: 404 }
-          )
-        }
-
-        return NextResponse.json({
-          operationId: operation.id,
-          status: operation.status,
-          progress: operation.progress,
-          resultData: operation.resultData,
-          errorMessage: operation.errorMessage,
-          createdAt: operation.createdAt,
-          completedAt: operation.completedAt
-        })
-      } else {
-        // Get all weekly reflection operations
-        const operations = await dataService.getAsyncOperations()
-        const reflectionOps = operations.filter(
-          (op: any) => op.operationType === AsyncOperationType.WEEKLY_REFLECTION
+    dataService = createUserDataService(userId)
+    
+    if (operationId) {
+      // Get specific operation
+      const operation = await dataService.getAsyncOperation(operationId)
+      if (!operation) {
+        return NextResponse.json(
+          { error: 'Operation not found' },
+          { status: 404 }
         )
+      }
 
-        return NextResponse.json({
-          operations: reflectionOps.map((op: any) => ({
+      // Parse metadata if it exists
+      let parsedMetadata = operation.metadata
+      try {
+        if (typeof operation.metadata === 'string') {
+          parsedMetadata = JSON.parse(operation.metadata)
+        }
+      } catch {
+        // Keep original metadata if parsing fails
+      }
+
+      return NextResponse.json({
+        operationId: operation.id,
+        status: operation.status,
+        progress: operation.progress,
+        resultData: operation.resultData,
+        errorMessage: operation.errorMessage,
+        createdAt: operation.createdAt,
+        completedAt: operation.completedAt,
+        metadata: parsedMetadata
+      })
+    } else {
+      // Get all weekly reflection operations
+      const operations = await dataService.getAsyncOperations()
+      const reflectionOps = operations.filter(
+        (op: AsyncOperation) => op.operationType === AsyncOperationType.WEEKLY_REFLECTION
+      )
+
+      return NextResponse.json({
+        operations: reflectionOps.map((op: AsyncOperation) => {
+          // Parse metadata if it exists
+          let parsedMetadata = op.metadata
+          try {
+            if (typeof op.metadata === 'string') {
+              parsedMetadata = JSON.parse(op.metadata)
+            }
+          } catch {
+            // Keep original metadata if parsing fails
+          }
+
+          return {
             operationId: op.id,
             status: op.status,
             progress: op.progress,
             createdAt: op.createdAt,
             completedAt: op.completedAt,
-            metadata: op.metadata
-          }))
+            metadata: parsedMetadata
+          }
         })
-      }
-    } finally {
-      await dataService.disconnect()
+      })
     }
 
   } catch (error) {
@@ -252,5 +276,9 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 }
     )
+  } finally {
+    if (dataService) {
+      await dataService.disconnect()
+    }
   }
 }

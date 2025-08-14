@@ -10,11 +10,46 @@
  */
 
 import { JobHandler, JobContext } from '../types'
-import { createUserDataService } from '../../user-scoped-data'
-import { integrationConsolidationService } from '../../integration-consolidation-service'
+import { createUserDataService, UserScopedDataService } from '../../user-scoped-data'
+import { integrationConsolidationService, ConsolidatedData } from '../../integration-consolidation-service'
 import { GoogleCalendarService } from '../../calendar-integration'
 import { llmProxy } from '../../llmproxy'
-import { startOfWeek, endOfWeek, subWeeks, format } from 'date-fns'
+import { startOfWeek, endOfWeek, subWeeks, format, getISOWeek } from 'date-fns'
+
+interface UserAccount {
+  id: string
+  provider: string
+  access_token: string | null
+  refresh_token: string | null
+  expires_at: number | null
+  token_type: string | null
+  scope: string | null
+}
+
+interface UserProfile {
+  id: string
+  name: string | null
+  jobTitle: string | null
+  seniorityLevel: string | null
+  careerProgressionPlan: string | null
+}
+
+interface PreviousContext {
+  previousReflection: string | null
+  previousWeek: {
+    weekNumber: number
+    year: number
+  } | null
+  recentInsights: string | null
+  assessmentDate: Date | null
+}
+
+interface WeeklySnippet {
+  id: string
+  weekNumber: number
+  year: number
+  content: string
+}
 
 export interface WeeklyReflectionInput {
   userId: string
@@ -50,10 +85,12 @@ export class WeeklyReflectionHandler implements JobHandler {
     const weekNumber = this.getWeekNumber(weekStart)
     const year = weekStart.getFullYear()
 
+    let dataService: UserScopedDataService | null = null
+
     try {
       // Step 1: Validate user and get profile
       await context.updateProgress(5, 'Loading user profile')
-      const dataService = createUserDataService(userId)
+      dataService = createUserDataService(userId)
       
       const userProfile = await dataService.getUserProfile()
       if (!userProfile) {
@@ -67,7 +104,6 @@ export class WeeklyReflectionHandler implements JobHandler {
         year
       )
       if (existingReflection) {
-        await dataService.disconnect()
         return {
           reflectionId: existingReflection.id,
           weekNumber,
@@ -87,7 +123,6 @@ export class WeeklyReflectionHandler implements JobHandler {
       )
 
       if (!integrationData || Object.keys(integrationData).length === 0) {
-        await dataService.disconnect()
         throw new Error('No integration data available for this week')
       }
 
@@ -133,8 +168,6 @@ export class WeeklyReflectionHandler implements JobHandler {
         }
       )
 
-      await dataService.disconnect()
-
       return {
         reflectionId: savedReflection.id,
         weekNumber,
@@ -153,6 +186,11 @@ export class WeeklyReflectionHandler implements JobHandler {
         status: 'error',
         error: error instanceof Error ? error.message : 'Unknown error'
       }
+    } finally {
+      // Ensure database connection is always cleaned up
+      if (dataService) {
+        await dataService.disconnect()
+      }
     }
   }
 
@@ -160,12 +198,12 @@ export class WeeklyReflectionHandler implements JobHandler {
    * Check if a reflection already exists for the week
    */
   private async checkExistingReflection(
-    dataService: any,
+    dataService: UserScopedDataService,
     weekNumber: number,
     year: number
-  ) {
+  ): Promise<WeeklySnippet | undefined> {
     const snippets = await dataService.getSnippets()
-    return snippets.find((s: any) => 
+    return snippets.find((s: WeeklySnippet) => 
       s.weekNumber === weekNumber && 
       s.year === year
     )
@@ -179,8 +217,8 @@ export class WeeklyReflectionHandler implements JobHandler {
     weekStart: Date,
     weekEnd: Date,
     includeIntegrations?: string[]
-  ): Promise<any> {
-    const integrationData: any = {}
+  ): Promise<Record<string, unknown>> {
+    const integrationData: Record<string, unknown> = {}
     
     // For now, focus on Google Calendar
     // TODO: Add Todoist, GitHub, etc.
@@ -211,7 +249,7 @@ export class WeeklyReflectionHandler implements JobHandler {
     try {
       // Get user's Google account
       const accounts = await dataService.getUserAccounts()
-      const googleAccount = accounts.find((a: any) => a.provider === 'google')
+      const googleAccount = accounts.find((a: UserAccount) => a.provider === 'google')
       
       if (!googleAccount || !googleAccount.access_token) {
         console.log('No Google Calendar integration found for user')
@@ -238,6 +276,9 @@ export class WeeklyReflectionHandler implements JobHandler {
       )
 
       return calendarData
+    } catch (error) {
+      console.error('Failed to fetch calendar data:', error)
+      throw error
     } finally {
       await dataService.disconnect()
     }
@@ -250,9 +291,9 @@ export class WeeklyReflectionHandler implements JobHandler {
     userId: string,
     weekStart: Date,
     weekEnd: Date,
-    integrationData: any,
-    userProfile: any
-  ) {
+    integrationData: Record<string, unknown>,
+    userProfile: UserProfile
+  ): Promise<ConsolidatedData & { id: string }> {
     // Use existing consolidation service
     const consolidatedData = await integrationConsolidationService.consolidateWeeklyData({
       userId,
@@ -296,9 +337,9 @@ export class WeeklyReflectionHandler implements JobHandler {
    * Get previous week's reflection and recent insights
    */
   private async getPreviousContext(
-    dataService: any,
+    dataService: UserScopedDataService,
     currentWeekStart: Date
-  ) {
+  ): Promise<PreviousContext> {
     const previousWeekStart = subWeeks(currentWeekStart, 1)
     const previousWeekEnd = endOfWeek(previousWeekStart, { weekStartsOn: 1 })
 
@@ -311,7 +352,7 @@ export class WeeklyReflectionHandler implements JobHandler {
     const previousReflection = previousReflections?.[0]
 
     // Get recent performance assessments
-    const assessments = await dataService.getPerformanceAssessments()
+    const assessments = await dataService.getAssessments()
     const recentAssessment = assessments?.[0]
 
     return {
@@ -320,7 +361,7 @@ export class WeeklyReflectionHandler implements JobHandler {
         weekNumber: previousReflection.weekNumber,
         year: previousReflection.year
       } : null,
-      recentInsights: recentAssessment?.keyInsights || null,
+      recentInsights: recentAssessment?.generatedDraft || null,
       assessmentDate: recentAssessment?.createdAt || null
     }
   }
@@ -329,9 +370,9 @@ export class WeeklyReflectionHandler implements JobHandler {
    * Generate reflection using LLM with context
    */
   private async generateReflection(
-    consolidation: any,
-    previousContext: any,
-    userProfile: any
+    consolidation: ConsolidatedData & { id: string },
+    previousContext: PreviousContext | null,
+    userProfile: UserProfile
   ): Promise<string> {
     const prompt = this.buildReflectionPrompt(
       consolidation,
@@ -356,9 +397,9 @@ export class WeeklyReflectionHandler implements JobHandler {
    * Build comprehensive prompt for reflection generation
    */
   private buildReflectionPrompt(
-    consolidation: any,
-    previousContext: any,
-    userProfile: any
+    consolidation: ConsolidatedData & { id: string },
+    previousContext: PreviousContext | null,
+    userProfile: UserProfile
   ): string {
     let prompt = `Generate a weekly reflection for a ${userProfile.seniorityLevel || 'professional'} ${userProfile.jobTitle || 'team member'}.
 
@@ -427,7 +468,7 @@ Return as markdown text with clear sections.`
    * Save reflection as draft
    */
   private async saveReflectionDraft(
-    dataService: any,
+    dataService: UserScopedDataService,
     reflection: {
       weekNumber: number
       year: number
@@ -436,7 +477,7 @@ Return as markdown text with clear sections.`
       content: string
       consolidationId?: string
     }
-  ): Promise<any> {
+  ): Promise<WeeklySnippet> {
     // Store metadata in aiSuggestions field as JSON
     const metadata = {
       generatedAutomatically: true,
@@ -458,14 +499,10 @@ Return as markdown text with clear sections.`
   }
 
   /**
-   * Calculate ISO week number
+   * Calculate ISO week number using date-fns
    */
   private getWeekNumber(date: Date): number {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-    const dayNum = d.getUTCDay() || 7
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+    return getISOWeek(date)
   }
 }
 
