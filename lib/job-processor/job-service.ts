@@ -24,7 +24,18 @@ export class JobService {
     operationId: string,
     inputData: any
   ): Promise<JobResult> {
-    const dataService = createUserDataService(userId)
+    // First get the operation to ensure we use the correct userId
+    const tempService = createUserDataService(userId)
+    const operation = await tempService.getAsyncOperation(operationId)
+    await tempService.disconnect()
+    
+    if (!operation) {
+      throw new Error(`Operation ${operationId} not found`)
+    }
+    
+    // Use the userId from the actual operation record for consistency
+    const actualUserId = operation.userId
+    const dataService = createUserDataService(actualUserId)
     
     try {
       // Get the appropriate handler
@@ -33,7 +44,7 @@ export class JobService {
         throw new Error(`No handler registered for job type: ${jobType}`)
       }
 
-      console.log(`🔄 Processing job ${jobType} for user ${userId}, operation ${operationId}`)
+      console.log(`🔄 Processing job ${jobType} for user ${actualUserId}, operation ${operationId}`)
 
       // Update operation status to processing
       await dataService.updateAsyncOperation(operationId, {
@@ -57,7 +68,7 @@ export class JobService {
 
       // Create job context
       const context: JobContext = {
-        userId,
+        userId: actualUserId,
         operationId,
         updateProgress,
         metadata: { jobType }
@@ -83,7 +94,7 @@ export class JobService {
         completedAt: new Date()
       })
 
-      console.log(`✅ Job ${jobType} completed successfully for user ${userId}`)
+      console.log(`✅ Job ${jobType} completed successfully for user ${actualUserId}`)
 
       return {
         success: true,
@@ -95,7 +106,7 @@ export class JobService {
       }
 
     } catch (error) {
-      console.error(`❌ Job ${jobType} failed for user ${userId}:`, error)
+      console.error(`❌ Job ${jobType} failed for user ${actualUserId}:`, error)
       
       // Update operation status to failed
       await dataService.updateAsyncOperation(operationId, {

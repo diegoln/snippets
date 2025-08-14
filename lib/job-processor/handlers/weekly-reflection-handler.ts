@@ -78,7 +78,11 @@ export class WeeklyReflectionHandler implements JobHandler {
     inputData: WeeklyReflectionInput,
     context: JobContext
   ): Promise<WeeklyReflectionResult> {
-    const { userId, includePreviousContext = true, testMode = false } = inputData
+    const { includePreviousContext = true, testMode = false } = inputData
+    
+    // Use userId from context instead of inputData to ensure consistency
+    // The context.userId comes from the job service and matches the operation's userId
+    const userId = context.userId
     
     // Determine week range (default to current week)
     const weekEnd = inputData.weekEnd || endOfWeek(new Date(), { weekStartsOn: 1 })
@@ -135,7 +139,8 @@ export class WeeklyReflectionHandler implements JobHandler {
         weekStart,
         weekEnd,
         integrationData,
-        userProfile
+        userProfile,
+        dataService
       )
 
       // Step 4: Get previous context if requested
@@ -230,14 +235,21 @@ export class WeeklyReflectionHandler implements JobHandler {
         let calendarData
         
         if (testMode) {
-          // Use existing mock data from GoogleCalendarService for testing
-          const { GoogleCalendarService } = await import('../../calendar-integration')
-          calendarData = GoogleCalendarService.generateMockData({
-            weekStart,
-            weekEnd,
-            userId
-          })
-          console.log('📋 Using existing mock calendar data for test mode')
+          // Use simple mock data for testing
+          calendarData = {
+            totalMeetings: 3,
+            meetingContext: [
+              'Monday, Jan 8: Sprint Planning (6 attendees)',
+              'Wednesday, Jan 10: 1:1 with Manager',
+              'Friday, Jan 12: Code Review Session (4 attendees)'
+            ],
+            keyMeetings: [
+              { summary: 'Sprint Planning', importance: 'high', attendees: 6 },
+              { summary: '1:1 with Manager', importance: 'high', attendees: 2 },
+              { summary: 'Code Review Session', importance: 'medium', attendees: 4 }
+            ],
+            weeklyContextSummary: 'Week focused on sprint planning, manager alignment, and code review activities'
+          }
         } else {
           calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd)
         }
@@ -250,16 +262,20 @@ export class WeeklyReflectionHandler implements JobHandler {
         
         // In test mode, always provide mock data even if real fetch fails
         if (testMode) {
-          console.log('📋 Falling back to existing mock calendar data in test mode')
-          try {
-            const { GoogleCalendarService } = await import('../../calendar-integration')
-            integrationData.google_calendar = GoogleCalendarService.generateMockData({
-              weekStart,
-              weekEnd,
-              userId
-            })
-          } catch (mockError) {
-            console.error('Failed to generate mock calendar data:', mockError)
+          // Provide simple mock calendar data for testing
+          integrationData.google_calendar = {
+            totalMeetings: 3,
+            meetingContext: [
+              'Monday, Jan 8: Sprint Planning (6 attendees)',
+              'Wednesday, Jan 10: 1:1 with Manager',
+              'Friday, Jan 12: Code Review Session (4 attendees)'
+            ],
+            keyMeetings: [
+              { summary: 'Sprint Planning', importance: 'high', attendees: 6 },
+              { summary: '1:1 with Manager', importance: 'high', attendees: 2 },
+              { summary: 'Code Review Session', importance: 'medium', attendees: 4 }
+            ],
+            weeklyContextSummary: 'Week focused on sprint planning, manager alignment, and code review activities'
           }
         }
       }
@@ -324,7 +340,8 @@ export class WeeklyReflectionHandler implements JobHandler {
     weekStart: Date,
     weekEnd: Date,
     integrationData: Record<string, unknown>,
-    userProfile: UserProfile
+    userProfile: UserProfile,
+    dataService: UserScopedDataService
   ): Promise<ConsolidatedData & { id: string }> {
     // Use existing consolidation service
     const consolidatedData = await integrationConsolidationService.consolidateWeeklyData({
@@ -359,7 +376,8 @@ export class WeeklyReflectionHandler implements JobHandler {
       },
       consolidatedData,
       'Weekly reflection automation',
-      'gemini-pro'
+      'gemini-pro',
+      dataService // Pass the existing dataService instance
     )
 
     return { ...consolidatedData, id: consolidationId }

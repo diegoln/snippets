@@ -104,9 +104,10 @@ export class IntegrationConsolidationService {
     request: ConsolidationRequest,
     consolidatedData: ConsolidatedData,
     prompt: string,
-    llmModel?: string
+    llmModel?: string,
+    existingDataService?: any
   ): Promise<string> {
-    const dataService = createUserDataService(userId)
+    const dataService = existingDataService || createUserDataService(userId)
     
     try {
       const weekNumber = this.getWeekNumber(request.weekStart)
@@ -131,7 +132,10 @@ export class IntegrationConsolidationService {
 
       return consolidation.id
     } finally {
-      await dataService.disconnect()
+      // Only disconnect if we created the dataService ourselves
+      if (!existingDataService) {
+        await dataService.disconnect()
+      }
     }
   }
 

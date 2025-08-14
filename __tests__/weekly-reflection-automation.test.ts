@@ -59,27 +59,40 @@ jest.mock('../lib/calendar-integration', () => ({
   }
 }))
 
-jest.mock('../lib/integration-consolidation-service', () => ({
-  integrationConsolidationService: {
-    consolidateWeeklyData: jest.fn().mockResolvedValue({
-      summary: 'Week focused on feature development and team collaboration',
-      themes: [
-        {
-          name: 'Development',
-          categories: [
-            {
-              name: 'Implementation',
-              evidence: [
-                { statement: 'Completed feature development' }
-              ]
-            }
-          ]
-        }
-      ]
-    }),
-    storeConsolidation: jest.fn().mockResolvedValue('mock-consolidation-id')
+jest.mock('../lib/integration-consolidation-service', () => {
+  // Create mock service that uses real storage
+  const mockRealService = jest.requireActual('../lib/integration-consolidation-service')
+  const mockServiceInstance = new mockRealService.IntegrationConsolidationService()
+  
+  return {
+    integrationConsolidationService: {
+      // Use fast mock data for consolidation (no LLM calls)
+      consolidateWeeklyData: jest.fn().mockResolvedValue({
+        summary: 'Week focused on feature development and team collaboration',
+        themes: [
+          {
+            name: 'Development',
+            categories: [
+              {
+                name: 'Implementation',
+                evidence: [
+                  { statement: 'Completed feature development' }
+                ]
+              }
+            ]
+          }
+        ],
+        keyInsights: ['Productive development week'],
+        metrics: { totalMeetings: 3 },
+        contextualData: { focus: 'development' }
+      }),
+      // Use real storage method to actually store to database
+      storeConsolidation: jest.fn().mockImplementation((...args) => {
+        return mockServiceInstance.storeConsolidation(...args)
+      })
+    }
   }
-}))
+})
 
 jest.mock('../lib/auth-utils', () => ({
   getUserIdFromRequest: jest.fn()
@@ -105,10 +118,11 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
   let testUserEmail: string
   
   beforeAll(async () => {
-    // Create test user with complete profile
+    // Create test user with complete profile - use timestamp + random for uniqueness
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const testUser = await prisma.user.create({
       data: {
-        email: `test-reflection-${Date.now()}@example.com`,
+        email: `test-reflection-${uniqueId}@example.com`,
         name: 'Test Reflection User',
         jobTitle: 'Software Engineer',
         seniorityLevel: 'Senior',
@@ -150,10 +164,22 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
     // Ensure database connection
     await prisma.$connect()
     
-    // Clean up any test operations before each test
-    await prisma.asyncOperation.deleteMany({ where: { userId: testUserId } })
-    await prisma.weeklySnippet.deleteMany({ where: { userId: testUserId } })
-    await prisma.integrationConsolidation.deleteMany({ where: { userId: testUserId } })
+    // Complete cleanup of all test data to ensure isolation
+    try {
+      // Wait longer to ensure any async operations from previous tests are complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Delete in dependency order to avoid foreign key constraints
+      await prisma.asyncOperation.deleteMany({ where: { userId: testUserId } })
+      await prisma.integrationConsolidation.deleteMany({ where: { userId: testUserId } })
+      await prisma.weeklySnippet.deleteMany({ where: { userId: testUserId } })
+      
+      // Additional delay to ensure cleanup is complete before test starts
+      await new Promise(resolve => setTimeout(resolve, 50))
+    } catch (error) {
+      console.warn('Cleanup warning (non-fatal):', error)
+      // Continue with test - cleanup errors shouldn't fail tests
+    }
   })
 
   describe('API Endpoints', () => {
@@ -308,38 +334,51 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
     })
     
     it('should handle job processing errors gracefully', async () => {
+      // Create fresh service instance for this test
       const dataService = createUserDataService(testUserId)
-      const operation = await dataService.createAsyncOperation({
-        operationType: AsyncOperationType.WEEKLY_REFLECTION,
-        status: AsyncOperationStatus.QUEUED,
-        inputData: { userId: testUserId }
-      })
-      
-      // Create a spy on the reflection handler to force an error
-      const weeklyReflectionHandler = require('../lib/job-processor/handlers/weekly-reflection-handler').weeklyReflectionHandler
-      const originalProcess = weeklyReflectionHandler.process
-      weeklyReflectionHandler.process = jest.fn().mockRejectedValueOnce(new Error('Simulated handler failure'))
       
       try {
-        // This should fail due to mocked handler error
-        await jobService.processJob(
-          'weekly_reflection_generation',
-          testUserId,
-          operation.id,
-          { 
-            userId: testUserId,
-            testMode: true
-          }
-        )
+        const operation = await dataService.createAsyncOperation({
+          operationType: AsyncOperationType.WEEKLY_REFLECTION,
+          status: AsyncOperationStatus.QUEUED,
+          inputData: { userId: testUserId }
+        })
         
-        // Verify error was recorded
-        const updatedOperation = await dataService.getAsyncOperation(operation.id)
-        expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
-        expect(updatedOperation!.errorMessage).toContain('Simulated handler failure')
+        // Create a spy on the reflection handler to force an error
+        const weeklyReflectionHandler = require('../lib/job-processor/handlers/weekly-reflection-handler').weeklyReflectionHandler
+        const originalProcess = weeklyReflectionHandler.process
+        weeklyReflectionHandler.process = jest.fn().mockRejectedValueOnce(new Error('Simulated handler failure'))
+        
+        try {
+          // This should fail due to mocked handler error
+          await jobService.processJob(
+            'weekly_reflection_generation',
+            testUserId,
+            operation.id,
+            { 
+              userId: testUserId,
+              testMode: true
+            }
+          )
+          
+          // Verify error was recorded - use fresh service instance for verification
+          const verifyService = createUserDataService(testUserId)
+          try {
+            const updatedOperation = await verifyService.getAsyncOperation(operation.id)
+            expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
+            expect(updatedOperation!.errorMessage).toContain('Simulated handler failure')
+          } finally {
+            await verifyService.disconnect()
+          }
+          
+        } finally {
+          // Restore original method
+          weeklyReflectionHandler.process = originalProcess
+        }
         
       } finally {
-        // Restore original method
-        weeklyReflectionHandler.process = originalProcess
+        // Always cleanup service connection
+        await dataService.disconnect()
       }
     })
   })
@@ -397,6 +436,7 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
 
   describe('Database Operations', () => {
     it('should store consolidation data correctly', async () => {
+      
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 })
       
@@ -423,7 +463,8 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
           userId: testUserId,
           weekStart,
           weekEnd,
-          includePreviousContext: false
+          includePreviousContext: false,
+          testMode: true // Use mock calendar data for testing
         }
       )
       
