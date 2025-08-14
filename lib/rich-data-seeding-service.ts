@@ -8,6 +8,7 @@
  */
 
 import { PrismaClient } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import { RichIntegrationDataService } from './rich-integration-data-service'
 import { getISOWeek, setISOWeek, startOfISOWeek, endOfISOWeek } from 'date-fns'
 
@@ -122,13 +123,13 @@ export class RichDataSeedingService {
             }
           },
           update: {
-            rawData: integrationData.rawData as any,
-            metadata: integrationData.metadata as any
+            rawData: integrationData.rawData as unknown as Prisma.InputJsonObject,
+            metadata: integrationData.metadata as unknown as Prisma.InputJsonObject
           },
           create: {
             ...integrationData,
-            rawData: integrationData.rawData as any,
-            metadata: integrationData.metadata as any
+            rawData: integrationData.rawData as unknown as Prisma.InputJsonObject,
+            metadata: integrationData.metadata as unknown as Prisma.InputJsonObject
           }
         })
 

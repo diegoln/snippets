@@ -129,18 +129,29 @@ Your objective is to analyze the provided inputs and generate a structured summa
 4. **careerGuidelines**: ${careerGuidelines}
 5. **calendarEvents**: ${JSON.stringify(calendarEvents, null, 2)}
 6. **meetingNotes**: ${meetingNotes.join('\n\n---\n\n')}
-${conversationExcerpts.length > 0 ? `7. **conversationExcerpts**: 
+${(() => {
+  const optionalSections = []
+  
+  if (conversationExcerpts.length > 0) {
+    optionalSections.push(`**conversationExcerpts**: 
 ${conversationExcerpts.map(excerpt => 
   `### ${excerpt.meetingType} (${excerpt.duration})
 **Participants**: ${excerpt.participants.join(', ')}
 **Key Discussion Points**:
 ${excerpt.keyExcerpts.map(point => `- ${point}`).join('\n')}`
-).join('\n\n')}` : ''}
-${meetingDocs.length > 0 ? `${conversationExcerpts.length > 0 ? '8' : '7'}. **meetingDocs**: 
+).join('\n\n')}`)
+  }
+  
+  if (meetingDocs.length > 0) {
+    optionalSections.push(`**meetingDocs**: 
 ${meetingDocs.map(doc => 
   `### ${doc.title}
 ${extractDocumentText(doc)}`
-).join('\n\n')}` : ''}
+).join('\n\n')}`)
+  }
+  
+  return optionalSections.map((section, index) => `${7 + index}. ${section}`).join('\n')
+})()}
 
 ## CORE INSTRUCTIONS
 1. **Identify Weekly Themes:** First, scan all calendar events, meeting notes, conversation excerpts, and meeting documents to identify the main projects, initiatives, or recurring themes of the week (e.g., "Project Phoenix Launch," "Q4 Planning," "Team Process Improvement").
