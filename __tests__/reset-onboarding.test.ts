@@ -78,7 +78,7 @@ describe('Reset Onboarding Functionality', () => {
       const data = await response.json()
 
       expect(response.status).toBe(403)
-      expect(data.error).toBe('This endpoint is only available in development')
+      expect(data.error).toBe('This endpoint is only available in development and staging environments')
       expect(mockGetUserIdFromRequest).not.toHaveBeenCalled()
     })
 

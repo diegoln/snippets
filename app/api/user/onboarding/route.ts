@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '../../../../lib/auth-utils'
 import { getDevUserIdFromRequest } from '../../../../lib/dev-auth'
 import { createUserDataService } from '../../../../lib/user-scoped-data'
+import { isDevLike } from '../../../../lib/environment'
+
+// Force dynamic execution for environment detection
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user ID from session (with dev fallback)
+    // Get authenticated user ID from session (with dev fallback for dev-like environments)
     let userId = await getUserIdFromRequest(request)
-    if (!userId && process.env.NODE_ENV === 'development') {
+    if (!userId && isDevLike()) {
       userId = await getDevUserIdFromRequest(request)
     }
     if (!userId) {
@@ -52,18 +57,18 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  // Only allow in development
-  if (process.env.NODE_ENV !== 'development') {
+  // Only allow in dev-like environments (development + staging)
+  if (!isDevLike()) {
     return NextResponse.json(
-      { error: 'This endpoint is only available in development' },
+      { error: 'This endpoint is only available in development and staging environments' },
       { status: 403 }
     )
   }
 
   try {
-    // Get authenticated user ID from session (with dev fallback)
+    // Get authenticated user ID from session (with dev fallback for dev-like environments)
     let userId = await getUserIdFromRequest(request)
-    if (!userId && process.env.NODE_ENV === 'development') {
+    if (!userId && isDevLike()) {
       userId = await getDevUserIdFromRequest(request)
     }
     if (!userId) {
