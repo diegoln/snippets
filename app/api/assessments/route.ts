@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           startDate: consolidation.weekStart.toISOString().split('T')[0],
           endDate: consolidation.weekEnd.toISOString().split('T')[0],
           integrationType: consolidation.integrationType,
-          summary: consolidation.consolidatedSummary,
+          summary: consolidation.summary,
           themes: consolidation.themes,
           keyInsights: consolidation.keyInsights,
           metrics: consolidation.metrics

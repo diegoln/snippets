@@ -66,9 +66,17 @@ export interface CheckInContext {
     endDate: string
     integrationType: string
     summary: string
-    themes: any[]
+    themes: Array<{
+      name: string
+      categories: Array<{
+        name: string
+        evidence: Array<{
+          statement: string
+        }>
+      }>
+    }>
     keyInsights: string[]
-    metrics: any
+    metrics: Record<string, unknown>
   }>
   previousFeedback?: string
   checkInFocusAreas?: string

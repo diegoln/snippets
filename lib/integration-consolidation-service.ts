@@ -122,9 +122,10 @@ export class IntegrationConsolidationService {
     request: ConsolidationRequest,
     consolidatedData: ConsolidatedData,
     prompt: string,
-    llmModel?: string
+    llmModel?: string,
+    existingDataService?: any
   ): Promise<string> {
-    const dataService = createUserDataService(userId)
+    const dataService = existingDataService || createUserDataService(userId)
     
     try {
       const weekNumber = this.getWeekNumber(request.weekStart)
@@ -149,7 +150,10 @@ export class IntegrationConsolidationService {
 
       return consolidation.id
     } finally {
-      await dataService.disconnect()
+      // Only disconnect if we created the dataService ourselves
+      if (!existingDataService) {
+        await dataService.disconnect()
+      }
     }
   }
 
@@ -159,7 +163,13 @@ export class IntegrationConsolidationService {
   async getConsolidationsForReflection(
     userId: string, 
     dateRange: { start: Date; end: Date }
-  ): Promise<ConsolidatedData[]> {
+  ): Promise<Array<ConsolidatedData & {
+    weekNumber: number
+    year: number
+    integrationType: string
+    weekStart: Date
+    weekEnd: Date
+  }>> {
     const dataService = createUserDataService(userId)
     
     try {
@@ -174,7 +184,12 @@ export class IntegrationConsolidationService {
         keyInsights: JSON.parse(consolidation.keyInsights),
         metrics: JSON.parse(consolidation.consolidatedMetrics),
         contextualData: JSON.parse(consolidation.consolidatedContext),
-        themes: JSON.parse(consolidation.consolidatedContext).themes || []
+        themes: JSON.parse(consolidation.consolidatedContext).themes || [],
+        weekNumber: consolidation.weekNumber,
+        year: consolidation.year,
+        integrationType: consolidation.integrationType,
+        weekStart: consolidation.weekStart,
+        weekEnd: consolidation.weekEnd
       }))
     } finally {
       await dataService.disconnect()
