@@ -247,11 +247,12 @@ describe('Tailwind Configuration Compliance', () => {
       })
       
       expect(colors.accent).toEqual({
+        100: 'rgba(220, 128, 75, 0.1)', // 10% opacity variant
         500: '#DC804B'
       })
       
       expect(colors.neutral).toEqual({
-        100: '#F8F9FA',
+        100: '#F7F9FC', // Updated to match CSS variable
         600: '#646464',
         900: '#1F1F23'
       })
