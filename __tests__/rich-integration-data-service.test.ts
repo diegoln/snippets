@@ -119,22 +119,22 @@ describe('RichIntegrationDataService', () => {
   })
 
   describe('User Detection', () => {
-    test('identifies Jack user correctly', () => {
-      expect(RichIntegrationDataService.isJackUser('jack@company.com')).toBe(true)
-      expect(RichIntegrationDataService.isJackUser('jack@example.com')).toBe(true)
-      expect(RichIntegrationDataService.isJackUser('1')).toBe(true)
-      expect(RichIntegrationDataService.isJackUser('dev-user-123')).toBe(true)
+    test('identifies users with rich data correctly', () => {
+      expect(RichIntegrationDataService.hasRichDataForUser('jack@company.com')).toBe(true)
+      expect(RichIntegrationDataService.hasRichDataForUser('jack@example.com')).toBe(true)
+      expect(RichIntegrationDataService.hasRichDataForUser('1')).toBe(true)
+      expect(RichIntegrationDataService.hasRichDataForUser('dev-user-123')).toBe(true)
     })
 
-    test('rejects non-Jack users', () => {
-      expect(RichIntegrationDataService.isJackUser('sarah@example.com')).toBe(false)
-      expect(RichIntegrationDataService.isJackUser('other@company.com')).toBe(false)
-      expect(RichIntegrationDataService.isJackUser('2')).toBe(false)
+    test('rejects users without rich data', () => {
+      expect(RichIntegrationDataService.hasRichDataForUser('sarah@example.com')).toBe(false)
+      expect(RichIntegrationDataService.hasRichDataForUser('other@company.com')).toBe(false)
+      expect(RichIntegrationDataService.hasRichDataForUser('2')).toBe(false)
     })
   })
 
   describe('Data Loading', () => {
-    test('returns null for non-Jack users', async () => {
+    test('returns null for users without rich data', async () => {
       const request = {
         weekStart: new Date('2024-10-01'),
         weekEnd: new Date('2024-10-05'),
@@ -145,7 +145,7 @@ describe('RichIntegrationDataService', () => {
       expect(result).toBeNull()
     })
 
-    test('returns null for weeks outside Jack dataset range', async () => {
+    test('returns null for weeks outside dataset range', async () => {
       const request = {
         weekStart: new Date('2024-09-01'), // Week 35, outside range
         weekEnd: new Date('2024-09-05'),
@@ -156,7 +156,7 @@ describe('RichIntegrationDataService', () => {
       expect(result).toBeNull()
     })
 
-    test('loads rich data for Jack in valid week range', async () => {
+    test('loads rich data for users in valid week range', async () => {
       // Data already set up in beforeEach
 
       const request = {
@@ -310,7 +310,7 @@ describe('RichIntegrationDataService', () => {
   })
 
   describe('Available Weeks', () => {
-    test('returns correct week range for Jack dataset', () => {
+    test('returns correct week range for dataset', () => {
       const weeks = RichIntegrationDataService.getAvailableWeeks()
 
       expect(weeks).toHaveLength(5)

@@ -9,6 +9,7 @@ import { llmProxy } from './llmproxy'
 import { createUserDataService } from './user-scoped-data'
 import { buildCalendarConsolidationPrompt, CalendarConsolidationPromptContext } from './consolidation-prompts/calendar-consolidation-prompt'
 import { GoogleCalendarService } from './calendar-integration'
+import { RichIntegrationDataService } from './rich-integration-data-service'
 import { format, getISOWeek } from 'date-fns'
 import type { IntegrationConsolidation } from '@prisma/client'
 
@@ -71,14 +72,14 @@ export class IntegrationConsolidationService {
     
     // Get conversation excerpts if available (for rich data)
     let conversationExcerpts: any[] = []
-    try {
-      conversationExcerpts = await GoogleCalendarService.getConversationExcerpts({
-        weekStart,
-        weekEnd,
-        userId
-      })
-    } catch (error) {
-      console.warn('Failed to get conversation excerpts:', error)
+    if (rawIntegrationData.meetingTranscripts && rawIntegrationData.meetingTranscripts.length > 0) {
+      try {
+        conversationExcerpts = RichIntegrationDataService.extractConversationExcerpts(
+          rawIntegrationData.meetingTranscripts
+        )
+      } catch (error) {
+        console.warn('Failed to extract conversation excerpts from raw data:', error)
+      }
     }
     
     const promptContext: CalendarConsolidationPromptContext = {

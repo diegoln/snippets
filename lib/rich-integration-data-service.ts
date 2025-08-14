@@ -8,7 +8,7 @@
 
 import { promises as fs } from 'fs'
 import * as path from 'path'
-import { getISOWeek } from 'date-fns'
+import { getISOWeek, setISOWeek, startOfISOWeek, endOfISOWeek } from 'date-fns'
 
 // Extended interfaces for rich data support
 export interface MeetTranscriptEntry {
@@ -249,17 +249,33 @@ export class RichIntegrationDataService {
     try {
       const files = await fs.readdir(docsDir)
       
-      // Map week numbers to approximate dates for doc matching
-      const weekDateMapping: Record<number, string> = {
-        40: 'Oct 1', 41: 'Oct 8', 42: 'Oct 15', 43: 'Oct 22', 44: 'Oct 29'
-      }
+      // Calculate the actual date range for this week
+      const year = 2024 // Jack's dataset is from 2024
+      const weekStart = this.getWeekStartDate(weekNumber, year)
+      const weekEnd = this.getWeekEndDate(weekNumber, year)
       
-      const weekDateStr = weekDateMapping[weekNumber]
-      if (!weekDateStr) return docs
-
-      const weekFiles = files.filter(file => 
-        file.includes(weekDateStr) && file.endsWith('.json')
-      )
+      const weekFiles = files.filter(file => {
+        if (!file.endsWith('.json')) return false
+        
+        // Try to parse date from filename (various patterns)
+        const dateMatch = file.match(/(?:Oct|October)\s*(\d{1,2})|(\d{4})-(\d{1,2})-(\d{1,2})/)
+        if (!dateMatch) return false
+        
+        let fileDate: Date
+        if (dateMatch[1]) {
+          // "Oct 1" or "October 1" format
+          const day = parseInt(dateMatch[1])
+          fileDate = new Date(2024, 9, day) // October is month 9
+        } else if (dateMatch[2] && dateMatch[3] && dateMatch[4]) {
+          // "2024-10-01" format
+          fileDate = new Date(parseInt(dateMatch[2]), parseInt(dateMatch[3]) - 1, parseInt(dateMatch[4]))
+        } else {
+          return false
+        }
+        
+        // Check if file date falls within the week
+        return fileDate >= weekStart && fileDate <= weekEnd
+      })
 
       for (const file of weekFiles) {
         try {
@@ -353,14 +369,14 @@ export class RichIntegrationDataService {
     transcript: MeetTranscript, 
     event: RichCalendarEvent
   ): boolean {
-    const transcriptDate = new Date(transcript.conferenceRecord.startTime)
-    const eventDate = new Date(event.start.dateTime)
-    
-    // Check if dates are within 2 hours of each other (accounting for timezone differences)
-    const timeDiff = Math.abs(transcriptDate.getTime() - eventDate.getTime())
-    const twoHours = 2 * 60 * 60 * 1000
-    
-    return timeDiff <= twoHours
+    const transcriptStart = new Date(transcript.conferenceRecord.startTime).getTime()
+    const eventStart = new Date(event.start.dateTime).getTime()
+    const eventEnd = new Date(event.end.dateTime).getTime()
+
+    // Check if the transcript's start time is within the event's duration, 
+    // allowing for a small buffer (e.g., 5 minutes) for timing discrepancies.
+    const buffer = 5 * 60 * 1000
+    return transcriptStart >= eventStart - buffer && transcriptStart <= eventEnd + buffer
   }
 
   /**
@@ -456,6 +472,28 @@ export class RichIntegrationDataService {
       { weekNumber: 43, year: 2024, dateRange: 'Oct 21-25, 2024' },
       { weekNumber: 44, year: 2024, dateRange: 'Oct 28-31, 2024' }
     ]
+  }
+
+  /**
+   * Calculate the start date of an ISO week
+   */
+  private static getWeekStartDate(weekNumber: number, year: number): Date {
+    const dateInTargetYear = new Date(year, 0, 4)
+    const dateInTargetWeek = setISOWeek(dateInTargetYear, weekNumber)
+    return startOfISOWeek(dateInTargetWeek)
+  }
+
+  /**
+   * Calculate the end date of an ISO week (Friday)
+   */
+  private static getWeekEndDate(weekNumber: number, year: number): Date {
+    const dateInTargetYear = new Date(year, 0, 4)
+    const dateInTargetWeek = setISOWeek(dateInTargetYear, weekNumber)
+    const weekEnd = endOfISOWeek(dateInTargetWeek)
+    // Return Friday instead of Sunday (subtract 2 days)
+    weekEnd.setDate(weekEnd.getDate() - 2)
+    weekEnd.setHours(23, 59, 59, 999)
+    return weekEnd
   }
 
   /**

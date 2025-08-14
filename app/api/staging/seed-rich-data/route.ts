@@ -27,8 +27,11 @@ export async function POST(request: NextRequest) {
     const environment = isStaging() ? 'staging' : 'development'
     console.log(`🌟 Rich data seeding requested for ${environment}...`)
     
-    // Seed rich data for users with available datasets
-    const userIds = ['1', 'jack@company.com', 'jack@example.com', 'dev-user-123']
+    // Get user IDs from request body or use defaults
+    const body = await request.json().catch(() => ({}))
+    const userIds = body.userIds || ['1', 'jack@company.com', 'jack@example.com', 'dev-user-123']
+    
+    console.log(`   Seeding for users: ${userIds.join(', ')}`)
     await RichDataSeedingService.seedRichDataForUsers(userIds, environment)
     
     console.log(`✅ Rich data seeding completed for ${environment}`)

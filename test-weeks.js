@@ -1,1 +1,0 @@
-import { getISOWeek } from 'date-fns'; console.log('Oct 1 week:', getISOWeek(new Date('2024-10-01'))); console.log('Sep 30 week:', getISOWeek(new Date('2024-09-30'))); console.log('Oct 7 week:', getISOWeek(new Date('2024-10-07')));

@@ -9,7 +9,7 @@
 
 import { PrismaClient } from '@prisma/client'
 import { RichIntegrationDataService } from './rich-integration-data-service'
-import { getISOWeek } from 'date-fns'
+import { getISOWeek, setISOWeek, startOfISOWeek, endOfISOWeek } from 'date-fns'
 
 export interface RichDataSeedingOptions {
   environment: 'development' | 'staging'
@@ -259,28 +259,22 @@ export class RichDataSeedingService {
    * Calculate the start date of an ISO week
    */
   private static getWeekStartDate(weekNumber: number, year: number): Date {
-    // January 4th is always in week 1 of the year
-    const jan4 = new Date(year, 0, 4)
-    const jan4Week = getISOWeek(jan4)
-    
-    // Calculate the Monday of week 1
-    const week1Monday = new Date(jan4)
-    week1Monday.setDate(jan4.getDate() - jan4.getDay() + 1)
-    
-    // Calculate the target week's Monday
-    const targetWeekMonday = new Date(week1Monday)
-    targetWeekMonday.setDate(week1Monday.getDate() + (weekNumber - jan4Week) * 7)
-    
-    return targetWeekMonday
+    // Using a date in the target year ensures correct week calculation.
+    // January 4th is always in week 1.
+    const dateInTargetYear = new Date(year, 0, 4)
+    const dateInTargetWeek = setISOWeek(dateInTargetYear, weekNumber)
+    return startOfISOWeek(dateInTargetWeek)
   }
 
   /**
    * Calculate the end date of an ISO week (Friday)
    */
   private static getWeekEndDate(weekNumber: number, year: number): Date {
-    const weekStart = this.getWeekStartDate(weekNumber, year)
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekStart.getDate() + 4) // Friday
+    const dateInTargetYear = new Date(year, 0, 4)
+    const dateInTargetWeek = setISOWeek(dateInTargetYear, weekNumber)
+    const weekEnd = endOfISOWeek(dateInTargetWeek)
+    // Return Friday instead of Sunday (subtract 2 days)
+    weekEnd.setDate(weekEnd.getDate() - 2)
     weekEnd.setHours(23, 59, 59, 999)
     return weekEnd
   }
