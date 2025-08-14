@@ -166,7 +166,10 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
     
     // Complete cleanup of all test data to ensure isolation
     try {
-      // Wait longer to ensure any async operations from previous tests are complete
+      // Strategic delay to ensure async operations from previous tests complete
+      // This prevents race conditions where database operations are still in flight
+      // Alternative approaches like tracking promises would be more complex and
+      // may not handle all async scenarios (job processing, Prisma connection pooling)
       await new Promise(resolve => setTimeout(resolve, 100))
       
       // Delete in dependency order to avoid foreign key constraints
@@ -174,7 +177,8 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       await prisma.integrationConsolidation.deleteMany({ where: { userId: testUserId } })
       await prisma.weeklySnippet.deleteMany({ where: { userId: testUserId } })
       
-      // Additional delay to ensure cleanup is complete before test starts
+      // Final delay to ensure database cleanup is fully committed
+      // before next test begins to prevent test interference
       await new Promise(resolve => setTimeout(resolve, 50))
     } catch (error) {
       console.warn('Cleanup warning (non-fatal):', error)
@@ -562,15 +566,54 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
     })
     
     it('should handle LLM failures gracefully', async () => {
-      // Mock LLM proxy to fail
-      const originalLlmProxy = require('../lib/llmproxy').llmProxy
-      const mockLlmProxy = {
-        request: jest.fn().mockRejectedValue(new Error('LLM service unavailable'))
-      }
+      const dataService = createUserDataService(testUserId)
       
-      // This would require more sophisticated mocking
-      // For now, just verify the handler exists and can be called
-      expect(weeklyReflectionHandler.process).toBeDefined()
+      try {
+        // Create an operation for LLM failure testing
+        const operation = await dataService.createAsyncOperation({
+          operationType: AsyncOperationType.WEEKLY_REFLECTION,
+          status: AsyncOperationStatus.QUEUED,
+          inputData: { 
+            userId: testUserId,
+            testMode: false // Important: use real mode to trigger LLM call
+          }
+        })
+        
+        // Mock LLM proxy to fail
+        const llmProxyModule = require('../lib/llmproxy')
+        const originalRequest = llmProxyModule.llmProxy.request
+        llmProxyModule.llmProxy.request = jest.fn().mockRejectedValue(new Error('LLM service unavailable'))
+        
+        try {
+          // Process the job - this should fail due to LLM error
+          await jobService.processJob(
+            'weekly_reflection_generation',
+            testUserId,
+            operation.id,
+            { 
+              userId: testUserId,
+              testMode: false // Use real mode to trigger LLM call
+            }
+          )
+          
+          // Verify the operation was marked as failed
+          const verifyService = createUserDataService(testUserId)
+          try {
+            const updatedOperation = await verifyService.getAsyncOperation(operation.id)
+            expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
+            expect(updatedOperation!.errorMessage).toContain('LLM service unavailable')
+          } finally {
+            await verifyService.disconnect()
+          }
+          
+        } finally {
+          // Restore original LLM proxy
+          llmProxyModule.llmProxy.request = originalRequest
+        }
+        
+      } finally {
+        await dataService.disconnect()
+      }
     })
   })
 

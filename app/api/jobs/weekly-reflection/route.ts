@@ -17,6 +17,22 @@ import { jobService } from '../../../../lib/job-processor/job-service'
 import { AsyncOperationStatus, AsyncOperationType, AsyncOperation } from '../../../../types/async-operations'
 import { startOfWeek, endOfWeek } from 'date-fns'
 
+/**
+ * Helper function to parse operation metadata safely
+ */
+function parseOperationMetadata(metadata: any, operationId: string): any {
+  let parsedMetadata = metadata
+  try {
+    if (typeof metadata === 'string') {
+      parsedMetadata = JSON.parse(metadata)
+    }
+  } catch (error) {
+    console.warn(`Failed to parse metadata for operation ${operationId}:`, error)
+    // Keep original metadata if parsing fails
+  }
+  return parsedMetadata
+}
+
 // Input validation schema
 const WeeklyReflectionJobSchema = z.object({
   userId: z.string().optional(), // Admin can specify user
@@ -46,9 +62,10 @@ export async function POST(request: NextRequest) {
     // Parse and validate request body
     let body
     try {
-      body = await request.json()
-    } catch {
-      body = {}
+      const text = await request.text()
+      body = text ? JSON.parse(text) : {}
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
     }
 
     const validationResult = WeeklyReflectionJobSchema.safeParse(body)
@@ -221,15 +238,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Parse metadata if it exists
-      let parsedMetadata = operation.metadata
-      try {
-        if (typeof operation.metadata === 'string') {
-          parsedMetadata = JSON.parse(operation.metadata)
-        }
-      } catch (error) {
-        console.warn(`Failed to parse metadata for operation ${operation.id}:`, error)
-        // Keep original metadata if parsing fails
-      }
+      const parsedMetadata = parseOperationMetadata(operation.metadata, operation.id)
 
       return NextResponse.json({
         operationId: operation.id,
@@ -251,15 +260,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         operations: reflectionOps.map((op: AsyncOperation) => {
           // Parse metadata if it exists
-          let parsedMetadata = op.metadata
-          try {
-            if (typeof op.metadata === 'string') {
-              parsedMetadata = JSON.parse(op.metadata)
-            }
-          } catch (error) {
-            console.warn(`Failed to parse metadata for operation ${op.id}:`, error)
-            // Keep original metadata if parsing fails
-          }
+          const parsedMetadata = parseOperationMetadata(op.metadata, op.id)
 
           return {
             operationId: op.id,
