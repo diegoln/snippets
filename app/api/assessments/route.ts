@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
           startDate,
           endDate
         },
-        consolidatedData: consolidatedData.map((consolidation: any) => ({
+        consolidatedData: consolidatedData.map((consolidation) => ({
           weekNumber: consolidation.weekNumber,
           year: consolidation.year,
           startDate: consolidation.weekStart.toISOString().split('T')[0],
