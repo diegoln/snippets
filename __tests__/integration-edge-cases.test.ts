@@ -234,9 +234,9 @@ describe('Integration Edge Cases (Simplified)', () => {
    * that could mislead users about their actual productivity.
    */
   describe('Mock Data Quality', () => {
-    it('should generate realistic mock calendar data', () => {
+    it('should generate realistic mock calendar data', async () => {
       // Arrange & Act
-      const mockData = GoogleCalendarService.generateMockData({
+      const mockData = await GoogleCalendarService.generateMockData({
         weekStart: new Date('2024-01-01'),
         weekEnd: new Date('2024-01-07'),
         userId: 'test-user'

@@ -34,6 +34,7 @@ model User {
   sessions        Session[]
   snippets           WeeklySnippet[]
   integrations       Integration[]
+  integrationData    IntegrationData[]
   integrationConsolidations IntegrationConsolidation[]
   performanceAssessments PerformanceAssessment[]
   asyncOperations      AsyncOperation[]
@@ -172,6 +173,22 @@ model CareerGuidelineTemplate {
   
   @@unique([role, level], name: "role_level")
   @@map("career_guideline_templates")
+}
+
+model IntegrationData {
+  id          String   @id @default(cuid())
+  userId      String
+  weekNumber  Int
+  year        Int
+  integrationType String
+  rawData     Json
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, weekNumber, year, integrationType])
+  @@map("integration_data")
 }
 
 model IntegrationConsolidation {

@@ -82,8 +82,8 @@ export async function POST(request: NextRequest) {
     // Fetch integration data based on type
     let rawIntegrationData
     if (integrationType === 'google_calendar') {
-      // Use mock data for now - in production this would fetch real calendar data
-      rawIntegrationData = GoogleCalendarService.generateMockData({
+      // Use enhanced mock data (includes rich data for Jack) - in production this would fetch real calendar data
+      rawIntegrationData = await GoogleCalendarService.generateMockData({
         weekStart,
         weekEnd,
         userId

@@ -22,6 +22,7 @@ interface Account {
   scope?: string | null
 }
 import { format, parseISO } from 'date-fns'
+import { RichIntegrationDataService, type RichCalendarData } from './rich-integration-data-service'
 
 // Dynamic import helper for googleapis
 let googleCache: any = null
@@ -60,6 +61,17 @@ export interface WeeklyCalendarData {
   meetingContext: string[]
   keyMeetings: CalendarEvent[]
   weeklyContextSummary: string
+}
+
+// Extended interface for rich data (backwards compatible)
+export interface EnhancedWeeklyCalendarData extends WeeklyCalendarData {
+  meetingTranscripts?: any[]
+  meetingDocs?: any[]
+  hasTranscripts?: boolean
+  hasDocs?: boolean
+  weekNumber?: number
+  year?: number
+  dataSource?: string
 }
 
 export interface WeeklyDataRequest {
@@ -300,16 +312,19 @@ export class GoogleCalendarService {
   }
 
   /**
-   * Generate mock data for development
+   * Generate mock data for development - now with rich data support
    */
-  static generateMockData(request: WeeklyDataRequest): WeeklyCalendarData {
-    // Load realistic user data based on userId
-    // Jack Thompson can be user ID '1' or the dev user ID 'dev-user-123'
-    if (request.userId === '1' || request.userId === 'dev-user-123') { // Jack Thompson
-      return GoogleCalendarService.generateJacksPreviousWeekData(request)
+  static async generateMockData(request: WeeklyDataRequest): Promise<EnhancedWeeklyCalendarData> {
+    // Try to load rich data if available for this user
+    if (RichIntegrationDataService.hasRichDataForUser(request.userId)) {
+      const richData = await RichIntegrationDataService.getRichWeeklyData(request)
+      if (richData) {
+        // Convert rich data to calendar format
+        return this.convertRichDataToCalendarData(richData)
+      }
     }
 
-    // Default generic mock data for other users
+    // Fallback to simple mock data for other users or when rich data fails
     const mockEvents: CalendarEvent[] = [
       {
         id: 'mock-1',
@@ -341,117 +356,46 @@ export class GoogleCalendarService {
       totalMeetings: mockEvents.length,
       meetingContext: mockEvents.map(e => `${format(parseISO(e.start.dateTime), 'EEEE, MMM d')}: ${e.summary}`),
       keyMeetings: mockEvents.filter(e => e.summary.includes('1:1')),
-      weeklyContextSummary: `This week included ${mockEvents.length} meetings. Had 1 1:1 meeting(s) for development discussions. Participated in 1 career-relevant meetings including: 1:1 with Manager.`
+      weeklyContextSummary: `This week included ${mockEvents.length} meetings. Had 1 1:1 meeting(s) for development discussions. Participated in 1 career-relevant meetings including: 1:1 with Manager.`,
+      hasTranscripts: false,
+      hasDocs: false,
+      dataSource: 'simple-mock'
     }
   }
 
   /**
-   * Generate Jack's realistic previous week data for onboarding
+   * Convert rich data to enhanced calendar data format
    */
-  static generateJacksPreviousWeekData(request: WeeklyDataRequest): WeeklyCalendarData {
-    // Use the provided week dates to generate relative dates for Jack's events
-    // This ensures the mock data always appears to be from the requested week
-    const baseDate = new Date(request.weekStart)
-    
-    // Helper to create a date at a specific day and time within the week
-    const createEventDate = (dayOffset: number, hours: number, minutes: number = 0): string => {
-      const eventDate = new Date(baseDate)
-      eventDate.setDate(baseDate.getDate() + dayOffset)
-      eventDate.setHours(hours, minutes, 0, 0)
-      return eventDate.toISOString()
+  private static convertRichDataToCalendarData(richData: RichCalendarData): EnhancedWeeklyCalendarData {
+    return {
+      totalMeetings: richData.totalMeetings,
+      meetingContext: richData.meetingContext,
+      keyMeetings: richData.keyMeetings,
+      weeklyContextSummary: richData.weeklyContextSummary,
+      meetingTranscripts: richData.meetingTranscripts,
+      meetingDocs: richData.meetingDocs,
+      hasTranscripts: richData.hasTranscripts,
+      hasDocs: richData.hasDocs,
+      weekNumber: richData.weekNumber,
+      year: richData.year,
+      dataSource: richData.dataSource
     }
-    
-    // Jack's realistic events adapted to use relative dates
-    const jackEvents: CalendarEvent[] = [
-      {
-        id: 'jack_week_1',
-        summary: 'Daily Standup - Identity Platform Team',
-        description: 'Team standup. Jack mentioned still working on JWT refresh token issues.',
-        start: { dateTime: createEventDate(0, 9, 0) }, // Monday 9:00 AM
-        end: { dateTime: createEventDate(0, 9, 15) },   // Monday 9:15 AM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
-          { email: 'lisa@company.com', displayName: 'Lisa Park' },
-          { email: 'tom@company.com', displayName: 'Tom Wilson' },
-          { email: 'alex@company.com', displayName: 'Alex Kumar' }
-        ],
-        status: 'confirmed'
-      },
-      {
-        id: 'jack_week_2',
-        summary: 'Identity Platform - Demo Prep',
-        description: 'Preparing for upcoming demo to stakeholders. Jack expressed concerns about his auth module not being ready for demo.',
-        start: { dateTime: createEventDate(0, 13, 0) }, // Monday 1:00 PM
-        end: { dateTime: createEventDate(0, 14, 0) },   // Monday 2:00 PM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen' },
-          { email: 'jennifer@company.com', displayName: 'Jennifer Walsh (PM)', organizer: true }
-        ],
-        status: 'confirmed'
-      },
-      {
-        id: 'jack_week_3',
-        summary: 'Daily Standup - Identity Platform Team',
-        description: '',
-        start: { dateTime: createEventDate(1, 9, 0) },  // Tuesday 9:00 AM
-        end: { dateTime: createEventDate(1, 9, 15) },    // Tuesday 9:15 AM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
-          { email: 'lisa@company.com', displayName: 'Lisa Park' },
-          { email: 'tom@company.com', displayName: 'Tom Wilson' },
-          { email: 'alex@company.com', displayName: 'Alex Kumar' }
-        ],
-        status: 'confirmed'
-      },
-      {
-        id: 'jack_week_4',
-        summary: 'URGENT: Production Auth Issues - Debug Session',
-        description: 'Authentication service experiencing intermittent failures. Jack called in as auth module owner despite his implementation not being deployed yet. Stressful 2-hour debug session.',
-        start: { dateTime: createEventDate(2, 11, 0) }, // Wednesday 11:00 AM
-        end: { dateTime: createEventDate(2, 13, 0) },   // Wednesday 1:00 PM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen', organizer: true },
-          { email: 'david@company.com', displayName: 'David Kim' },
-          { email: 'oncall@company.com', displayName: 'OnCall Team' }
-        ],
-        location: 'War Room / Slack #incident-auth',
-        status: 'confirmed'
-      },
-      {
-        id: 'jack_week_5',
-        summary: 'Daily Standup - Identity Platform Team',
-        description: '',
-        start: { dateTime: createEventDate(3, 9, 0) },  // Thursday 9:00 AM
-        end: { dateTime: createEventDate(3, 9, 15) },   // Thursday 9:15 AM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen (Team Lead)' },
-          { email: 'lisa@company.com', displayName: 'Lisa Park' },
-          { email: 'tom@company.com', displayName: 'Tom Wilson' },
-          { email: 'alex@company.com', displayName: 'Alex Kumar' }
-        ],
-        status: 'confirmed'
-      },
-      {
-        id: 'jack_week_6',
-        summary: '1:1 with Sarah - Urgent Performance Discussion',
-        description: 'Urgent check-in after production incident. Topics: JWT implementation blockers, need for additional support, timeline concerns for auth module delivery.',
-        start: { dateTime: createEventDate(4, 14, 0) }, // Friday 2:00 PM
-        end: { dateTime: createEventDate(4, 15, 0) },   // Friday 3:00 PM
-        attendees: [
-          { email: 'jack@company.com', displayName: 'Jack Thompson', self: true },
-          { email: 'sarah@company.com', displayName: 'Sarah Chen', organizer: true }
-        ],
-        status: 'confirmed'
-      }
-    ]
-
-    // Process the events using the same logic as real calendar data
-    const service = new GoogleCalendarService()
-    return service['processCalendarData'](jackEvents)
   }
+
+  /**
+   * Get conversation excerpts for consolidation (when available)
+   */
+  static async getConversationExcerpts(request: WeeklyDataRequest): Promise<any[]> {
+    if (!RichIntegrationDataService.hasRichDataForUser(request.userId)) {
+      return []
+    }
+
+    const richData = await RichIntegrationDataService.getRichWeeklyData(request)
+    if (!richData || !richData.hasTranscripts) {
+      return []
+    }
+
+    return RichIntegrationDataService.extractConversationExcerpts(richData.meetingTranscripts)
+  }
+
 }
