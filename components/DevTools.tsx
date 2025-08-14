@@ -20,24 +20,29 @@ export function DevTools() {
   // Initialize environment detection and dev session
   useEffect(() => {
     async function initializeEnvironment() {
+      const STAGING_HOSTNAME = 'staging.advanceweekly.io'
+      const DEVELOPMENT_HOSTNAMES = ['localhost', '127.0.0.1']
+
       try {
-        // First check if we're on staging domain
-        if (typeof window !== 'undefined' && window.location.hostname === 'staging.advanceweekly.io') {
-          setEnvMode('staging')
-          setIsInitialized(true)
-          setDevSession()
-          return
+        let detectedEnv: 'development' | 'staging' | null = null
+        
+        // Client-side check for well-known hostnames
+        if (typeof window !== 'undefined') {
+          const { hostname } = window.location
+          if (hostname === STAGING_HOSTNAME) {
+            detectedEnv = 'staging'
+          } else if (DEVELOPMENT_HOSTNAMES.includes(hostname)) {
+            detectedEnv = 'development'
+          }
         }
 
-        // For development, check directly
-        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-          setEnvMode('development')
-          setIsInitialized(true)
+        if (detectedEnv) {
+          setEnvMode(detectedEnv)
           setDevSession()
-          return
+          return // Skip API call if environment is determined
         }
 
-        // For other cases, fetch from API
+        // Fallback to API for other environments (e.g., review apps)
         const response = await fetch('/api/environment')
         if (response.ok) {
           const data = await response.json()
@@ -45,10 +50,13 @@ export function DevTools() {
           if (data.environment === 'staging' || data.environment === 'development') {
             setDevSession()
           }
+        } else {
+          console.warn(`API call to /api/environment failed with status ${response.status}. Falling back to production mode.`)
+          setEnvMode('production')
         }
       } catch (error) {
         console.error('Failed to detect environment:', error)
-        // Fallback to production
+        // Fallback to production on any network or parsing error
         setEnvMode('production')
       } finally {
         setIsInitialized(true)
