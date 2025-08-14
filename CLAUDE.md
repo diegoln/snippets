@@ -50,13 +50,20 @@ Git hooks automatically run checks, but for manual validation:
 - **Components**: Follow existing patterns in neighboring files
 
 ## Environment Context
-| Feature | Development | Production |
-|---------|-------------|------------|
-| Database | PostgreSQL (Docker) | Cloud SQL |
-| Schema | ✅ Matches production | PostgreSQL |
-| Data | Rich mock data | Real user data |
-| Auth | Mock (localStorage) | Google OAuth |
-| LLM | Mock/Local | OpenAI API |
+| Feature | Testing (CI/CD) | Development | Production |
+|---------|-----------------|-------------|------------|
+| Database | SQLite (file) | PostgreSQL (Docker) | Cloud SQL |
+| Schema | SQLite-compatible | ✅ Matches production | PostgreSQL |
+| Data | Test fixtures | Rich mock data | Real user data |
+| Auth | Mocked | Mock (localStorage) | Google OAuth |
+| LLM | Mocked | Google Gemini API | Google Gemini API |
+
+## Database Architecture
+- **Testing**: SQLite for fast, isolated tests (`NODE_ENV=test`)
+- **Development**: PostgreSQL for production parity (`NODE_ENV=development`)
+- **Production**: Cloud SQL PostgreSQL (`NODE_ENV=production`)
+- **Schema Generation**: Automatic based on environment via `npm run generate-schema:force`
+- **IMPORTANT**: Never edit `schema.prisma` directly - use template system
 
 ## Component Pattern
 ```typescript
