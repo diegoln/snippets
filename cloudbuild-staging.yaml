@@ -10,10 +10,11 @@
 # from production data and infrastructure.
 #
 
-timeout: 600s  # 10 minutes max
+timeout: 900s  # 15 minutes max (increased from 10 for npm install reliability)
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: 'E2_HIGHCPU_8'
+  machineType: 'E2_HIGHCPU_8'  # High CPU for faster npm install and Docker builds
+  diskSizeGb: 30  # More disk space for Docker layers and npm cache
   env:
     - 'DOCKER_BUILDKIT=1'
 
@@ -31,7 +32,7 @@ steps:
       - '.'
     env:
       - 'DOCKER_BUILDKIT=1'
-    timeout: 360s
+    timeout: 600s  # Increased from 6 to 10 minutes for npm install reliability
 
   # Step 2: Push staging images
   - name: 'gcr.io/cloud-builders/docker'
@@ -66,7 +67,7 @@ steps:
       - '--add-cloudsql-instances=advanceweekly-prod:us-central1:advanceweekly-staging-db'
       - '--execution-environment=gen2'
     waitFor: ['push-staging-images']
-    timeout: 120s
+    timeout: 300s  # Increased from 2 to 5 minutes for reliable deployment
 
   # Step 4: Verify staging deployment and initialization
   - name: 'gcr.io/cloud-builders/gcloud'

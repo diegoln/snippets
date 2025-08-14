@@ -17,8 +17,8 @@ FROM base AS builder
 # Copy package files for caching
 COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci --frozen-lockfile --include=dev
+# Install dependencies with optimizations for Cloud Build
+RUN npm ci --frozen-lockfile --include=dev --prefer-offline --no-audit --progress=false
 
 # Copy source code
 COPY . .
@@ -37,7 +37,7 @@ FROM base as development
 
 # Install dependencies for development
 COPY package.json package-lock.json* ./
-RUN npm ci --frozen-lockfile
+RUN npm ci --frozen-lockfile --prefer-offline --no-audit --progress=false
 
 # Copy source and development files
 COPY . .
