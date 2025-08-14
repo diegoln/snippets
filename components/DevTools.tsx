@@ -90,7 +90,7 @@ export function DevTools() {
       
       // Clear NextAuth session (important for staging JWT cookies)
       console.log('🔄 Clearing NextAuth session...')
-      const redirectUrl = envMode === 'staging' ? '/staging' : '/'
+      const redirectUrl = '/'
       await signOut({ 
         redirect: false,
         callbackUrl: redirectUrl
@@ -102,7 +102,7 @@ export function DevTools() {
     } catch (error) {
       console.error('Error clearing session:', error)
       // Fallback: force reload anyway
-      window.location.href = envMode === 'staging' ? '/staging' : '/'
+      window.location.href = '/'
     }
   }
 
@@ -159,7 +159,7 @@ export function DevTools() {
         const data = await response.json()
         const confirmRedirect = confirm('Onboarding reset successfully! Would you like to go to the onboarding wizard now?')
         if (confirmRedirect) {
-          window.location.href = envMode === 'staging' ? '/staging' : '/onboarding-wizard'
+          window.location.href = envMode === 'staging' ? '/' : '/onboarding-wizard'
         }
       } else {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }))
@@ -188,7 +188,7 @@ export function DevTools() {
       
       if (response.ok) {
         alert('Staging data reset successfully! Redirecting to staging home...')
-        window.location.href = '/staging'
+        window.location.href = '/'
       } else {
         const error = await response.json().catch(() => ({ error: 'Unknown error' }))
         alert(`Failed to reset staging data: ${error.error}`)
@@ -199,7 +199,7 @@ export function DevTools() {
   }
 
   const goToOnboarding = () => {
-    window.location.href = envMode === 'staging' ? '/staging' : '/onboarding-wizard'
+    window.location.href = envMode === 'staging' ? '/' : '/onboarding-wizard'
   }
 
   const goToDashboard = () => {
@@ -207,7 +207,7 @@ export function DevTools() {
     // Set flags to ensure we bypass onboarding
     localStorage.setItem('onboarding-just-completed', 'true')
     localStorage.setItem('onboarding-completed-timestamp', Date.now().toString())
-    window.location.href = envMode === 'staging' ? '/staging' : '/'
+    window.location.href = '/'
   }
 
   return (
