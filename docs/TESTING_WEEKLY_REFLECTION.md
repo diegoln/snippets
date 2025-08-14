@@ -62,7 +62,7 @@ Comprehensive end-to-end testing covering:
 - ✅ Error scenarios (missing users, LLM failures)
 - ✅ Duplicate detection and prevention
 
-### 2. Manual API Testing (Interactive)
+### 3. Manual API Testing (Interactive)
 
 **File**: `scripts/test-weekly-reflection.sh`  
 **Command**: `./scripts/test-weekly-reflection.sh`
@@ -90,7 +90,7 @@ Interactive bash script for manual validation:
 ./scripts/test-weekly-reflection.sh cleanup
 ```
 
-### 3. Development Test Runner (Programmatic)
+### 4. Development Test Runner (Programmatic)
 
 **File**: `scripts/test-reflection-dev.js`  
 **Command**: `npm run test:reflection`

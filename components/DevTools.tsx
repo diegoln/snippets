@@ -221,9 +221,11 @@ export function DevTools() {
     )
     if (!confirm) return
 
+    // Get button reference once at the start
+    const button = document.querySelector('[data-test="weekly-reflection"]') as HTMLButtonElement
+    
     try {
       // Show loading state
-      const button = document.querySelector('[data-test="weekly-reflection"]') as HTMLButtonElement
       if (button) {
         button.disabled = true
         button.textContent = 'Processing...'
@@ -303,8 +305,7 @@ export function DevTools() {
       console.error('Weekly reflection test error:', err)
       alert('Failed to test weekly reflection. Check console for details.')
     } finally {
-      // Reset button state
-      const button = document.querySelector('[data-test="weekly-reflection"]') as HTMLButtonElement
+      // Reset button state (using the button reference from the start)
       if (button) {
         button.disabled = false
         button.textContent = '📝 Test Reflection'

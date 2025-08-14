@@ -226,7 +226,8 @@ export async function GET(request: NextRequest) {
         if (typeof operation.metadata === 'string') {
           parsedMetadata = JSON.parse(operation.metadata)
         }
-      } catch {
+      } catch (error) {
+        console.warn(`Failed to parse metadata for operation ${operation.id}:`, error)
         // Keep original metadata if parsing fails
       }
 
@@ -255,7 +256,8 @@ export async function GET(request: NextRequest) {
             if (typeof op.metadata === 'string') {
               parsedMetadata = JSON.parse(op.metadata)
             }
-          } catch {
+          } catch (error) {
+            console.warn(`Failed to parse metadata for operation ${op.id}:`, error)
             // Keep original metadata if parsing fails
           }
 

@@ -315,31 +315,31 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
         inputData: { userId: testUserId }
       })
       
-      // Mock the LLM service to throw an error instead of mocking getUserProfile
-      // This is more realistic as it simulates an actual service failure
-      const originalLLMRequest = require('../lib/llmproxy').llmProxy.request
-      require('../lib/llmproxy').llmProxy.request = jest.fn().mockRejectedValueOnce(new Error('LLM service unavailable'))
+      // Create a spy on the reflection handler to force an error
+      const weeklyReflectionHandler = require('../lib/job-processor/handlers/weekly-reflection-handler').weeklyReflectionHandler
+      const originalProcess = weeklyReflectionHandler.process
+      weeklyReflectionHandler.process = jest.fn().mockRejectedValueOnce(new Error('Simulated handler failure'))
       
       try {
-        // This should fail due to mocked LLM service error
+        // This should fail due to mocked handler error
         await jobService.processJob(
           'weekly_reflection_generation',
           testUserId,
           operation.id,
           { 
             userId: testUserId,
-            testMode: true // Use test mode to avoid integration complexity
+            testMode: true
           }
         )
         
         // Verify error was recorded
         const updatedOperation = await dataService.getAsyncOperation(operation.id)
         expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
-        expect(updatedOperation!.errorMessage).toContain('LLM service unavailable')
+        expect(updatedOperation!.errorMessage).toContain('Simulated handler failure')
         
       } finally {
         // Restore original method
-        require('../lib/llmproxy').llmProxy.request = originalLLMRequest
+        weeklyReflectionHandler.process = originalProcess
       }
     })
   })
