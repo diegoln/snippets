@@ -308,39 +308,38 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
     })
     
     it('should handle job processing errors gracefully', async () => {
-      // Create user without Google account to force error
-      const testUserWithoutAuth = await prisma.user.create({
-        data: {
-          email: `test-no-auth-${Date.now()}@example.com`,
-          name: 'Test User No Auth'
-        }
+      const dataService = createUserDataService(testUserId)
+      const operation = await dataService.createAsyncOperation({
+        operationType: AsyncOperationType.WEEKLY_REFLECTION,
+        status: AsyncOperationStatus.QUEUED,
+        inputData: { userId: testUserId }
       })
       
+      // Mock the LLM service to throw an error instead of mocking getUserProfile
+      // This is more realistic as it simulates an actual service failure
+      const originalLLMRequest = require('../lib/llmproxy').llmProxy.request
+      require('../lib/llmproxy').llmProxy.request = jest.fn().mockRejectedValueOnce(new Error('LLM service unavailable'))
+      
       try {
-        const dataService = createUserDataService(testUserWithoutAuth.id)
-        const operation = await dataService.createAsyncOperation({
-          operationType: AsyncOperationType.WEEKLY_REFLECTION,
-          status: AsyncOperationStatus.QUEUED,
-          inputData: {}
-        })
-        
-        // This should fail due to missing user profile
+        // This should fail due to mocked LLM service error
         await jobService.processJob(
           'weekly_reflection_generation',
-          testUserWithoutAuth.id,
+          testUserId,
           operation.id,
-          { userId: testUserWithoutAuth.id }
+          { 
+            userId: testUserId,
+            testMode: true // Use test mode to avoid integration complexity
+          }
         )
         
         // Verify error was recorded
         const updatedOperation = await dataService.getAsyncOperation(operation.id)
-        expect(updatedOperation!.status).toBe(AsyncOperationStatus.ERROR)
-        expect(updatedOperation!.errorMessage).toContain('User profile not found')
+        expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
+        expect(updatedOperation!.errorMessage).toContain('LLM service unavailable')
         
       } finally {
-        // Clean up
-        await prisma.asyncOperation.deleteMany({ where: { userId: testUserWithoutAuth.id } })
-        await prisma.user.delete({ where: { id: testUserWithoutAuth.id } })
+        // Restore original method
+        require('../lib/llmproxy').llmProxy.request = originalLLMRequest
       }
     })
   })
@@ -401,11 +400,25 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 })
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 })
       
+      const dataService = createUserDataService(testUserId)
+      
+      // Create a proper async operation for tracking
+      const operation = await dataService.createAsyncOperation({
+        operationType: AsyncOperationType.WEEKLY_REFLECTION,
+        status: AsyncOperationStatus.QUEUED,
+        inputData: {
+          userId: testUserId,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+          includePreviousContext: false
+        }
+      })
+      
       // Process reflection which should create consolidation
       await jobService.processJob(
         'weekly_reflection_generation',
         testUserId,
-        'test-operation',
+        operation.id,
         {
           userId: testUserId,
           weekStart,
@@ -415,7 +428,6 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       )
       
       // Verify consolidation was stored
-      const dataService = createUserDataService(testUserId)
       const consolidations = await dataService.getIntegrationConsolidations({
         integrationType: 'google_calendar',
         weekStart,
