@@ -98,24 +98,24 @@ describe('Mock Users API Security Tests', () => {
 
       await GET(mockRequest)
 
-      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { id: { in: ['1', '2', '3', '4', '5'] } },
-            { id: { startsWith: 'dev_' } },
-            { id: { startsWith: 'test_' } }
-          ]
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          jobTitle: true,
-          seniorityLevel: true
-        },
-        orderBy: { id: 'asc' }
+      // More robust test that checks for required conditions without being sensitive to order
+      const findManyCall = mockPrisma.user.findMany.mock.calls[0][0]
+      expect(findManyCall.where.OR).toHaveLength(4)
+      expect(findManyCall.where.OR).toEqual(expect.arrayContaining([
+        { id: { in: ['1', '2', '3', '4', '5'] } },
+        { id: { startsWith: 'dev_' } },
+        { id: { startsWith: 'dev-' } },
+        { id: { startsWith: 'test_' } }
+      ]))
+      expect(findManyCall.select).toEqual({
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        jobTitle: true,
+        seniorityLevel: true
       })
+      expect(findManyCall.orderBy).toEqual({ id: 'asc' })
     })
   })
 

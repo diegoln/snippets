@@ -14,8 +14,9 @@ const PRODUCTION_USER_ID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9
 const ALLOWED_DEV_NUMERIC_IDS = ['1', '2', '3', '4', '5']
 const STAGING_ID_PREFIX = 'staging_'
 const DEV_ID_PREFIX = 'dev_'
+const DEV_USER_PREFIX = 'dev-'  // Allow hyphenated dev user IDs
 const TEST_ID_PREFIX = 'test_'
-const ALLOWED_DEV_PREFIXES = [DEV_ID_PREFIX, TEST_ID_PREFIX]
+const ALLOWED_DEV_PREFIXES = [DEV_ID_PREFIX, DEV_USER_PREFIX, TEST_ID_PREFIX]
 
 /**
  * Helper function to check if a user ID is safe for the given environment
@@ -33,8 +34,7 @@ const isSafeMockIdForEnvironment = (id: string, envMode: string): boolean => {
   
   // envMode is 'development'
   return ALLOWED_DEV_NUMERIC_IDS.includes(id) ||
-         id.startsWith(DEV_ID_PREFIX) ||
-         id.startsWith(TEST_ID_PREFIX);
+         ALLOWED_DEV_PREFIXES.some(prefix => id.startsWith(prefix));
 }
 
 /**
