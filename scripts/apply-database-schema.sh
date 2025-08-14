@@ -21,11 +21,9 @@ echo "🔍 Environment: ${NODE_ENV:-production}"
 echo "📡 Database URL: ${DATABASE_URL%%password*}[REDACTED]"
 echo ""
 
-# Generate Prisma client if needed
-if [ ! -d "node_modules/@prisma/client" ]; then
-    echo "📦 Generating Prisma client..."
-    npx prisma generate
-fi
+# Always generate Prisma client to ensure it's up to date
+echo "📦 Generating Prisma client..."
+npx prisma generate
 
 # Apply database schema
 echo "🗄️  Applying database schema..."
