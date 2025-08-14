@@ -8,11 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'primary-100': '#E5EDF4',
+        'primary-600': '#174E7A',
+        'accent-500': '#DC804B',
+        'neutral-100': '#F8F9FA',
+        'neutral-600': '#646464',
+        'neutral-900': '#1F1F23',
         primary: {
           100: '#E5EDF4',
           600: '#174E7A',
         },
         accent: {
+          100: 'rgba(220, 128, 75, 0.1)', // 10% opacity variant
           500: '#DC804B',
         },
         neutral: {
@@ -20,6 +27,7 @@ module.exports = {
           600: '#646464',
           900: '#1F1F23',
         },
+        secondary: '#646464', // Alias for easier usage
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
