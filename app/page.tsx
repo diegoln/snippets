@@ -152,7 +152,7 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-neutral-100 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
-          <LoadingSpinner size="lg" />
+          <LoadingSpinner size="lg" color="primary" />
           <div className="mt-6">
             <h2 className="text-lg font-semibold text-gray-900">
               Loading<span className="animate-pulse">...</span>

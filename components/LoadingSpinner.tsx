@@ -8,7 +8,7 @@ import React from 'react'
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg'
-  color?: 'white' | 'blue' | 'gray'
+  color?: 'white' | 'blue' | 'gray' | 'primary'
   className?: string
 }
 
@@ -26,7 +26,8 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   const colorClasses = {
     white: 'text-white',
     blue: 'text-blue-600',
-    gray: 'text-gray-400'
+    gray: 'text-gray-400',
+    primary: 'text-primary-600'
   }
 
   return (
