@@ -32,7 +32,7 @@ model User {
   
   accounts        Account[]
   sessions        Session[]
-  snippets           WeeklySnippet[]
+  reflections        Reflection[]
   integrations       Integration[]
   integrationData    IntegrationData[]
   integrationConsolidations IntegrationConsolidation[]
@@ -80,27 +80,29 @@ model VerificationToken {
   @@map("verificationtokens")
 }
 
-model WeeklySnippet {
+model Reflection {
   id          String   @id @default(cuid())
   userId      String
   weekNumber  Int
-  year        Int      // Add year field
+  year        Int
   startDate   DateTime // Monday
   endDate     DateTime // Friday
   content     String
+  type        String   @default("weekly") // weekly, monthly, quarterly, etc.
   
-  // AI-enhanced fields (JSON stored as strings for compatibility)
-  extractedTasks    String? // JSON string
-  extractedMeetings String? // JSON string
-  aiSuggestions String?
+  // Integration-based generation tracking
+  sourceIntegrationType String? // google_calendar, etc.
+  consolidationId       String? // References IntegrationConsolidation.id
+  generatedFromConsolidation Boolean @default(false)
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  integrationConsolidations IntegrationConsolidation[]
   
-  @@unique([userId, year, weekNumber])
-  @@map("weekly_snippets")
+  @@unique([userId, year, weekNumber, type])
+  @@map("reflections")
 }
 
 model PerformanceAssessment {
@@ -220,6 +222,7 @@ model IntegrationConsolidation {
   consolidatedAt   DateTime?
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reflections Reflection[]
   
   @@unique([userId, integrationType, year, weekNumber])
   @@index([userId, weekStart])

@@ -16,12 +16,16 @@ import {
  *   const snippets = await dataService.getSnippets()
  */
 
-export interface SnippetInput {
+export interface ReflectionInput {
   weekNumber: number
   year: number
   startDate: Date
   endDate: Date
   content: string
+  type?: string
+  sourceIntegrationType?: string
+  consolidationId?: string
+  generatedFromConsolidation?: boolean
 }
 
 export interface AssessmentInput {
@@ -188,12 +192,15 @@ export class UserScopedDataService {
   }
 
   /**
-   * Get all weekly snippets for the user
+   * Get all reflections for the user
    */
-  async getSnippets() {
+  async getReflections(type = 'weekly') {
     try {
-      const snippets = await this.prisma.weeklySnippet.findMany({
-        where: { userId: this.userId },
+      const reflections = await this.prisma.reflection.findMany({
+        where: { 
+          userId: this.userId,
+          type: type
+        },
         orderBy: { startDate: 'desc' },
         select: {
           id: true,
@@ -202,45 +209,54 @@ export class UserScopedDataService {
           startDate: true,
           endDate: true,
           content: true,
-          extractedTasks: true,
-          extractedMeetings: true,
-          aiSuggestions: true,
+          type: true,
+          sourceIntegrationType: true,
+          consolidationId: true,
+          generatedFromConsolidation: true,
           createdAt: true,
           updatedAt: true
         }
       })
 
-      return snippets
+      return reflections
     } catch (error) {
-      console.error('Error fetching snippets:', error)
-      throw new Error('Failed to fetch snippets')
+      console.error('Error fetching reflections:', error)
+      throw new Error('Failed to fetch reflections')
     }
   }
 
   /**
-   * Get snippets within a specific date range
+   * Get all snippets for the user (legacy compatibility)
    */
-  async getSnippetsInDateRange(startDate: Date, endDate: Date) {
+  async getSnippets() {
+    return this.getReflections('weekly')
+  }
+
+  /**
+   * Get reflections within a specific date range
+   */
+  async getReflectionsInDateRange(startDate: Date, endDate: Date, type = 'weekly') {
     try {
-      const snippets = await this.prisma.weeklySnippet.findMany({
+      const reflections = await this.prisma.reflection.findMany({
         where: {
           userId: this.userId,
+          type: type,
           OR: [
-            // Snippet starts within the range
+            // Reflection starts within the range
             {
               startDate: {
                 gte: startDate,
                 lte: endDate
               }
             },
-            // Snippet ends within the range
+            // Reflection ends within the range
             {
               endDate: {
                 gte: startDate,
                 lte: endDate
               }
             },
-            // Snippet spans the entire range
+            // Reflection spans the entire range
             {
               startDate: { lte: startDate },
               endDate: { gte: endDate }
@@ -255,25 +271,33 @@ export class UserScopedDataService {
           startDate: true,
           endDate: true,
           content: true,
-          extractedTasks: true,
-          extractedMeetings: true,
-          aiSuggestions: true
+          type: true,
+          sourceIntegrationType: true,
+          consolidationId: true,
+          generatedFromConsolidation: true
         }
       })
 
-      return snippets
+      return reflections
     } catch (error) {
-      console.error('Error fetching snippets in date range:', error)
-      throw new Error('Failed to fetch snippets in date range')
+      console.error('Error fetching reflections in date range:', error)
+      throw new Error('Failed to fetch reflections in date range')
     }
   }
 
   /**
-   * Create a new weekly snippet
+   * Get snippets within a specific date range (legacy compatibility)
    */
-  async createSnippet(data: SnippetInput) {
+  async getSnippetsInDateRange(startDate: Date, endDate: Date) {
+    return this.getReflectionsInDateRange(startDate, endDate, 'weekly')
+  }
+
+  /**
+   * Create a new reflection
+   */
+  async createReflection(data: ReflectionInput) {
     try {
-      // Prevent creation of future snippets
+      // Prevent creation of future reflections
       const { isWeekInFuture, isValidWeekNumber } = await import('./week-utils')
       
       if (!isValidWeekNumber(data.weekNumber)) {
@@ -281,25 +305,30 @@ export class UserScopedDataService {
       }
       
       if (isWeekInFuture(data.weekNumber, data.year)) {
-        throw new Error('Cannot create snippets for future weeks')
+        throw new Error('Cannot create reflections for future weeks')
       }
 
-      const snippet = await this.prisma.weeklySnippet.upsert({
+      const reflection = await this.prisma.reflection.upsert({
         where: {
-          userId_year_weekNumber: {
+          userId_year_weekNumber_type: {
             userId: this.userId,
             year: data.year,
-            weekNumber: data.weekNumber
+            weekNumber: data.weekNumber,
+            type: data.type || 'weekly'
           }
         },
         create: {
           ...data,
-          userId: this.userId
+          userId: this.userId,
+          type: data.type || 'weekly'
         },
         update: {
           content: data.content,
           startDate: data.startDate,
           endDate: data.endDate,
+          sourceIntegrationType: data.sourceIntegrationType,
+          consolidationId: data.consolidationId,
+          generatedFromConsolidation: data.generatedFromConsolidation || false,
           updatedAt: new Date()
         },
         select: {
@@ -309,39 +338,53 @@ export class UserScopedDataService {
           startDate: true,
           endDate: true,
           content: true,
+          type: true,
+          sourceIntegrationType: true,
+          consolidationId: true,
+          generatedFromConsolidation: true,
           createdAt: true,
           updatedAt: true
         }
       })
 
-      return snippet
+      return reflection
     } catch (error) {
-      console.error('Error creating snippet:', error)
+      console.error('Error creating reflection:', error)
       // Preserve the original error for debugging
       if (error instanceof Error) {
         throw error
       }
-      throw new Error('Failed to create snippet')
+      throw new Error('Failed to create reflection')
     }
   }
 
   /**
-   * Update an existing snippet (only if owned by user)
+   * Create a new weekly snippet (legacy compatibility)
    */
-  async updateSnippet(snippetId: string, content: string) {
+  async createSnippet(data: ReflectionInput) {
+    return this.createReflection({
+      ...data,
+      type: 'weekly'
+    })
+  }
+
+  /**
+   * Update an existing reflection (only if owned by user)
+   */
+  async updateReflection(reflectionId: string, content: string) {
     try {
-      // First verify the snippet belongs to this user
-      const existingSnippet = await this.prisma.weeklySnippet.findUnique({
-        where: { id: snippetId },
+      // First verify the reflection belongs to this user
+      const existingReflection = await this.prisma.reflection.findUnique({
+        where: { id: reflectionId },
         select: { userId: true }
       })
 
-      if (!existingSnippet || existingSnippet.userId !== this.userId) {
-        throw new Error('Snippet not found or access denied')
+      if (!existingReflection || existingReflection.userId !== this.userId) {
+        throw new Error('Reflection not found or access denied')
       }
 
-      const updatedSnippet = await this.prisma.weeklySnippet.update({
-        where: { id: snippetId },
+      const updatedReflection = await this.prisma.reflection.update({
+        where: { id: reflectionId },
         data: { content },
         select: {
           id: true,
@@ -350,41 +393,59 @@ export class UserScopedDataService {
           startDate: true,
           endDate: true,
           content: true,
+          type: true,
+          sourceIntegrationType: true,
+          consolidationId: true,
+          generatedFromConsolidation: true,
           updatedAt: true
         }
       })
 
-      return updatedSnippet
+      return updatedReflection
     } catch (error) {
-      console.error('Error updating snippet:', error)
-      throw new Error('Failed to update snippet')
+      console.error('Error updating reflection:', error)
+      throw new Error('Failed to update reflection')
     }
   }
 
   /**
-   * Delete a snippet (only if owned by user)
+   * Update an existing snippet (legacy compatibility)
    */
-  async deleteSnippet(snippetId: string) {
+  async updateSnippet(snippetId: string, content: string) {
+    return this.updateReflection(snippetId, content)
+  }
+
+  /**
+   * Delete a reflection (only if owned by user)
+   */
+  async deleteReflection(reflectionId: string) {
     try {
-      // First verify the snippet belongs to this user
-      const existingSnippet = await this.prisma.weeklySnippet.findUnique({
-        where: { id: snippetId },
+      // First verify the reflection belongs to this user
+      const existingReflection = await this.prisma.reflection.findUnique({
+        where: { id: reflectionId },
         select: { userId: true }
       })
 
-      if (!existingSnippet || existingSnippet.userId !== this.userId) {
-        throw new Error('Snippet not found or access denied')
+      if (!existingReflection || existingReflection.userId !== this.userId) {
+        throw new Error('Reflection not found or access denied')
       }
 
-      await this.prisma.weeklySnippet.delete({
-        where: { id: snippetId }
+      await this.prisma.reflection.delete({
+        where: { id: reflectionId }
       })
 
       return true
     } catch (error) {
-      console.error('Error deleting snippet:', error)
-      throw new Error('Failed to delete snippet')
+      console.error('Error deleting reflection:', error)
+      throw new Error('Failed to delete reflection')
     }
+  }
+
+  /**
+   * Delete a snippet (legacy compatibility)
+   */
+  async deleteSnippet(snippetId: string) {
+    return this.deleteReflection(snippetId)
   }
 
   /**

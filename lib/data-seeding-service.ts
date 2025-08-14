@@ -39,7 +39,7 @@ export async function initializeMockData(
       ? { startsWith: config.userIdPrefix }
       : { in: BASE_MOCK_USERS.map((_, index) => `${index + 1}`) } // Development user IDs
 
-    await db.weeklySnippet.deleteMany({
+    await db.reflection.deleteMany({
       where: { userId: userIds }
     })
     
