@@ -72,7 +72,7 @@ describe('DELETE /api/user/onboarding (Reset Onboarding)', () => {
     const data = await response.json()
 
     expect(response.status).toBe(403)
-    expect(data.error).toBe('This endpoint is only available in development')
+    expect(data.error).toBe('This endpoint is only available in development and staging environments')
   })
 
   it('should return 401 if not authenticated', async () => {
