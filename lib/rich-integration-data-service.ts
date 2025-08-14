@@ -505,33 +505,41 @@ export class RichIntegrationDataService {
     keyExcerpts: string[]
     duration: string
   }> {
+    if (!transcripts || transcripts.length === 0) {
+      return []
+    }
+    
     return transcripts.map(transcript => {
+      const entries = transcript.transcriptEntries || []
       const participants = Array.from(new Set(
-        transcript.transcriptEntries.map(entry => {
+        entries.map(entry => {
           const participantName = entry.participant.split('/').pop() || 'Unknown'
           return participantName.replace('participant_', '').replace('_', ' ')
         })
       ))
 
       // Extract key excerpts (longer statements that show insights)
-      const keyExcerpts = transcript.transcriptEntries
+      const keyExcerpts = entries
         .filter(entry => entry.text.length > 100) // Longer, more substantial statements
         .slice(0, 5) // Limit to first 5 substantial excerpts
         .map(entry => entry.text)
 
       // Calculate duration
-      const startTime = new Date(transcript.conferenceRecord.startTime)
-      const endTime = new Date(transcript.conferenceRecord.endTime)
-      const durationMs = endTime.getTime() - startTime.getTime()
-      const durationMinutes = Math.round(durationMs / (1000 * 60))
+      let durationMinutes = 0
+      if (transcript.conferenceRecord?.startTime && transcript.conferenceRecord?.endTime) {
+        const startTime = new Date(transcript.conferenceRecord.startTime)
+        const endTime = new Date(transcript.conferenceRecord.endTime)
+        const durationMs = endTime.getTime() - startTime.getTime()
+        durationMinutes = Math.round(durationMs / (1000 * 60))
+      }
 
       // Infer meeting type from participants and content
       let meetingType = 'Team Meeting'
       if (participants.length === 2) meetingType = '1:1 Meeting'
-      if (transcript.transcriptEntries.some(e => e.text.toLowerCase().includes('standup'))) {
+      if (entries.some(e => e.text.toLowerCase().includes('standup'))) {
         meetingType = 'Daily Standup'
       }
-      if (transcript.transcriptEntries.some(e => e.text.toLowerCase().includes('architecture'))) {
+      if (entries.some(e => e.text.toLowerCase().includes('architecture'))) {
         meetingType = 'Technical Discussion'
       }
 
