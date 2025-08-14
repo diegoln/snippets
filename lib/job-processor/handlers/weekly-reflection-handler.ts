@@ -57,6 +57,7 @@ export interface WeeklyReflectionInput {
   weekEnd?: Date
   includeIntegrations?: string[]
   includePreviousContext?: boolean
+  testMode?: boolean // Use mock data for testing
 }
 
 export interface WeeklyReflectionResult {
@@ -77,7 +78,7 @@ export class WeeklyReflectionHandler implements JobHandler {
     inputData: WeeklyReflectionInput,
     context: JobContext
   ): Promise<WeeklyReflectionResult> {
-    const { userId, includePreviousContext = true } = inputData
+    const { userId, includePreviousContext = true, testMode = false } = inputData
     
     // Determine week range (default to current week)
     const weekEnd = inputData.weekEnd || endOfWeek(new Date(), { weekStartsOn: 1 })
@@ -114,12 +115,13 @@ export class WeeklyReflectionHandler implements JobHandler {
       }
 
       // Step 2: Collect integration data
-      await context.updateProgress(20, 'Fetching integration data')
+      await context.updateProgress(20, testMode ? 'Using mock integration data for testing' : 'Fetching integration data')
       const integrationData = await this.collectIntegrationData(
         userId,
         weekStart,
         weekEnd,
-        inputData.includeIntegrations
+        inputData.includeIntegrations,
+        testMode
       )
 
       if (!integrationData || Object.keys(integrationData).length === 0) {
@@ -216,7 +218,8 @@ export class WeeklyReflectionHandler implements JobHandler {
     userId: string,
     weekStart: Date,
     weekEnd: Date,
-    includeIntegrations?: string[]
+    includeIntegrations?: string[],
+    testMode: boolean = false
   ): Promise<Record<string, unknown>> {
     const integrationData: Record<string, unknown> = {}
     
@@ -224,12 +227,41 @@ export class WeeklyReflectionHandler implements JobHandler {
     // TODO: Add Todoist, GitHub, etc.
     if (!includeIntegrations || includeIntegrations.includes('google_calendar')) {
       try {
-        const calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd)
+        let calendarData
+        
+        if (testMode) {
+          // Use existing mock data from GoogleCalendarService for testing
+          const { GoogleCalendarService } = await import('../../calendar-integration')
+          calendarData = GoogleCalendarService.generateMockData({
+            weekStart,
+            weekEnd,
+            userId
+          })
+          console.log('📋 Using existing mock calendar data for test mode')
+        } else {
+          calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd)
+        }
+        
         if (calendarData) {
           integrationData.google_calendar = calendarData
         }
       } catch (error) {
         console.error('Failed to fetch calendar data:', error)
+        
+        // In test mode, always provide mock data even if real fetch fails
+        if (testMode) {
+          console.log('📋 Falling back to existing mock calendar data in test mode')
+          try {
+            const { GoogleCalendarService } = await import('../../calendar-integration')
+            integrationData.google_calendar = GoogleCalendarService.generateMockData({
+              weekStart,
+              weekEnd,
+              userId
+            })
+          } catch (mockError) {
+            console.error('Failed to generate mock calendar data:', mockError)
+          }
+        }
       }
     }
 
@@ -453,7 +485,22 @@ Return as markdown text with clear sections.`
    */
   private parseReflectionResponse(response: string): string {
     // Clean up the response if needed
-    const content = response.trim()
+    let content = response.trim()
+    
+    // Remove markdown code block wrappers if present
+    // The LLM sometimes returns content wrapped in ```markdown...```
+    const markdownCodeBlockRegex = /^```markdown\s*\n([\s\S]*?)\n```$/
+    const match = content.match(markdownCodeBlockRegex)
+    if (match) {
+      content = match[1].trim()
+    }
+    
+    // Also handle cases where it might be wrapped with just ```
+    const genericCodeBlockRegex = /^```\s*\n([\s\S]*?)\n```$/
+    const genericMatch = content.match(genericCodeBlockRegex)
+    if (genericMatch && genericMatch[1].includes('## Done')) {
+      content = genericMatch[1].trim()
+    }
     
     // Ensure it has the expected sections
     if (!content.includes('## Done') || !content.includes('## Next')) {
@@ -497,6 +544,8 @@ Return as markdown text with clear sections.`
 
     return snippet
   }
+
+  // Removed custom mock data method - now using existing GoogleCalendarService.generateMockData()
 
   /**
    * Calculate ISO week number using date-fns

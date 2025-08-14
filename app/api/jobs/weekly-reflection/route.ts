@@ -24,7 +24,8 @@ const WeeklyReflectionJobSchema = z.object({
   weekEnd: z.string().optional(), // ISO date string
   includeIntegrations: z.array(z.string()).optional(),
   includePreviousContext: z.boolean().optional().default(true),
-  manual: z.boolean().optional().default(false) // Track if manually triggered
+  manual: z.boolean().optional().default(false), // Track if manually triggered
+  testMode: z.boolean().optional().default(false) // Use mock data for testing
 })
 
 /**
@@ -116,11 +117,13 @@ export async function POST(request: NextRequest) {
         weekEnd: weekEnd.toISOString(),
         includeIntegrations: input.includeIntegrations,
         includePreviousContext: input.includePreviousContext,
-        manual: input.manual
+        manual: input.manual,
+        testMode: input.testMode
       },
       metadata: {
-        triggerType: input.manual ? 'manual' : 'scheduled',
-        requestedAt: new Date().toISOString()
+        triggerType: input.manual ? (input.testMode ? 'test' : 'manual') : 'scheduled',
+        requestedAt: new Date().toISOString(),
+        testMode: input.testMode
       }
     })
 
@@ -136,7 +139,8 @@ export async function POST(request: NextRequest) {
         weekStart,
         weekEnd,
         includeIntegrations: input.includeIntegrations,
-        includePreviousContext: input.includePreviousContext
+        includePreviousContext: input.includePreviousContext,
+        testMode: input.testMode
       }
     )
 
