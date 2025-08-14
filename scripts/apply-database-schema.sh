@@ -29,7 +29,10 @@ fi
 
 # Apply database schema
 echo "🗄️  Applying database schema..."
-npx prisma db push --skip-generate
+if ! npx prisma db push --skip-generate; then
+    echo "❌ Failed to apply database schema!"
+    exit 1
+fi
 
 echo "✅ Database schema applied successfully!"
 

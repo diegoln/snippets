@@ -70,9 +70,11 @@ jobs:
           
           # Make production init script executable
           chmod +x scripts/post-deploy-production-init.sh
+          chmod +x scripts/apply-database-schema.sh
           
           # Run production initialization (applies schema and seeds career guidelines)
-          ./scripts/post-deploy-production-init.sh || echo "⚠️ Production initialization may have completed already"
+          # This step is critical and should fail the deployment if it fails
+          ./scripts/post-deploy-production-init.sh
 
       - name: Post-deployment verification
         run: |

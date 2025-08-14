@@ -3,7 +3,7 @@
 # Post-deployment production initialization script
 # Applies database schema and seeds common data (career guidelines)
 
-set -e
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
 
 echo "🚀 Post-deployment production initialization..."
 

@@ -4,7 +4,7 @@
 # This script runs after successful deployment to ensure staging environment consistency
 # Should be called from GitHub Actions or manual deployment processes
 
-set -e
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
 
 echo "🚀 Post-deployment staging initialization..."
 

@@ -64,9 +64,11 @@ jobs:
           
           # Make staging init script executable
           chmod +x scripts/post-deploy-staging-init.sh
+          chmod +x scripts/apply-database-schema.sh
           
           # Run staging initialization (creates mock users and test data)
-          ./scripts/post-deploy-staging-init.sh || echo "⚠️ Staging initialization may have completed already"
+          # This step is critical and should fail the deployment if it fails
+          ./scripts/post-deploy-staging-init.sh
 
       - name: Verify Staging Deployment
         run: |
