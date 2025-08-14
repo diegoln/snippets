@@ -31,13 +31,9 @@ fi
 echo "🔧 Generating Prisma schema..."
 npm run generate-schema:force
 
-# Generate Prisma client
-echo "📦 Generating Prisma client..."
-npx prisma generate
-
-# Apply schema to database  
-echo "🗃️ Applying schema to PostgreSQL..."
-npx prisma db push
+# Apply database schema and seed common data
+chmod +x scripts/apply-database-schema.sh
+./scripts/apply-database-schema.sh
 
 # Initialize development data
 echo "📋 Initializing development data..."

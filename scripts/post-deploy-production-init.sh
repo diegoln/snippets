@@ -1,16 +1,15 @@
 #!/bin/bash
 
-# Post-deployment staging initialization script
-# This script runs after successful deployment to ensure staging environment consistency
-# Should be called from GitHub Actions or manual deployment processes
+# Post-deployment production initialization script
+# Applies database schema and seeds common data (career guidelines)
 
 set -e
 
-echo "🚀 Post-deployment staging initialization..."
+echo "🚀 Post-deployment production initialization..."
 
 # Check if we're in a deployment context (GitHub Actions or Cloud Run)
 if [[ -z "${GITHUB_ACTIONS:-}" && -z "${K_SERVICE:-}" && -z "${PROJECT_ID:-}" ]]; then
-    echo "ℹ️ Not in deployment context, skipping staging initialization"
+    echo "ℹ️ Not in deployment context, skipping production initialization"
     exit 0
 fi
 
@@ -19,29 +18,27 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     echo "🔐 Loading DATABASE_URL from Secret Manager..."
     
     if command -v gcloud >/dev/null 2>&1; then
-        # For staging, use the staging database URL
-        ORIGINAL_DATABASE_URL=$(gcloud secrets versions access latest --secret="staging-database-url" --project=advanceweekly-prod)
+        # For production, use the production database URL
+        ORIGINAL_DATABASE_URL=$(gcloud secrets versions access latest --secret="database-url" --project=advanceweekly-prod)
         
         if [[ -n "${ORIGINAL_DATABASE_URL}" ]]; then
             # GitHub Actions needs Cloud SQL Proxy, Cloud Run can use socket directly
             if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
-                echo "🔗 Setting up Cloud SQL Proxy for GitHub Actions (staging database)..."
+                echo "🔗 Setting up Cloud SQL Proxy for GitHub Actions (production database)..."
                 
                 # Download Cloud SQL Proxy
                 curl -s -o cloud_sql_proxy https://dl.google.com/cloudsql/cloud_sql_proxy.linux.amd64
                 chmod +x cloud_sql_proxy
                 
-                # Start proxy in background on port 5433 for STAGING database
-                ./cloud_sql_proxy -instances=advanceweekly-prod:us-central1:advanceweekly-staging-db=tcp:5433 &
+                # Start proxy in background on port 5432 for PRODUCTION database
+                ./cloud_sql_proxy -instances=advanceweekly-prod:us-central1:advanceweekly-db=tcp:5432 &
                 PROXY_PID=$!
                 
                 # Wait for proxy to initialize
                 sleep 5
                 
                 # Convert DATABASE_URL to use TCP connection instead of socket
-                # Original: postgresql://user:pass@localhost/snippets_db?host=/cloudsql/...
-                # Target:   postgresql://user:pass@127.0.0.1:5433/snippets_db
-                export DATABASE_URL=$(echo "$ORIGINAL_DATABASE_URL" | sed 's|@localhost/\([^?]*\).*|@127.0.0.1:5433/\1|')
+                export DATABASE_URL=$(echo "$ORIGINAL_DATABASE_URL" | sed 's|@localhost/\([^?]*\).*|@127.0.0.1:5432/\1|')
                 echo "✅ Cloud SQL Proxy started, using TCP connection"
                 
                 # Setup cleanup on exit
@@ -57,7 +54,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
         fi
     else
         echo "❌ gcloud not available and DATABASE_URL not set"
-        echo "Staging initialization skipped - manual initialization may be required"
+        echo "Production initialization skipped - manual initialization may be required"
         exit 0
     fi
 else
@@ -67,7 +64,6 @@ fi
 echo "📦 Installing required dependencies..."
 
 # Install production dependencies including Prisma client
-# Skip postinstall scripts (like husky) which aren't needed in deployment
 npm ci --production --silent --ignore-scripts || npm install --production --silent --ignore-scripts
 
 echo "🔧 Generating Prisma schema..."
@@ -80,26 +76,21 @@ echo "📋 Applying database schema and common data..."
 # Apply schema and seed career guidelines (common to all environments)
 NODE_ENV=production DATABASE_URL="${DATABASE_URL}" ./scripts/apply-database-schema.sh
 
-echo "🎭 Initializing staging-specific mock data..."
+echo "✅ Production initialization completed successfully!"
 
-# Run the staging initialization for mock users and integrations
-NODE_ENV=production DATABASE_URL="${DATABASE_URL}" node "$(dirname "$0")/init-staging-environment.js"
-
-echo "✅ Staging initialization completed successfully!"
-
-# Optional: Run basic health check on staging
-echo "🔍 Running staging health check..."
+# Optional: Run basic health check on production
+echo "🔍 Running production health check..."
 
 if command -v curl >/dev/null 2>&1; then
-    STAGING_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://advanceweekly.io/staging || echo "000")
+    PRODUCTION_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" https://advanceweekly.io || echo "000")
     
-    if [[ "${STAGING_HEALTH}" == "200" ]]; then
-        echo "✅ Staging environment health check passed"
+    if [[ "${PRODUCTION_HEALTH}" == "200" ]]; then
+        echo "✅ Production environment health check passed"
     else
-        echo "⚠️ Staging environment health check returned: ${STAGING_HEALTH}"
+        echo "⚠️ Production environment health check returned: ${PRODUCTION_HEALTH}"
     fi
 else
     echo "ℹ️ curl not available, skipping health check"
 fi
 
-echo "🎉 Post-deployment staging initialization completed!"
+echo "🎉 Post-deployment production initialization completed!"

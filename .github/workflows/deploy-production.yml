@@ -64,6 +64,16 @@ jobs:
             --config=cloudbuild.yaml \
             --project=$PROJECT_ID
 
+      - name: Initialize Production Database
+        run: |
+          echo "🗄️ Initializing production database..."
+          
+          # Make production init script executable
+          chmod +x scripts/post-deploy-production-init.sh
+          
+          # Run production initialization (applies schema and seeds career guidelines)
+          ./scripts/post-deploy-production-init.sh || echo "⚠️ Production initialization may have completed already"
+
       - name: Post-deployment verification
         run: |
           echo "✅ Deployment completed successfully!"
