@@ -8,6 +8,7 @@
 import { llmProxy } from './llmproxy'
 import { createUserDataService } from './user-scoped-data'
 import { buildCalendarConsolidationPrompt, CalendarConsolidationPromptContext } from './consolidation-prompts/calendar-consolidation-prompt'
+import { GoogleCalendarService } from './calendar-integration'
 import { format, getISOWeek } from 'date-fns'
 import type { IntegrationConsolidation } from '@prisma/client'
 
@@ -59,14 +60,26 @@ export class IntegrationConsolidationService {
   }
 
   /**
-   * Consolidate Google Calendar integration data
+   * Consolidate Google Calendar integration data with rich context
    */
   private async consolidateCalendarData(request: ConsolidationRequest): Promise<ConsolidatedData> {
-    const { userId, rawIntegrationData, userProfile, careerGuidelines } = request
+    const { userId, rawIntegrationData, userProfile, careerGuidelines, weekStart, weekEnd } = request
     
     // Extract calendar events and meeting notes from raw data
     const calendarEvents = rawIntegrationData.keyMeetings || []
     const meetingNotes = rawIntegrationData.meetingContext || []
+    
+    // Get conversation excerpts if available (for rich data)
+    let conversationExcerpts: any[] = []
+    try {
+      conversationExcerpts = await GoogleCalendarService.getConversationExcerpts({
+        weekStart,
+        weekEnd,
+        userId
+      })
+    } catch (error) {
+      console.warn('Failed to get conversation excerpts:', error)
+    }
     
     const promptContext: CalendarConsolidationPromptContext = {
       userName: userProfile.name,
@@ -74,7 +87,11 @@ export class IntegrationConsolidationService {
       userLevel: userProfile.seniorityLevel,
       careerGuidelines,
       calendarEvents,
-      meetingNotes
+      meetingNotes,
+      // Rich data additions
+      meetingTranscripts: rawIntegrationData.meetingTranscripts || [],
+      meetingDocs: rawIntegrationData.meetingDocs || [],
+      conversationExcerpts
     }
     
     const prompt = buildCalendarConsolidationPrompt(promptContext)

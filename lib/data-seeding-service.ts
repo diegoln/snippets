@@ -8,6 +8,8 @@
 import { PrismaClient } from '@prisma/client'
 import { BASE_MOCK_USERS } from './mock-users'
 import { seedCareerGuidelineTemplates } from './career-guidelines-seeding'
+import { RichDataSeedingService } from './rich-data-seeding-service'
+import { RichIntegrationDataService } from './rich-integration-data-service'
 
 export interface SeedingConfig {
   environment: 'development' | 'staging'
@@ -40,6 +42,16 @@ export async function initializeMockData(
     await db.weeklySnippet.deleteMany({
       where: { userId: userIds }
     })
+    
+    // Try to clean up integrationData if the table exists
+    try {
+      await db.integrationData.deleteMany({
+        where: { userId: userIds }
+      })
+    } catch (error) {
+      console.log('⚠️  IntegrationData table not found - skipping cleanup (this is normal for new deployments)')
+    }
+    
     await db.integration.deleteMany({
       where: { userId: userIds }
     })
@@ -193,12 +205,37 @@ export async function initializeMockData(
       console.log('Career guideline templates may need to be seeded manually\n')
     }
 
+    // 6. Seed rich integration data for users with available datasets
+    console.log('6️⃣ Seeding rich integration data...')
+    try {
+      // Find users with available rich data
+      const usersWithRichData = mockUsers.filter(user => 
+        RichIntegrationDataService.hasRichDataForUser(user.id)
+      )
+      
+      if (usersWithRichData.length > 0) {
+        await RichDataSeedingService.seedRichDataForUsers(
+          usersWithRichData.map(user => user.id),
+          config.environment,
+          db
+        )
+        console.log(`✅ Rich integration data seeded for ${usersWithRichData.length} users\n`)
+      } else {
+        console.log('💡 No users found with available rich datasets\n')
+      }
+    } catch (error) {
+      console.error('⚠️  Failed to seed rich integration data:', error instanceof Error ? error.message : String(error))
+      console.log('💡 This is expected if the IntegrationData table doesn\'t exist yet.')
+      console.log('   Run database migration first: npx prisma db push\n')
+    }
+
     console.log(`🎉 ${envName} database initialized successfully!`)
     console.log('📊 Summary:')
     console.log(`   - ${mockUsers.length} ${envName} users created`)
     console.log('   - Mock integrations (Google Calendar, Todoist) configured')
     console.log(`   - Career guidelines populated for ${mockUsers[0].name}`)
     console.log('   - Career guideline templates seeded globally')
+    console.log('   - Rich integration data seeded for users with available datasets')
     console.log()
     
     const accessUrl = config.environment === 'staging' 
@@ -209,6 +246,7 @@ export async function initializeMockData(
     console.log(`   - Access app at ${accessUrl}`)
     console.log(`   - Test mock authentication with ${envName} users`)
     console.log('   - Create and edit reflections manually')
+    console.log('   - Generate reflections using rich calendar data (Jack users)')
     console.log(`   - Use same data patterns across environments`)
     
   } catch (error) {

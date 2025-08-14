@@ -26,13 +26,95 @@ export interface CalendarConsolidationPromptContext {
     status: string
   }>
   meetingNotes: string[]
+  // Rich data additions
+  meetingTranscripts?: Array<{
+    conferenceRecord: {
+      name: string
+      startTime: string
+      endTime: string
+      space: {
+        name: string
+        meetingUri: string
+      }
+    }
+    transcript: {
+      name: string
+      state: string
+      startTime: string
+      endTime: string
+    }
+    transcriptEntries: Array<{
+      name: string
+      participant: string
+      text: string
+      languageCode: string
+      startTime: string
+      endTime: string
+    }>
+  }>
+  meetingDocs?: Array<{
+    kind: string
+    documentId: string
+    title: string
+    body: {
+      content: Array<{
+        startIndex: number
+        endIndex: number
+        paragraph?: {
+          elements: Array<{
+            startIndex: number
+            endIndex: number
+            textRun?: {
+              content: string
+              textStyle?: any
+            }
+          }>
+        }
+      }>
+    }
+  }>
+  conversationExcerpts?: Array<{
+    meetingType: string
+    participants: string[]
+    keyExcerpts: string[]
+    duration: string
+  }>
+}
+
+/**
+ * Extract text content from Google Docs structure
+ */
+function extractDocumentText(doc: any): string {
+  if (!doc.body?.content) return ''
+  
+  return doc.body.content
+    .map((item: any) => {
+      if (item.paragraph?.elements) {
+        return item.paragraph.elements
+          .map((element: any) => element.textRun?.content || '')
+          .join('')
+      }
+      return ''
+    })
+    .join('')
+    .trim()
 }
 
 /**
  * Build calendar consolidation prompt for processing raw calendar data
  */
 export function buildCalendarConsolidationPrompt(context: CalendarConsolidationPromptContext): string {
-  const { userName, userRole, userLevel, careerGuidelines, calendarEvents, meetingNotes } = context
+  const { 
+    userName, 
+    userRole, 
+    userLevel, 
+    careerGuidelines, 
+    calendarEvents, 
+    meetingNotes,
+    meetingTranscripts = [],
+    meetingDocs = [],
+    conversationExcerpts = []
+  } = context
   
   return `## CONTEXT
 You are an expert-level AI assistant for "AdvanceWeekly," a career development platform. Your function is to process raw data about a user's work week and transform it into a structured, meaningful context that will be used by downstream AI processes to generate career reflections. The output must be a clean, factual, and self-contained summary of the user's professional contributions, filtered to exclude noise from other individuals' actions.
@@ -47,20 +129,37 @@ Your objective is to analyze the provided inputs and generate a structured summa
 4. **careerGuidelines**: ${careerGuidelines}
 5. **calendarEvents**: ${JSON.stringify(calendarEvents, null, 2)}
 6. **meetingNotes**: ${meetingNotes.join('\n\n---\n\n')}
+${conversationExcerpts.length > 0 ? `7. **conversationExcerpts**: 
+${conversationExcerpts.map(excerpt => 
+  `### ${excerpt.meetingType} (${excerpt.duration})
+**Participants**: ${excerpt.participants.join(', ')}
+**Key Discussion Points**:
+${excerpt.keyExcerpts.map(point => `- ${point}`).join('\n')}`
+).join('\n\n')}` : ''}
+${meetingDocs.length > 0 ? `${conversationExcerpts.length > 0 ? '8' : '7'}. **meetingDocs**: 
+${meetingDocs.map(doc => 
+  `### ${doc.title}
+${extractDocumentText(doc)}`
+).join('\n\n')}` : ''}
 
 ## CORE INSTRUCTIONS
-1. **Identify Weekly Themes:** First, scan all calendar events and meeting notes to identify the main projects, initiatives, or recurring themes of the week (e.g., "Project Phoenix Launch," "Q4 Planning," "Team Process Improvement").
+1. **Identify Weekly Themes:** First, scan all calendar events, meeting notes, conversation excerpts, and meeting documents to identify the main projects, initiatives, or recurring themes of the week (e.g., "Project Phoenix Launch," "Q4 Planning," "Team Process Improvement").
 
-2. **Extract All Potential Actions:** For each theme, scan the inputs for specific actions, decisions, deliverables, or outcomes.
+2. **Extract All Potential Actions:** For each theme, scan ALL the inputs (calendar events, meeting notes, conversation excerpts, and meeting documents) for specific actions, decisions, deliverables, or outcomes. Pay special attention to:
+   - Direct quotes and statements from conversation excerpts showing the user's contributions
+   - Action items and decisions documented in meeting notes
+   - Technical discussions and problem-solving shown in transcripts
+   - Follow-up items and commitments made during meetings
 
-3. **Determine Attribution for Each Action:** For every action identified, determine the actor. Look for names, pronouns ("I," "we"), and other cues to understand who performed the action.
+3. **Determine Attribution for Each Action:** For every action identified, determine the actor. Look for names, pronouns ("I," "we"), and other cues to understand who performed the action. In conversation excerpts, pay attention to who is speaking and what they are contributing to the discussion.
 
 4. **Apply Critical Filtering:** This is the most important step. You MUST filter the extracted actions based on the following rule:
    * **RETAIN** an action only if the actor is the user (${userName}) or a team/group where the user was an active and relevant participant.
    * **DISCARD** all actions where another individual is the sole or primary actor. The goal is to build a list of accomplishments the user can authentically claim.
 
-5. **Generate Self-Contained Evidence:** For each retained action, you must rewrite it as a self-contained "Evidence" statement. This statement must synthesize the action with its surrounding context (e.g., the project name, meeting goal, or problem being solved) so that it is fully understandable without the original source material.
+5. **Generate Self-Contained Evidence:** For each retained action, you must rewrite it as a self-contained "Evidence" statement. This statement must synthesize the action with its surrounding context (e.g., the project name, meeting goal, or problem being solved) so that it is fully understandable without the original source material. When available, use specific details from conversation excerpts and meeting documents to make the evidence more concrete and compelling.
    * *Example Transformation:* Do not just extract "approved the new API." Instead, synthesize and generate: "In the 'API Design Review' for the mobile integration, a new, more efficient API contract was agreed upon with the backend team."
+   * *Using Rich Data:* When conversation excerpts are available, incorporate specific quotes or technical details that demonstrate the user's expertise and contribution.
 
 6. **Categorize Evidence:** Using the career guidelines as your guide, map each self-contained Evidence statement to the single most relevant performance category (e.g., \`Impact & Ownership\`, \`Craft & Expertise\`).
 

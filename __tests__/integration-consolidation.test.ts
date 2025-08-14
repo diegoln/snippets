@@ -146,8 +146,8 @@ describe('Integration Consolidation Service', () => {
   })
 
   describe('Integration with Mock Calendar Data', () => {
-    test('should work with GoogleCalendarService mock data', () => {
-      const mockCalendarData = GoogleCalendarService.generateMockData({
+    test('should work with GoogleCalendarService mock data', async () => {
+      const mockCalendarData = await GoogleCalendarService.generateMockData({
         weekStart: new Date('2024-01-01'),
         weekEnd: new Date('2024-01-05'),
         userId: 'test-user'

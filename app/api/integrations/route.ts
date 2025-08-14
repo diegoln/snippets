@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         weekEnd.setDate(weekEnd.getDate() + 4) // Friday
         weekEnd.setHours(23, 59, 59, 999)
 
-        const mockData = GoogleCalendarService.generateMockData({
+        const mockData = await GoogleCalendarService.generateMockData({
           weekStart,
           weekEnd,
           userId
