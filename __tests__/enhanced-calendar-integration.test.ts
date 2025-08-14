@@ -9,7 +9,7 @@ import { GoogleCalendarService } from '../lib/calendar-integration'
 // Mock the rich integration data service
 jest.mock('../lib/rich-integration-data-service', () => ({
   RichIntegrationDataService: {
-    isJackUser: jest.fn(),
+    hasRichDataForUser: jest.fn(),
     getRichWeeklyData: jest.fn(),
     extractConversationExcerpts: jest.fn()
   }
@@ -71,7 +71,7 @@ describe('Enhanced Calendar Integration', () => {
 
   describe('generateMockData with Rich Data', () => {
     test('returns rich data for Jack user', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(true)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(true)
       mockRichIntegrationDataService.getRichWeeklyData.mockResolvedValue(mockRichData)
 
       const request = {
@@ -91,7 +91,7 @@ describe('Enhanced Calendar Integration', () => {
     })
 
     test('falls back to simple mock data for non-Jack users', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(false)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(false)
 
       const request = {
         weekStart: new Date('2024-10-01'),
@@ -109,7 +109,7 @@ describe('Enhanced Calendar Integration', () => {
     })
 
     test('falls back to simple mock data when rich data fails', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(true)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(true)
       mockRichIntegrationDataService.getRichWeeklyData.mockResolvedValue(null)
 
       const request = {
@@ -128,7 +128,7 @@ describe('Enhanced Calendar Integration', () => {
 
   describe('getConversationExcerpts', () => {
     test('returns conversation excerpts for Jack user with transcripts', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(true)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(true)
       mockRichIntegrationDataService.getRichWeeklyData.mockResolvedValue(mockRichData)
       mockRichIntegrationDataService.extractConversationExcerpts.mockReturnValue([
         {
@@ -153,7 +153,7 @@ describe('Enhanced Calendar Integration', () => {
     })
 
     test('returns empty array for non-Jack users', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(false)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(false)
 
       const request = {
         weekStart: new Date('2024-10-01'),
@@ -173,7 +173,7 @@ describe('Enhanced Calendar Integration', () => {
         meetingTranscripts: []
       }
 
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(true)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(true)
       mockRichIntegrationDataService.getRichWeeklyData.mockResolvedValue(dataWithoutTranscripts)
 
       const request = {
@@ -190,7 +190,7 @@ describe('Enhanced Calendar Integration', () => {
 
   describe('Backwards Compatibility', () => {
     test('enhanced data includes all original WeeklyCalendarData fields', async () => {
-      mockRichIntegrationDataService.isJackUser.mockReturnValue(true)
+      mockRichIntegrationDataService.hasRichDataForUser.mockReturnValue(true)
       mockRichIntegrationDataService.getRichWeeklyData.mockResolvedValue(mockRichData)
 
       const request = {
