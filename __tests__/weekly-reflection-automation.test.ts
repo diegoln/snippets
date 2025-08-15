@@ -605,15 +605,21 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
         
         // Verify the direct return value indicates failure
         expect(result).toBeDefined()
-        expect(result.status).toBe('error')
-        expect(result.error).toContain('LLM service unavailable')
+        expect(result.success).toBe(true) // Job completed (handler returned result)
+        expect(result.data.status).toBe('error') // But the reflection generation failed
+        expect(result.data.error).toContain('LLM service unavailable')
         
-        // Verify the operation was marked as failed in the database
+        // Verify the operation was marked as completed (handler returned result)
+        // but the result indicates an error
         const verifyService = createUserDataService(testUserId)
         try {
           const updatedOperation = await verifyService.getAsyncOperation(operation.id)
-          expect(updatedOperation!.status).toBe(AsyncOperationStatus.FAILED)
-          expect(updatedOperation!.errorMessage).toContain('LLM service unavailable')
+          expect(updatedOperation!.status).toBe(AsyncOperationStatus.COMPLETED)
+          expect(updatedOperation!.resultData).toBeDefined()
+          // The error is in the result data, not the operation error
+          const resultData = updatedOperation!.resultData as any
+          expect(resultData.status).toBe('error')
+          expect(resultData.error).toContain('LLM service unavailable')
         } finally {
           await verifyService.disconnect()
         }
