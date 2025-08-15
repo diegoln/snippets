@@ -4,6 +4,7 @@ import { getUserIdFromRequest } from '../../../lib/auth-utils'
 import { getDevUserIdFromRequest } from '../../../lib/dev-auth'
 import { createUserDataService } from '../../../lib/user-scoped-data'
 import { GoogleCalendarService } from '../../../lib/calendar-integration'
+import { getToken } from 'next-auth/jwt'
 
 // Input validation schemas
 const ConnectIntegrationSchema = z.object({
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/integrations - Create new integration
+ * POST /api/integrations - Enable calendar integration
  */
 export async function POST(request: NextRequest) {
   try {
@@ -141,6 +142,17 @@ export async function POST(request: NextRequest) {
 
     const { type } = validationResult.data
 
+    // For production: Check if user has OAuth tokens for Google Calendar
+    if (process.env.NODE_ENV === 'production') {
+      const token = await getToken({ req: request })
+      if (!token?.accessToken) {
+        return NextResponse.json(
+          { error: 'Google OAuth access required. Please sign in with Google.' },
+          { status: 401 }
+        )
+      }
+    }
+
     const dataService = createUserDataService(userId)
 
     try {
@@ -150,23 +162,40 @@ export async function POST(request: NextRequest) {
       
       if (existingIntegration) {
         return NextResponse.json(
-          { error: 'Integration already exists for this service' },
+          { error: 'Calendar integration is already enabled' },
           { status: 409 }
         )
       }
 
-      // Create placeholder integration (OAuth flow would happen here in production)
-      const integration = await dataService.createIntegration({
-        type: 'google_calendar',
-        accessToken: 'placeholder-token', // Would be real OAuth token in production
-        refreshToken: null,
-        expiresAt: null,
-        metadata: { 
-          status: 'placeholder',
-          note: 'This is a development placeholder. Real OAuth implementation needed for production.'
-        },
-        isActive: true
-      })
+      let integration
+      if (process.env.NODE_ENV === 'production') {
+        // Use real OAuth tokens in production
+        const token = await getToken({ req: request })
+        integration = await dataService.createIntegration({
+          type: 'google_calendar',
+          accessToken: token?.accessToken as string,
+          refreshToken: token?.refreshToken as string || null,
+          expiresAt: token?.expiresAt ? new Date((token.expiresAt as number) * 1000) : null,
+          metadata: { 
+            status: 'active',
+            grantedScopes: ['calendar.readonly', 'meetings.space.readonly', 'drive.readonly']
+          },
+          isActive: true
+        })
+      } else {
+        // Development mode - create integration record for mock data
+        integration = await dataService.createIntegration({
+          type: 'google_calendar',
+          accessToken: 'dev-mock-token',
+          refreshToken: null,
+          expiresAt: null,
+          metadata: { 
+            status: 'development',
+            note: 'Development mode - using mock calendar data'
+          },
+          isActive: true
+        })
+      }
 
       return NextResponse.json({
         success: true,
@@ -181,16 +210,16 @@ export async function POST(request: NextRequest) {
       await dataService.disconnect()
     }
   } catch (error) {
-    console.error('Error creating integration:', error)
+    console.error('Error enabling integration:', error)
     return NextResponse.json(
-      { error: 'Failed to create integration' },
+      { error: 'Failed to enable calendar integration' },
       { status: 500 }
     )
   }
 }
 
 /**
- * DELETE /api/integrations/[id] - Remove integration
+ * DELETE /api/integrations/[id] - Disable calendar integration
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -218,20 +247,21 @@ export async function DELETE(request: NextRequest) {
     const dataService = createUserDataService(userId)
 
     try {
-      // Delete integration (this would also revoke OAuth tokens in production)
+      // Disable integration (keep OAuth tokens available for re-enabling)
+      // In production, we don't revoke the OAuth tokens since they're granted at sign-in
       await dataService.deleteIntegration(integrationId)
 
       return NextResponse.json({
         success: true,
-        message: 'Integration removed successfully'
+        message: 'Calendar integration disabled successfully'
       })
     } finally {
       await dataService.disconnect()
     }
   } catch (error) {
-    console.error('Error deleting integration:', error)
+    console.error('Error disabling integration:', error)
     return NextResponse.json(
-      { error: 'Failed to delete integration' },
+      { error: 'Failed to disable calendar integration' },
       { status: 500 }
     )
   }
