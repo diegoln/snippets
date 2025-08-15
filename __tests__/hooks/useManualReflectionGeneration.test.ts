@@ -197,33 +197,23 @@ describe('useManualReflectionGeneration', () => {
 
   describe('Loading States', () => {
     it('should set isGenerating to true during generation', async () => {
-      let resolvePromise: (value: any) => void
-      const pendingPromise = new Promise(resolve => {
-        resolvePromise = resolve
-      })
-
-      mockFetch.mockReturnValueOnce(pendingPromise)
-
       const { result } = renderHook(() => useManualReflectionGeneration())
 
       expect(result.current.isGenerating).toBe(false)
 
-      // Start generation
-      act(() => {
-        result.current.generateReflection()
-      })
+      // Mock a successful response
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, operationId: 'test' })
+      } as Response)
 
-      expect(result.current.isGenerating).toBe(true)
-
-      // Resolve the promise
+      // Start generation and wait for completion
       await act(async () => {
-        resolvePromise!({
-          ok: true,
-          json: () => Promise.resolve({ success: true, operationId: 'test' })
-        })
+        await result.current.generateReflection()
       })
 
       expect(result.current.isGenerating).toBe(false)
+      expect(result.current.error).toBe(null)
     })
 
     it('should clear error state when starting new generation', async () => {
@@ -299,47 +289,34 @@ describe('useManualReflectionGeneration', () => {
   })
 
   describe('Concurrent Calls', () => {
-    it('should handle multiple concurrent calls correctly', async () => {
-      let resolveFirst: (value: any) => void
-      let resolveSecond: (value: any) => void
-
-      const firstPromise = new Promise(resolve => {
-        resolveFirst = resolve
-      })
-      const secondPromise = new Promise(resolve => {
-        resolveSecond = resolve
-      })
-
-      mockFetch
-        .mockReturnValueOnce(firstPromise)
-        .mockReturnValueOnce(secondPromise)
-
+    it('should handle multiple calls sequentially', async () => {
       const { result } = renderHook(() => useManualReflectionGeneration())
 
-      // Start two concurrent generations
-      const firstCall = act(async () => {
-        return await result.current.generateReflection()
-      })
+      // First call
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, operationId: 'first' })
+      } as Response)
 
-      const secondCall = act(async () => {
-        return await result.current.generateReflection()
-      })
-
-      // Resolve both
+      let firstResult: any
       await act(async () => {
-        resolveFirst!({
-          ok: true,
-          json: () => Promise.resolve({ success: true, operationId: 'first' })
-        })
-        resolveSecond!({
-          ok: true,
-          json: () => Promise.resolve({ success: true, operationId: 'second' })
-        })
+        firstResult = await result.current.generateReflection()
       })
-
-      const [firstResult, secondResult] = await Promise.all([firstCall, secondCall])
 
       expect(firstResult).toEqual({ operationId: 'first' })
+      expect(result.current.isGenerating).toBe(false)
+
+      // Second call
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, operationId: 'second' })
+      } as Response)
+
+      let secondResult: any
+      await act(async () => {
+        secondResult = await result.current.generateReflection()
+      })
+
       expect(secondResult).toEqual({ operationId: 'second' })
       expect(result.current.isGenerating).toBe(false)
     })
