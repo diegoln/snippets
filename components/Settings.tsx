@@ -19,7 +19,9 @@ import { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 import { Tooltip } from './Tooltip'
 import { Integrations } from './Integrations'
+import { ReflectionPreferencesComponent } from './ReflectionPreferences'
 import { useFileUpload } from '../hooks/useFileUpload'
+import { useReflectionPreferences } from '../hooks/useReflectionPreferences'
 import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
 import type { 
   PerformanceSettings, 
@@ -46,7 +48,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     performanceFeedbackFile: initialSettings.performanceFeedbackFile || null
   }), [initialSettings])
 
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'integrations'>('performance')
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'integrations' | 'reflections'>('performance')
   const [settings, setSettings] = useState<PerformanceSettings>(initialFormState)
   const [errors, setErrors] = useState<SettingsErrors>({})
   const [formState, setFormState] = useState<FormState>({
@@ -58,6 +60,9 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null)
   const feedbackFileInputRef = useRef<HTMLInputElement>(null)
+
+  // Reflection preferences hook
+  const reflectionPreferences = useReflectionPreferences()
 
   // File upload hooks with proper error handling
   const careerLadderUpload = useFileUpload({
@@ -251,6 +256,16 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                 }`}
               >
                 Integrations
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('reflections')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeSettingsTab === 'reflections'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Reflection Automation
               </button>
             </nav>
           </div>
@@ -497,8 +512,16 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
             </div>
               </form>
             </>
-          ) : (
+          ) : activeSettingsTab === 'integrations' ? (
             <Integrations />
+          ) : (
+            <ReflectionPreferencesComponent
+              onSave={reflectionPreferences.updatePreferences}
+              onClose={handleClose}
+              initialPreferences={reflectionPreferences.preferences || undefined}
+              availableIntegrations={reflectionPreferences.availableIntegrations}
+              isLoading={reflectionPreferences.isLoading}
+            />
           )}
         </div>
       </div>
