@@ -6,15 +6,25 @@
  */
 
 /**
- * Interface for weekly snippet data structure
+ * Interface for weekly reflection data structure
  */
-export interface WeeklySnippet {
+export interface WeeklyReflection {
   id: string
   weekNumber: number
+  year: number
   startDate: string
   endDate: string
   content: string
+  type: string
+  sourceIntegrationType?: string
+  consolidationId?: string
+  generatedFromConsolidation?: boolean
 }
+
+/**
+ * Legacy alias for backward compatibility
+ */
+export type WeeklySnippet = WeeklyReflection
 
 /**
  * Calculate current week number based on current date

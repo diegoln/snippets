@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserIdFromRequest } from '../../../lib/auth-utils'
 import { getDevUserIdFromRequest } from '../../../lib/dev-auth'
 import { createUserDataService } from '../../../lib/user-scoped-data'
+import { integrationConsolidationService } from '../../../lib/integration-consolidation-service'
 import { llmProxy } from '../../../lib/llmproxy'
 import { AssessmentContext } from '../../../types/performance'
 import { buildPerformanceAssessmentPrompt } from './performance-assessment-prompt'
@@ -65,26 +66,23 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Get snippets within the timeframe
-      const allSnippets = await dataService.getSnippetsInDateRange(start, end)
-
-      // Filter for meaningful content (simple filtering logic)
-      const meaningfulSnippets = allSnippets.filter((snippet: any) => {
-        const content = snippet.content.trim()
-        return content && content.length >= 20 && !content.toLowerCase().includes('placeholder')
-      })
+      // Get consolidated integration data within the timeframe
+      const consolidatedData = await integrationConsolidationService.getConsolidationsForReflection(
+        userId,
+        { start, end }
+      )
       
-      if (meaningfulSnippets.length === 0) {
+      if (consolidatedData.length === 0) {
         return NextResponse.json(
           { 
-            error: 'No work snippets found for the specified date range',
-            suggestion: 'Try adjusting the date range or ensure snippets exist for this period'
+            error: 'No consolidated work data found for the specified date range',
+            suggestion: 'Try adjusting the date range or ensure you have connected integrations with activity data for this period'
           },
           { status: 404 }
         )
       }
 
-      console.log(`📊 Found ${meaningfulSnippets.length} meaningful snippets`)
+      console.log(`📊 Found ${consolidatedData.length} consolidated integration records`)
 
       // Build assessment context
       const assessmentContext: AssessmentContext = {
@@ -97,15 +95,20 @@ export async function POST(request: NextRequest) {
           startDate,
           endDate
         },
-        weeklySnippets: meaningfulSnippets.map((snippet: any) => ({
-          weekNumber: snippet.weekNumber,
-          startDate: snippet.startDate.toISOString().split('T')[0],
-          endDate: snippet.endDate.toISOString().split('T')[0],
-          content: snippet.content
+        consolidatedData: consolidatedData.map((consolidation) => ({
+          weekNumber: consolidation.weekNumber,
+          year: consolidation.year,
+          startDate: consolidation.weekStart.toISOString().split('T')[0],
+          endDate: consolidation.weekEnd.toISOString().split('T')[0],
+          integrationType: consolidation.integrationType,
+          summary: consolidation.summary,
+          themes: consolidation.themes,
+          keyInsights: consolidation.keyInsights,
+          metrics: consolidation.metrics
         })),
         previousFeedback: userProfile.performanceFeedback || undefined,
         checkInFocusAreas: checkInFocusAreas || undefined,
-        snippetCount: meaningfulSnippets.length
+        consolidationCount: consolidatedData.length
       }
 
       // Generate assessment using LLM
@@ -138,7 +141,7 @@ export async function POST(request: NextRequest) {
         updatedAt: assessment.updatedAt.toISOString(),
         isGenerating: false,
         stats: {
-          snippetsUsed: meaningfulSnippets.length,
+          consolidationsUsed: consolidatedData.length,
           tokensGenerated: llmResponse.usage?.tokens || 0,
           model: llmResponse.model,
           cost: llmResponse.usage?.cost || 0

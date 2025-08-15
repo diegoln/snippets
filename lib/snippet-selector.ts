@@ -1,12 +1,17 @@
 import { PrismaClient } from '@prisma/client'
 
-export interface SnippetData {
+export interface ReflectionData {
   id: string
   weekNumber: number
+  year: number
   startDate: string
   endDate: string
   content: string
+  type: string
 }
+
+// Legacy alias for backward compatibility
+export type SnippetData = ReflectionData
 
 export interface UserProfile {
   id: string
@@ -48,7 +53,7 @@ export class SnippetSelector {
       // Adjust end date to end of day for inclusive range
       end.setHours(23, 59, 59, 999)
 
-      const snippets = await this.prisma.weeklySnippet.findMany({
+      const snippets = await this.prisma.reflection.findMany({
         where: {
           userId,
           OR: [
@@ -83,9 +88,11 @@ export class SnippetSelector {
         select: {
           id: true,
           weekNumber: true,
+          year: true,
           startDate: true,
           endDate: true,
-          content: true
+          content: true,
+          type: true
         }
       })
 
@@ -93,9 +100,11 @@ export class SnippetSelector {
       return snippets.map((snippet: any) => ({
         id: snippet.id,
         weekNumber: snippet.weekNumber,
+        year: snippet.year,
         startDate: snippet.startDate.toISOString().split('T')[0],
         endDate: snippet.endDate.toISOString().split('T')[0],
-        content: snippet.content
+        content: snippet.content,
+        type: snippet.type
       }))
 
     } catch (error) {

@@ -65,7 +65,7 @@ test('Prisma schema has appropriate database configuration', () => {
     return 'No database provider configured';
   }
   
-  if (!schema.includes('User') || !schema.includes('WeeklySnippet')) {
+  if (!schema.includes('User') || !schema.includes('Reflection')) {
     return 'Missing required models';
   }
   return true;

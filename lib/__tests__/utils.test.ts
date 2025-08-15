@@ -16,7 +16,7 @@ import {
   findSnippetByWeek,
   calculateReadingTime,
   debounce,
-  type WeeklySnippet
+  type WeeklyReflection
 } from '../utils'
 
 // Mock DOM methods for sanitizeHTML tests
@@ -298,7 +298,7 @@ describe('generateSnippetId', () => {
 })
 
 describe('sortSnippetsByWeek', () => {
-  const mockSnippets: WeeklySnippet[] = [
+  const mockSnippets: WeeklyReflection[] = [
     {
       id: '1',
       weekNumber: 28,
@@ -345,7 +345,7 @@ describe('sortSnippetsByWeek', () => {
 })
 
 describe('findSnippetByWeek', () => {
-  const mockSnippets: WeeklySnippet[] = [
+  const mockSnippets: WeeklyReflection[] = [
     {
       id: '1',
       weekNumber: 28,

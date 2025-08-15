@@ -49,6 +49,7 @@ interface WeeklySnippet {
   weekNumber: number
   year: number
   content: string
+  type?: string
 }
 
 export interface WeeklyReflectionInput {
@@ -210,10 +211,11 @@ export class WeeklyReflectionHandler implements JobHandler {
     weekNumber: number,
     year: number
   ): Promise<WeeklySnippet | undefined> {
-    const snippets = await dataService.getSnippets()
-    return snippets.find((s: WeeklySnippet) => 
-      s.weekNumber === weekNumber && 
-      s.year === year
+    const reflections = await dataService.getReflections()
+    return reflections.find((r: WeeklySnippet) => 
+      r.weekNumber === weekNumber && 
+      r.year === year &&
+      r.type === 'weekly'
     )
   }
 
@@ -386,7 +388,7 @@ export class WeeklyReflectionHandler implements JobHandler {
     const previousWeekEnd = endOfWeek(previousWeekStart, { weekStartsOn: 1 })
 
     // Get previous week's reflection
-    const previousReflections = await dataService.getSnippetsInDateRange(
+    const previousReflections = await dataService.getReflectionsInDateRange(
       previousWeekStart,
       previousWeekEnd
     )
@@ -543,12 +545,16 @@ Return as markdown text with clear sections.`
       status: 'draft'
     }
 
-    const snippet = await dataService.createSnippet({
+    const snippet = await dataService.createReflection({
       weekNumber: reflection.weekNumber,
       year: reflection.year,
       startDate: reflection.weekStart,
       endDate: reflection.weekEnd,
       content: reflection.content,
+      type: 'weekly',
+      sourceIntegrationType: 'google_calendar',
+      consolidationId: reflection.consolidationId,
+      generatedFromConsolidation: true,
       aiSuggestions: JSON.stringify(metadata)
     })
 

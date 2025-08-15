@@ -235,12 +235,13 @@ export class HourlyReflectionChecker {
     const currentYear = new Date().getFullYear()
     
     const prisma = getPrismaClient()
-    const reflection = await prisma.weeklySnippet.findUnique({
+    const reflection = await prisma.reflection.findUnique({
       where: {
-        userId_year_weekNumber: {
+        userId_year_weekNumber_type: {
           userId,
           year: currentYear,
-          weekNumber: currentWeek
+          weekNumber: currentWeek,
+          type: 'weekly'
         }
       }
     })

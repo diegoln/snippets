@@ -59,11 +59,16 @@ export interface CheckInContext {
     seniorityLevel: string
     careerLadder?: string
   }
-  weeklySnippets: Array<{
+  consolidatedData: Array<{
     weekNumber: number
+    year: number
     startDate: string
     endDate: string
-    content: string
+    integrationType: string
+    summary: string
+    themes: any[]
+    keyInsights: string[]
+    metrics: any
   }>
   previousFeedback?: string
   checkInFocusAreas?: string
@@ -72,7 +77,7 @@ export interface CheckInContext {
     endDate: string
     cycleName: string
   }
-  snippetCount?: number
+  consolidationCount?: number
 }
 
 /**

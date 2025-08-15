@@ -10,7 +10,7 @@ import { AssessmentContext } from '../../../types/performance'
  * Build performance assessment prompt from context
  */
 export function buildPerformanceAssessmentPrompt(context: AssessmentContext): string {
-  const { userProfile, weeklySnippets, cyclePeriod, previousFeedback, checkInFocusAreas } = context
+  const { userProfile, consolidatedData, cyclePeriod, previousFeedback, checkInFocusAreas } = context
 
   return `You are an expert performance review assistant. Create a comprehensive self-assessment for a ${userProfile.seniorityLevel} ${userProfile.jobTitle}.
 
@@ -20,8 +20,18 @@ CONTEXT:
 - Previous Feedback: ${previousFeedback || 'None provided'}
 ${checkInFocusAreas ? `- Special Directions: ${checkInFocusAreas}` : ''}
 
-WEEKLY ACCOMPLISHMENTS:
-${weeklySnippets.map(snippet => `Week ${snippet.weekNumber}: ${snippet.content}`).join('\n')}
+CONSOLIDATED WORK ACTIVITIES:
+${consolidatedData.map(consolidation => {
+  const themesText = consolidation.themes.map((theme: any) => 
+    `${theme.name}: ${theme.categories.map((cat: any) => cat.evidence.map((e: any) => e.statement).join(', ')).join('; ')}`
+  ).join('\n  ')
+  
+  return `Week ${consolidation.weekNumber} (${consolidation.startDate} to ${consolidation.endDate}) - ${consolidation.integrationType}:
+  Summary: ${consolidation.summary}
+  Key Insights: ${consolidation.keyInsights.join(', ')}
+  Themes & Evidence:
+  ${themesText}`
+}).join('\n\n')}
 
 REQUIREMENTS:
 1. Write a professional self-assessment (max 2 pages)
