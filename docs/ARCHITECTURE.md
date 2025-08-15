@@ -56,18 +56,101 @@ The diagram illustrates the layered architecture with clear separation between:
 - **AI Processing**: Environment-aware LLM integration (local models for dev, OpenAI for production)
 - **Scheduled Processing**: GCP-based batch jobs for weekly data collection and analysis
 
-## Integration System Architecture
+## Reflection Automation System
 
-### Scheduled Data Collection Flow
+### Overview
 
-The system implements a weekly batch processing pipeline that:
+AdvanceWeekly now features a sophisticated reflection automation system that generates weekly reflections based on user preferences, integration data, and AI analysis. The system supports both automated scheduled generation and manual on-demand generation.
 
-1. **Cloud Scheduler** triggers data collection every Monday at 9:00 AM
-2. **Cloud Run Jobs** execute the data processing pipeline
-3. **Integration Collectors** gather data from each user's connected services
-4. **Data Aggregator** combines and processes the collected information
-5. **LLM Processor** generates insights and recommendations using AI analysis
-6. **Database Storage** persists both raw data and processed insights
+### Dual Generation Modes
+
+**1. Scheduled Generation (Automated)**
+- Users configure their preferred day (Monday, Friday, or Sunday) and time
+- Hourly checker service evaluates all users' preferences against current time
+- Timezone-aware scheduling ensures accurate timing across global users
+- Automatic conflict prevention ensures one reflection per week per user
+- Integration data is automatically collected and consolidated for AI processing
+
+**2. Manual Generation (On-Demand)**
+- Users can trigger reflection generation at any time via "Generate Now" button
+- Provides real-time progress feedback and status updates
+- Includes conflict detection to prevent duplicate generations
+- Allows user customization of integration data sources and context inclusion
+
+### Hourly Reflection Scheduler Architecture
+
+```typescript
+HourlyReflectionChecker {
+  // Runs every hour to check user preferences
+  checkAndProcessUsers() -> void
+  
+  // Per-user processing with timezone conversion
+  shouldProcessUser(user: User) -> boolean
+  processUser(userId: string) -> AsyncOperation
+  
+  // Timezone-aware preference matching
+  isPreferredTime(preferences: ReflectionPreferences) -> boolean
+  hasReflectionThisWeek(userId: string) -> boolean
+}
+```
+
+**Key Features:**
+- **Timezone Awareness**: Uses `date-fns-tz` for accurate timezone conversion
+- **Preference Validation**: Validates day, hour, timezone, and integration selections
+- **Conflict Prevention**: Ensures no duplicate reflections for the same week
+- **Error Handling**: Graceful failure handling with operation tracking
+
+### User Preference Management
+
+**Reflection Preferences Schema:**
+```typescript
+interface ReflectionPreferences {
+  autoGenerate: boolean                    // Enable/disable automation
+  preferredDay: 'monday' | 'friday' | 'sunday'  // Generation day
+  preferredHour: number                    // 0-23 in user's timezone
+  timezone: string                         // IANA timezone identifier
+  includeIntegrations: string[]            // Selected integration types
+  notifyOnGeneration: boolean              // Email notification preference
+}
+```
+
+**Preference Management APIs:**
+- `GET /api/user/reflection-preferences` - Retrieve current preferences
+- `PUT /api/user/reflection-preferences` - Update preferences with validation
+- Real-time validation of timezone, integration availability, and time ranges
+
+### Manual Generation System
+
+**API Endpoint:** `POST /api/reflections/generate`
+
+**Request Flow:**
+1. User clicks "Generate Now" button in UI
+2. Frontend sends request with optional parameters (week range, integrations)
+3. API validates request and checks for existing operations
+4. Creates AsyncOperation record for progress tracking
+5. Triggers job processor for reflection generation
+6. Returns operation ID for real-time status polling
+
+**Progress Tracking:**
+- Real-time progress updates through async operation system
+- Status indicators: queued → processing → completed/failed
+- Detailed progress messages for each generation phase
+- Error handling with user-friendly error messages
+
+### Integration System Architecture
+
+### Enhanced Data Collection Flow
+
+The system now implements user preference-driven data collection:
+
+1. **Hourly Scheduler** checks user preferences against current time
+2. **Preference Evaluation** determines which users need reflections generated
+3. **Job Orchestration** creates async operations for eligible users
+4. **Integration Data Collection** gathers data from user's connected services
+5. **Data Consolidation** processes and themes integration data
+6. **AI Processing** generates reflection content using LLM
+7. **Draft Storage** saves generated reflection as draft for user review
+8. **Manual Trigger** allows users to generate reflections on-demand
 
 ## Core Components
 
@@ -171,6 +254,15 @@ User {
   performanceFeedback, careerLadderFile
   careerProgressionPlan, nextLevelExpectations  -- AI-generated career guidance
   companyCareerLadder                           -- Optional company context
+  
+  -- Reflection Automation Preferences
+  reflectionAutoGenerate         Boolean @default(true)
+  reflectionPreferredDay         String  @default("friday")    -- "monday", "friday", "sunday"
+  reflectionPreferredHour        Int     @default(14)          -- 0-23 in user timezone
+  reflectionTimezone            String  @default("America/New_York")
+  reflectionIncludeIntegrations Json    @default("[]")         -- Array of integration types
+  reflectionNotifyOnGeneration  Boolean @default(false)
+  
   integrations[]
   snippets[]
   assessments[]
@@ -207,11 +299,16 @@ PerformanceAssessment {
 }
 
 AsyncOperation {
-  id, userId, operationType  -- 'career_plan_generation', 'weekly_analysis', etc.
+  id, userId, operationType  -- 'career_plan_generation', 'weekly_reflection', 'weekly_analysis', etc.
   status                     -- 'queued', 'processing', 'completed', 'failed'
   progress, inputData, resultData
   createdAt, startedAt, completedAt
-  metadata                   -- Operation-specific data
+  metadata                   -- Operation-specific data (trigger type, timezone, preferences)
+  
+  -- Reflection Generation Specific Fields
+  -- inputData: { weekStart, weekEnd, includeIntegrations, includePreviousContext, automated }
+  -- metadata: { triggerType: 'scheduled' | 'manual', timezone, preferredTime }
+  -- resultData: { reflectionId, status: 'draft' | 'error', content?, error? }
 }
 ```
 
@@ -424,8 +521,19 @@ Single deployment serves both production and staging:
 **Database**: PostgreSQL (prod/staging) / SQLite (dev) via Prisma ORM
 **Cloud Platform**: Google Cloud Platform
 **Container Runtime**: Cloud Run with Docker
+
 **AI Integration**: Google Gemini API across all environments
 **External APIs**: Google Calendar, Todoist, GitHub (prod) / Mock data (dev/staging)
+
+**Reflection Automation Stack**:
+- **Scheduling**: `date-fns` and `date-fns-tz` for timezone-aware scheduling
+- **Job Processing**: Custom async job framework with progress tracking
+- **Preference Management**: Zod validation with timezone verification
+- **Integration Consolidation**: Custom service for data aggregation and theming
+- **Progress Tracking**: Real-time status updates via async operations
+- **Conflict Prevention**: Database-level uniqueness constraints and application logic
+
 **Infrastructure**: Terraform for GCP resource management
 **CI/CD**: Cloud Build with automated deployments
 **Monitoring**: Built-in GCP logging and metrics
+**Testing**: Jest with React Testing Library for hook testing (JSDOM environment)
