@@ -155,9 +155,9 @@ describe('UserScopedDataService - Snippet Operations', () => {
           endDate: new Date('2025-08-01'),
           content: 'Future content'
         })
-      ).rejects.toThrow('Cannot create snippets for future weeks')
+      ).rejects.toThrow('Cannot create reflections for future weeks')
 
-      expect(mockPrisma.weeklySnippet.upsert).not.toHaveBeenCalled()
+      expect(mockPrisma.reflection.upsert).not.toHaveBeenCalled()
     })
 
     it('should reject far future week with error', async () => {
@@ -169,13 +169,13 @@ describe('UserScopedDataService - Snippet Operations', () => {
           endDate: new Date('2025-12-26'),
           content: 'Far future content'
         })
-      ).rejects.toThrow('Cannot create snippets for future weeks')
+      ).rejects.toThrow('Cannot create reflections for future weeks')
 
-      expect(mockPrisma.weeklySnippet.upsert).not.toHaveBeenCalled()
+      expect(mockPrisma.reflection.upsert).not.toHaveBeenCalled()
     })
 
     it('should handle database errors gracefully', async () => {
-      mockPrisma.weeklySnippet.upsert.mockRejectedValue(new Error('Database connection failed'))
+      mockPrisma.reflection.upsert.mockRejectedValue(new Error('Database connection failed'))
 
       await expect(
         dataService.createSnippet({
@@ -190,7 +190,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
 
     it('should preserve original error message for debugging', async () => {
       const originalError = new Error('Unique constraint violation')
-      mockPrisma.weeklySnippet.upsert.mockRejectedValue(originalError)
+      mockPrisma.reflection.upsert.mockRejectedValue(originalError)
 
       try {
         await dataService.createSnippet({
@@ -218,10 +218,10 @@ describe('UserScopedDataService - Snippet Operations', () => {
           endDate: new Date('2025-08-01'),
           content: 'Future content'
         })
-      ).rejects.toThrow('Cannot create snippets for future weeks')
+      ).rejects.toThrow('Cannot create reflections for future weeks')
 
       // Week 30 should be allowed
-      mockPrisma.weeklySnippet.upsert.mockResolvedValue({
+      mockPrisma.reflection.upsert.mockResolvedValue({
         id: 'test', weekNumber: 30, year: 2025, startDate: new Date(), endDate: new Date(),
         content: 'test', createdAt: new Date(), updatedAt: new Date()
       })
@@ -241,7 +241,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
       // Test with early year date
       jest.setSystemTime(new Date('2025-01-05T10:00:00.000Z')) // Week 2 of 2025
 
-      mockPrisma.weeklySnippet.upsert.mockResolvedValue({
+      mockPrisma.reflection.upsert.mockResolvedValue({
         id: 'test', weekNumber: 2, year: 2025, startDate: new Date(), endDate: new Date(),
         content: 'test', createdAt: new Date(), updatedAt: new Date()
       })
@@ -264,7 +264,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
           endDate: new Date('2025-01-16'),
           content: 'Future content'
         })
-      ).rejects.toThrow('Cannot create snippets for future weeks')
+      ).rejects.toThrow('Cannot create reflections for future weeks')
     })
   })
 })
