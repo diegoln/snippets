@@ -22,8 +22,8 @@ ${checkInFocusAreas ? `- Special Directions: ${checkInFocusAreas}` : ''}
 
 CONSOLIDATED WORK ACTIVITIES:
 ${consolidatedData.map(consolidation => {
-  const themesText = consolidation.themes.map(theme => 
-    `${theme.name}: ${theme.categories.map(cat => cat.evidence.map(e => e.statement).join(', ')).join('; ')}`
+  const themesText = consolidation.themes.map((theme: any) => 
+    `${theme.name}: ${theme.categories.map((cat: any) => cat.evidence.map((e: any) => e.statement).join(', ')).join('; ')}`
   ).join('\n  ')
   
   return `Week ${consolidation.weekNumber} (${consolidation.startDate} to ${consolidation.endDate}) - ${consolidation.integrationType}:
