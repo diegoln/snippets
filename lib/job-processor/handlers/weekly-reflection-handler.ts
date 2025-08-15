@@ -125,7 +125,8 @@ export class WeeklyReflectionHandler implements JobHandler {
         weekStart,
         weekEnd,
         inputData.includeIntegrations,
-        testMode
+        testMode,
+        dataService // Pass existing dataService to avoid creating new connections
       )
 
       if (!integrationData || Object.keys(integrationData).length === 0) {
@@ -224,7 +225,8 @@ export class WeeklyReflectionHandler implements JobHandler {
     weekStart: Date,
     weekEnd: Date,
     includeIntegrations?: string[],
-    testMode: boolean = false
+    testMode: boolean = false,
+    dataService?: UserScopedDataService
   ): Promise<Record<string, unknown>> {
     const integrationData: Record<string, unknown> = {}
     
@@ -251,7 +253,7 @@ export class WeeklyReflectionHandler implements JobHandler {
             weeklyContextSummary: 'Week focused on sprint planning, manager alignment, and code review activities'
           }
         } else {
-          calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd)
+          calendarData = await this.fetchCalendarData(userId, weekStart, weekEnd, dataService)
         }
         
         if (calendarData) {
@@ -260,24 +262,9 @@ export class WeeklyReflectionHandler implements JobHandler {
       } catch (error) {
         console.error('Failed to fetch calendar data:', error)
         
-        // In test mode, always provide mock data even if real fetch fails
-        if (testMode) {
-          // Provide simple mock calendar data for testing
-          integrationData.google_calendar = {
-            totalMeetings: 3,
-            meetingContext: [
-              'Monday, Jan 8: Sprint Planning (6 attendees)',
-              'Wednesday, Jan 10: 1:1 with Manager',
-              'Friday, Jan 12: Code Review Session (4 attendees)'
-            ],
-            keyMeetings: [
-              { summary: 'Sprint Planning', importance: 'high', attendees: 6 },
-              { summary: '1:1 with Manager', importance: 'high', attendees: 2 },
-              { summary: 'Code Review Session', importance: 'medium', attendees: 4 }
-            ],
-            weeklyContextSummary: 'Week focused on sprint planning, manager alignment, and code review activities'
-          }
-        }
+        // Since we're in non-test mode (testMode=false), we can't provide mock data
+        // The error will be logged but integration will continue without calendar data
+        // This allows the reflection generation to continue with other available data sources
       }
     }
 
@@ -290,9 +277,11 @@ export class WeeklyReflectionHandler implements JobHandler {
   private async fetchCalendarData(
     userId: string,
     weekStart: Date,
-    weekEnd: Date
+    weekEnd: Date,
+    existingDataService?: UserScopedDataService
   ) {
-    const dataService = createUserDataService(userId)
+    // Use existing dataService to avoid creating unnecessary database connections
+    const dataService = existingDataService || createUserDataService(userId)
     
     try {
       // Get user's Google account
@@ -328,7 +317,10 @@ export class WeeklyReflectionHandler implements JobHandler {
       console.error('Failed to fetch calendar data:', error)
       throw error
     } finally {
-      await dataService.disconnect()
+      // Only disconnect if we created the dataService ourselves
+      if (!existingDataService) {
+        await dataService.disconnect()
+      }
     }
   }
 

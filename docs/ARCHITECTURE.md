@@ -97,6 +97,70 @@ The central React component that orchestrates the entire user experience:
 - Development: JWT strategy with localStorage persistence
 - Production: Database sessions with Prisma adapter
 
+### Database Architecture
+
+#### Multi-Environment Database Strategy
+
+AdvanceWeekly uses different database configurations optimized for each environment:
+
+| Environment | Database | Provider | Purpose | Schema Generation |
+|-------------|----------|----------|---------|-------------------|
+| **Testing (CI/CD)** | SQLite | `file:./test.db` | Fast, isolated unit/integration tests | `NODE_ENV=test` → SQLite schema |
+| **Development** | PostgreSQL | Docker container | Production-like development | `NODE_ENV=development` → PostgreSQL schema |
+| **Staging** | Cloud SQL | PostgreSQL | Production mirror with test data | `NODE_ENV=staging` → PostgreSQL schema |
+| **Production** | Cloud SQL | PostgreSQL | Live user data | `NODE_ENV=production` → PostgreSQL schema |
+
+#### Schema Generation System
+
+The database schema is **dynamically generated** based on the environment to ensure compatibility:
+
+```bash
+# Schema template with placeholders
+prisma/schema.template.prisma  # Contains __DB_PROVIDER__ and __METADATA_TYPE__
+
+# Generated schema (DO NOT EDIT DIRECTLY)
+prisma/schema.prisma           # Auto-generated based on environment
+
+# Generation command
+npm run generate-schema:force   # Regenerates based on NODE_ENV and DATABASE_URL
+```
+
+**Key Differences by Environment:**
+- **SQLite (Testing)**: Uses `String` type for JSON fields due to SQLite limitations
+- **PostgreSQL (All others)**: Uses native `Json` type for better performance and validation
+
+#### Why Different Databases?
+
+1. **Testing with SQLite**:
+   - ✅ No external dependencies for CI/CD
+   - ✅ Instant test database creation/teardown
+   - ✅ Parallel test execution without conflicts
+   - ✅ Consistent test environment across all platforms
+   - ⚠️ Some PostgreSQL-specific features unavailable (but not needed for tests)
+
+2. **Development/Production with PostgreSQL**:
+   - ✅ Production parity for realistic development
+   - ✅ Native JSON support with validation
+   - ✅ Advanced query capabilities
+   - ✅ Better performance for complex operations
+   - ✅ Cloud SQL integration for managed infrastructure
+
+#### Schema Management Best Practices
+
+1. **Never manually edit `schema.prisma`** - Always use the template system
+2. **Check environment before schema generation**:
+   ```bash
+   # For development/production (PostgreSQL)
+   NODE_ENV=development npm run generate-schema:force
+   
+   # For testing (SQLite)
+   DATABASE_URL="file:./test.db" NODE_ENV=test npm run generate-schema:force
+   ```
+3. **Migrations are PostgreSQL-only** - SQLite test databases are ephemeral
+4. **JSON field handling**:
+   - PostgreSQL: Store as native `Json` type
+   - SQLite: Store as `String` with JSON serialization in application layer
+
 ### Database Schema
 
 ```sql
