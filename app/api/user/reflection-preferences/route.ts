@@ -213,7 +213,9 @@ export async function PUT(request: NextRequest) {
       // Return updated preferences
       const preferences: ReflectionPreferences = {
         autoGenerate: updatedProfile.reflectionAutoGenerate,
-        preferredDay: updatedProfile.reflectionPreferredDay as any,
+        preferredDay: isValidReflectionDay(updatedProfile.reflectionPreferredDay) 
+          ? updatedProfile.reflectionPreferredDay 
+          : 'friday',
         preferredHour: updatedProfile.reflectionPreferredHour,
         timezone: updatedProfile.reflectionTimezone,
         includeIntegrations: updatedProfile.reflectionIncludeIntegrations as string[],

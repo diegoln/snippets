@@ -344,16 +344,22 @@ describe('Reflection Preferences System', () => {
       })
 
       it('should validate timezone format', () => {
-        // Basic timezone format validation
-        const validTimezones = ['America/New_York', 'Europe/London', 'Asia/Tokyo']
-        const invalidTimezones = ['Invalid/Timezone', 'Not_A_Zone']
+        // Use proper timezone validation function instead of regex
+        const validTimezones = [
+          'America/New_York', 
+          'Europe/London', 
+          'Asia/Tokyo',
+          'America/Argentina/Buenos_Aires', // Complex timezone name
+          'UTC'
+        ]
+        const invalidTimezones = ['Invalid/Timezone', 'Not_A_Zone', '', 'definitely_not_a_timezone']
         
         validTimezones.forEach(tz => {
-          expect(tz).toMatch(/^[A-Z][a-z]+\/[A-Z][a-z_]+$/)
+          expect(isValidTimezone(tz)).toBe(true)
         })
         
         invalidTimezones.forEach(tz => {
-          expect(tz).not.toMatch(/^[A-Z][a-z]+\/[A-Z][a-z_]+$/)
+          expect(isValidTimezone(tz)).toBe(false)
         })
       })
     })

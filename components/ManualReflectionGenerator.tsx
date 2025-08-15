@@ -142,7 +142,7 @@ export function ManualReflectionGenerator({
             <span>Generating reflection...</span>
             <span>~2 minutes</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1">
+          <div className="w-full bg-gray-200 rounded-full h-1" role="progressbar" aria-valuenow={60} aria-valuemin={0} aria-valuemax={100} aria-label="Reflection generation progress">
             <div className="bg-blue-600 h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
           </div>
         </div>

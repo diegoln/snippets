@@ -12,6 +12,7 @@ import { AsyncOperationType, AsyncOperationStatus, AsyncOperation } from '../../
 import { startOfWeek, endOfWeek, getISOWeek } from 'date-fns'
 import { toZonedTime, format } from 'date-fns-tz'
 import { PrismaClient } from '@prisma/client'
+import { isValidReflectionDay } from '../../types/reflection-preferences'
 
 // Use singleton Prisma client to avoid multiple connections
 let prismaClient: PrismaClient | null = null
@@ -188,9 +189,14 @@ export class HourlyReflectionChecker {
    * Check if user should be processed at current time
    */
   private async shouldProcessUser(user: User): Promise<boolean> {
+    // Validate and cast the preferred day from database
+    const preferredDay = isValidReflectionDay(user.reflectionPreferredDay) 
+      ? user.reflectionPreferredDay 
+      : 'friday' // Default fallback
+    
     const preferences: UserReflectionPreferences = {
       autoGenerate: true, // Already filtered in getUsersWithAutoGeneration
-      preferredDay: user.reflectionPreferredDay as any,
+      preferredDay,
       preferredHour: user.reflectionPreferredHour,
       timezone: user.reflectionTimezone,
       includeIntegrations: [], // Will be fetched during processing
@@ -288,7 +294,9 @@ export class HourlyReflectionChecker {
 
     return {
       autoGenerate: user.reflectionAutoGenerate,
-      preferredDay: user.reflectionPreferredDay as any,
+      preferredDay: isValidReflectionDay(user.reflectionPreferredDay) 
+        ? user.reflectionPreferredDay 
+        : 'friday',
       preferredHour: user.reflectionPreferredHour,
       timezone: user.reflectionTimezone,
       includeIntegrations: Array.isArray(user.reflectionIncludeIntegrations) 
