@@ -45,7 +45,7 @@ The **staging environment** is accessible at `https://advanceweekly.io/staging` 
 
 ## System Architecture Diagram
 
-![System Architecture](./architecture-diagram.svg)
+![System Architecture](./architecture-diagram.png)
 
 The diagram illustrates the layered architecture with clear separation between:
 - **User Interface Layer**: Landing page, Friday Reflections, Career Check-Ins, and integration management
