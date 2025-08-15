@@ -1,4 +1,6 @@
 /**
+ * @jest-environment jsdom
+ * 
  * Test suite for useManualReflectionGeneration hook
  * Tests manual reflection generation functionality
  */

@@ -63,7 +63,7 @@ const jestConfig = {
     // These are excluded because they need browser-like environment setup
     '/__tests__/.*\\.tsx$',                        // All .tsx test files (React components)
     '/__tests__/OnboardingWizard.*\\.test\\.(ts|tsx)$', // Onboarding component tests
-    '/__tests__/onboarding.*\\.test\\.(ts|tsx)$'   // Other onboarding-related component tests
+    '/__tests__/onboarding.*\\.test\\.(ts|tsx)$'  // Other onboarding-related component tests
   ],
   
   // Module paths and aliases
