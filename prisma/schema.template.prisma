@@ -95,6 +95,9 @@ model Reflection {
   consolidationId       String? // References IntegrationConsolidation.id
   generatedFromConsolidation Boolean @default(false)
   
+  // AI and automation metadata (JSON stored as string for compatibility)
+  aiSuggestions String?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
