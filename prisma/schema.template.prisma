@@ -30,6 +30,14 @@ model User {
   careerPlanGeneratedAt    DateTime? // Track when plan was created
   careerPlanLastUpdated    DateTime? // Track manual edits
   
+  // Reflection Automation Preferences
+  reflectionAutoGenerate         Boolean @default(true)
+  reflectionPreferredDay         String  @default("friday") // "monday"|"friday"|"sunday"
+  reflectionPreferredHour        Int     @default(14)       // 0-23 in user timezone
+  reflectionTimezone            String  @default("America/New_York")
+  reflectionIncludeIntegrations Json    @default("[]")      // Array of integration types
+  reflectionNotifyOnGeneration  Boolean @default(false)
+  
   accounts        Account[]
   sessions        Session[]
   reflections        Reflection[]
@@ -94,6 +102,9 @@ model Reflection {
   sourceIntegrationType String? // google_calendar, etc.
   consolidationId       String? // References IntegrationConsolidation.id
   generatedFromConsolidation Boolean @default(false)
+  
+  // AI and automation metadata (JSON stored as string for compatibility)
+  aiSuggestions String?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
