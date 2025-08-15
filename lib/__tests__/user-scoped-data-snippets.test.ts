@@ -7,13 +7,13 @@ import { UserScopedDataService } from '../user-scoped-data'
 
 // Mock Prisma with all required methods
 const mockPrisma = {
-  weeklySnippet: {
+  reflection: {
     create: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     findUnique: jest.fn(),
-    upsert: jest.fn() // Add missing upsert method
+    upsert: jest.fn()
   },
   $disconnect: jest.fn()
 }
@@ -41,18 +41,23 @@ describe('UserScopedDataService - Snippet Operations', () => {
 
   describe('createSnippet', () => {
     it('should create snippet for current week successfully', async () => {
-      const mockSnippet = {
-        id: 'snippet-id',
+      const mockReflection = {
+        id: 'reflection-id',
         weekNumber: 30,
         year: 2025,
         startDate: new Date('2025-07-21'),
         endDate: new Date('2025-07-25'),
         content: 'Test content',
+        type: 'weekly',
+        sourceIntegrationType: null,
+        consolidationId: null,
+        generatedFromConsolidation: false,
+        aiSuggestions: null,
         createdAt: new Date(),
         updatedAt: new Date()
       }
 
-      mockPrisma.weeklySnippet.upsert.mockResolvedValue(mockSnippet)
+      mockPrisma.reflection.upsert.mockResolvedValue(mockReflection)
 
       const result = await dataService.createSnippet({
         weekNumber: 30,
@@ -62,12 +67,13 @@ describe('UserScopedDataService - Snippet Operations', () => {
         content: 'Test content'
       })
 
-      expect(mockPrisma.weeklySnippet.upsert).toHaveBeenCalledWith({
+      expect(mockPrisma.reflection.upsert).toHaveBeenCalledWith({
         where: {
-          userId_year_weekNumber: {
+          userId_year_weekNumber_type: {
             userId: 'test-user-id',
             year: 2025,
-            weekNumber: 30
+            weekNumber: 30,
+            type: 'weekly'
           }
         },
         create: {
@@ -76,12 +82,17 @@ describe('UserScopedDataService - Snippet Operations', () => {
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
           content: 'Test content',
-          userId: 'test-user-id'
+          userId: 'test-user-id',
+          type: 'weekly'
         },
         update: {
           content: 'Test content',
           startDate: new Date('2025-07-21'),
           endDate: new Date('2025-07-25'),
+          sourceIntegrationType: undefined,
+          consolidationId: undefined,
+          generatedFromConsolidation: false,
+          aiSuggestions: undefined,
           updatedAt: expect.any(Date)
         },
         select: {
@@ -91,12 +102,17 @@ describe('UserScopedDataService - Snippet Operations', () => {
           startDate: true,
           endDate: true,
           content: true,
+          type: true,
+          sourceIntegrationType: true,
+          consolidationId: true,
+          generatedFromConsolidation: true,
+          aiSuggestions: true,
           createdAt: true,
           updatedAt: true
         }
       })
 
-      expect(result).toEqual(mockSnippet)
+      expect(result).toEqual(mockReflection)
     })
 
     it('should create snippet for past week successfully', async () => {

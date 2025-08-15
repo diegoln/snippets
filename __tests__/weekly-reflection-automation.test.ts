@@ -153,7 +153,7 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
   afterAll(async () => {
     // Clean up test data
     await prisma.asyncOperation.deleteMany({ where: { userId: testUserId } })
-    await prisma.weeklySnippet.deleteMany({ where: { userId: testUserId } })
+    await prisma.reflection.deleteMany({ where: { userId: testUserId } })
     await prisma.integrationConsolidation.deleteMany({ where: { userId: testUserId } })
     await prisma.account.deleteMany({ where: { userId: testUserId } })
     await prisma.user.delete({ where: { id: testUserId } })
@@ -184,7 +184,7 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       // Delete in dependency order to avoid foreign key constraints
       await prisma.asyncOperation.deleteMany({ where: { userId: testUserId } })
       await prisma.integrationConsolidation.deleteMany({ where: { userId: testUserId } })
-      await prisma.weeklySnippet.deleteMany({ where: { userId: testUserId } })
+      await prisma.reflection.deleteMany({ where: { userId: testUserId } })
       
       // Additional delay to ensure cleanup is complete before test starts
       // This prevents test interference from database commit timing
@@ -329,10 +329,11 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       expect(updatedOperation!.status).toBe(AsyncOperationStatus.COMPLETED)
       
       // Verify reflection was created
-      const snippets = await dataService.getSnippets()
-      const reflection = snippets.find(s => 
-        s.weekNumber === getISOWeek(weekStart) && 
-        s.year === weekStart.getFullYear()
+      const reflections = await dataService.getReflections()
+      const reflection = reflections.find(r => 
+        r.weekNumber === getISOWeek(weekStart) && 
+        r.year === weekStart.getFullYear() &&
+        r.type === 'weekly'
       )
       
       expect(reflection).toBeTruthy()
