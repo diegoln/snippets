@@ -415,6 +415,207 @@ Single deployment serves both production and staging:
 - No additional infrastructure or deployment costs
 - Staging data initialized automatically after deployment
 
+## Reflection Automation System
+
+AdvanceWeekly includes a comprehensive automated weekly reflection generation system that operates alongside manual reflection creation. This dual-mode approach provides users with both scheduled automation and on-demand generation flexibility.
+
+### System Architecture
+
+**Dual Generation Modes:**
+- **Scheduled Automation**: Automatically generates reflections based on user preferences and timezone settings
+- **Manual Generation**: On-demand reflection creation with immediate processing
+
+**Core Components:**
+
+```typescript
+// Scheduling Layer
+HourlyReflectionChecker {
+  checkAndProcessUsers(): Promise<void>
+  processUser(userId: string): Promise<void>
+  shouldGenerateReflection(user: UserProfile): boolean
+}
+
+// Job Processing Layer
+WeeklyReflectionHandler {
+  process(jobData: ReflectionJobData): Promise<ReflectionResult>
+  generateReflectionContent(userData: ConsolidatedData): Promise<string>
+  storeReflection(content: string, metadata: ReflectionMetadata): Promise<Reflection>
+}
+
+// User Interface Layer
+ManualReflectionGenerator {
+  generateReflection(options?: GenerationOptions): Promise<OperationResult>
+  trackProgress(operationId: string): Promise<ProgressStatus>
+  handleConflicts(): Promise<ConflictResolution>
+}
+```
+
+### Database Schema for Automation
+
+**User Reflection Preferences:**
+```sql
+-- Added to User table
+reflectionAutoGenerate         Boolean @default(true)
+reflectionPreferredDay         String  @default("friday")      -- monday, friday, sunday
+reflectionPreferredHour        Int     @default(14)            -- 0-23 (24-hour format)
+reflectionTimezone            String  @default("America/New_York")
+reflectionIncludeIntegrations Json    @default("[]")          -- ["google_calendar", "github"]
+reflectionNotifyOnGeneration  Boolean @default(false)
+```
+
+**Async Operation Tracking:**
+```sql
+AsyncOperation {
+  id            String   @id @default(cuid())
+  userId        String
+  operationType String   -- "weekly_reflection_generation"
+  status        String   -- "queued", "processing", "completed", "failed"
+  inputData     Json?    -- Generation parameters
+  resultData    Json?    -- Generated reflection data
+  progress      Int      @default(0)  -- 0-100 percentage
+  progressMessage String?
+  errorMessage  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+```
+
+### API Endpoints
+
+**Manual Reflection Generation:**
+```typescript
+POST /api/reflections/generate
+{
+  triggerType: "manual" | "scheduled",
+  weekStart?: Date,
+  weekEnd?: Date,
+  includeIntegrations?: string[],
+  includePreviousContext?: boolean
+}
+
+Response: {
+  success: boolean,
+  operationId: string,
+  weekNumber: number,
+  year: number,
+  estimatedDuration: number,
+  message: string
+}
+```
+
+**User Preference Management:**
+```typescript
+GET /api/user/reflection-preferences
+Response: {
+  preferences: ReflectionPreferences,
+  availableIntegrations: string[]
+}
+
+PUT /api/user/reflection-preferences
+{
+  autoGenerate: boolean,
+  preferredDay: "monday" | "friday" | "sunday",
+  preferredHour: number, // 0-23
+  timezone: string,
+  includeIntegrations: string[],
+  notifyOnGeneration: boolean
+}
+```
+
+**Operation Status Tracking:**
+```typescript
+GET /api/jobs/weekly-reflection?operationId={id}
+Response: {
+  operationId: string,
+  status: "queued" | "processing" | "completed" | "failed",
+  progress: number,
+  progressMessage?: string,
+  error?: string,
+  result?: ReflectionResult
+}
+```
+
+### Scheduling Logic
+
+**Hourly Checker Process:**
+1. **User Query**: Find users with `reflectionAutoGenerate = true`
+2. **Time Matching**: Check if current time matches user's preferred day/hour in their timezone
+3. **Duplicate Prevention**: Verify no reflection exists for current week
+4. **Conflict Detection**: Ensure no active generation operation exists
+5. **Job Creation**: Create async operation and trigger reflection generation
+
+**Timezone-Aware Scheduling:**
+```typescript
+// lib/schedulers/hourly-reflection-checker.ts
+function shouldGenerateForUser(user: UserProfile): boolean {
+  const userTime = DateTime.now().setZone(user.reflectionTimezone);
+  const preferredDay = user.reflectionPreferredDay;
+  const preferredHour = user.reflectionPreferredHour;
+  
+  // Check if current time matches user's preference
+  const isCorrectDay = isPreferredDay(userTime, preferredDay);
+  const isCorrectHour = userTime.hour === preferredHour;
+  
+  return isCorrectDay && isCorrectHour && user.reflectionAutoGenerate;
+}
+```
+
+### Generation Process Flow
+
+**Automated Generation Pipeline:**
+1. **Data Collection**: Gather integration data for the target week
+2. **Context Building**: Include previous reflections if enabled
+3. **LLM Processing**: Generate reflection content using consolidated data
+4. **Quality Validation**: Ensure content meets standards
+5. **Storage**: Save reflection with automation metadata
+6. **User Notification**: Optional notification on completion
+
+**Manual Generation Pipeline:**
+1. **Conflict Check**: Verify no existing reflection or active operation
+2. **Parameter Validation**: Validate date ranges and integration selections
+3. **Job Creation**: Create tracked async operation
+4. **Background Processing**: Execute generation in job processor
+5. **Progress Updates**: Real-time progress tracking for UI
+6. **Result Delivery**: Return operation ID for status monitoring
+
+### Error Handling and Recovery
+
+**Operation Failure Recovery:**
+```typescript
+// Failed operations are marked with error details
+// Users can retry manually after reviewing error
+// System automatically cleans up failed operations after 24 hours
+// No data corruption from failed automation attempts
+```
+
+**Duplicate Prevention:**
+```typescript
+// Multiple safety checks prevent duplicate reflections:
+// 1. Database unique constraints on (userId, weekNumber, year)
+// 2. Active operation detection before job creation
+// 3. Existing reflection check in handler
+// 4. Atomic operation creation with conflict detection
+```
+
+### User Experience Features
+
+**Manual Generation Component:**
+- Real-time progress indicators with estimated completion time
+- Graceful error handling with actionable error messages
+- Conflict detection with clear resolution options
+- Success feedback with automatic data refresh
+
+**Preference Management:**
+- Intuitive timezone selection with validation
+- Integration toggle with availability checking
+- Immediate preference validation and feedback
+- Stable UI layout preventing layout shifts
+
+**Notification Options:**
+- Optional email notifications on generation completion
+- In-app status updates for manual generations
+- Clear indication of automation vs manual generation source
+
 ## Technology Stack Summary
 
 **Frontend Framework**: Next.js 14 with App Router
@@ -426,6 +627,8 @@ Single deployment serves both production and staging:
 **Container Runtime**: Cloud Run with Docker
 **AI Integration**: Google Gemini API across all environments
 **External APIs**: Google Calendar, Todoist, GitHub (prod) / Mock data (dev/staging)
+**Reflection Automation**: Hourly scheduler, job processor, manual triggers
+**Background Jobs**: Async operation tracking, progress updates, error recovery
 **Infrastructure**: Terraform for GCP resource management
 **CI/CD**: Cloud Build with automated deployments
 **Monitoring**: Built-in GCP logging and metrics
