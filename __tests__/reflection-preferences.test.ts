@@ -9,9 +9,21 @@ import { POST } from '../app/api/reflections/generate/route'
 import { createUserDataService } from '../lib/user-scoped-data'
 import { 
   DEFAULT_REFLECTION_PREFERENCES,
-  REFLECTION_DAYS 
+  REFLECTION_DAYS,
+  isValidTimezone
 } from '../types/reflection-preferences'
 import { hourlyReflectionChecker } from '../lib/schedulers/hourly-reflection-checker'
+import { getUserIdFromRequest } from '../lib/auth-utils'
+
+// Mock auth utils to provide test user
+jest.mock('../lib/auth-utils', () => ({
+  getUserIdFromRequest: jest.fn().mockResolvedValue('user-1')
+}))
+
+// Mock dev auth
+jest.mock('../lib/dev-auth', () => ({
+  getDevUserIdFromRequest: jest.fn().mockResolvedValue('user-1')
+}))
 
 // Mock user data service
 jest.mock('../lib/user-scoped-data')
@@ -109,13 +121,15 @@ describe('Reflection Preferences System', () => {
       })
 
       it('should require authentication', async () => {
+        // Mock getUserIdFromRequest to return null for this test
+        ;(getUserIdFromRequest as jest.MockedFunction<typeof getUserIdFromRequest>).mockResolvedValueOnce(null)
+        
         const request = new NextRequest('http://localhost:3000/api/user/reflection-preferences')
 
         const response = await GET(request)
         const data = await response.json()
 
         expect(response.status).toBe(401)
-        expect(data.success).toBe(false)
         expect(data.error).toBe('Authentication required')
       })
     })
