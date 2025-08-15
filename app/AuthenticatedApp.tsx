@@ -11,6 +11,7 @@ import { Logo } from '../components/Logo'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
+import { ManualReflectionGenerator } from '../components/ManualReflectionGenerator'
 import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS, CheckInFormData, CheckInContext } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
@@ -646,16 +647,32 @@ Weekly Reflections
                   </div>
                 </div>
                 
-                {!snippets.find(snippet => snippet.weekNumber === getCurrentWeek()) && (
-                  <button 
-                    onClick={handleAddCurrentWeek}
-                    className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                    aria-label="Add current week reflection"
-                    title={`Add reflection for week ${getCurrentWeek()}`}
-                  >
-                    + Add Current Week (Week {getCurrentWeek()})
-                  </button>
-                )}
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  {!snippets.find(snippet => snippet.weekNumber === getCurrentWeek()) && (
+                    <button 
+                      onClick={handleAddCurrentWeek}
+                      className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
+                      aria-label="Add current week reflection"
+                      title={`Add reflection for week ${getCurrentWeek()}`}
+                    >
+                      + Add Current Week (Week {getCurrentWeek()})
+                    </button>
+                  )}
+                  
+                  {/* Manual Generation */}
+                  <ManualReflectionGenerator
+                    onReflectionGenerated={(operationId) => {
+                      console.log('🤖 Reflection generation started:', operationId)
+                      // Refresh snippets list after a delay to show the new reflection
+                      setTimeout(() => {
+                        // Re-fetch snippets to show the generated reflection
+                        window.location.reload()
+                      }, 3000)
+                    }}
+                    disabled={!!snippets.find(snippet => snippet.weekNumber === getCurrentWeek())}
+                  />
+                </div>
               </nav>
             </div>
           </aside>

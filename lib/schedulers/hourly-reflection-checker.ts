@@ -26,6 +26,10 @@ function getPrismaClient(): PrismaClient {
 interface User {
   id: string
   email: string
+  reflectionPreferredDay: string
+  reflectionPreferredHour: number
+  reflectionTimezone: string
+  reflectionNotifyOnGeneration: boolean
 }
 
 export interface UserReflectionPreferences {
@@ -145,9 +149,10 @@ export class HourlyReflectionChecker {
       
       console.log(`✅ Reflection job started for user ${userId}`)
       
-      // TODO: Send notification if enabled
+      // Send notification if enabled (placeholder for future implementation)
       if (preferences.notifyOnGeneration) {
-        // await this.sendNotification(userId, operation.id)
+        console.log(`📧 Notification would be sent to user ${userId} (feature not yet implemented)`)
+        // Future: await this.sendNotification(userId, operation.id)
       }
       
     } finally {
@@ -161,24 +166,36 @@ export class HourlyReflectionChecker {
    * Get all users with auto-generation enabled
    */
   private async getUsersWithAutoGeneration(): Promise<User[]> {
-    // For now, return all users since we use default preferences
-    // TODO: In future, filter based on user preferences stored in separate table
     const prisma = getPrismaClient()
     const users = await prisma.user.findMany({
+      where: {
+        reflectionAutoGenerate: true
+      },
       select: {
         id: true,
-        email: true
+        email: true,
+        reflectionPreferredDay: true,
+        reflectionPreferredHour: true,
+        reflectionTimezone: true,
+        reflectionNotifyOnGeneration: true
       }
     })
     
-    return users
+    return users as any[]
   }
 
   /**
    * Check if user should be processed at current time
    */
   private async shouldProcessUser(user: User): Promise<boolean> {
-    const preferences = DEFAULT_PREFERENCES // Use default preferences for now
+    const preferences: UserReflectionPreferences = {
+      autoGenerate: true, // Already filtered in getUsersWithAutoGeneration
+      preferredDay: user.reflectionPreferredDay as any,
+      preferredHour: user.reflectionPreferredHour,
+      timezone: user.reflectionTimezone,
+      includeIntegrations: [], // Will be fetched during processing
+      notifyOnGeneration: user.reflectionNotifyOnGeneration
+    }
     
     // Check if it's the right day and time
     if (!this.isPreferredTime(preferences)) {
@@ -252,9 +269,33 @@ export class HourlyReflectionChecker {
    * Get user's reflection preferences
    */
   private async getUserPreferences(userId: string): Promise<UserReflectionPreferences> {
-    // For now, return default preferences
-    // TODO: Implement user preferences storage and retrieval
-    return DEFAULT_PREFERENCES
+    const prisma = getPrismaClient()
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        reflectionAutoGenerate: true,
+        reflectionPreferredDay: true,
+        reflectionPreferredHour: true,
+        reflectionTimezone: true,
+        reflectionIncludeIntegrations: true,
+        reflectionNotifyOnGeneration: true
+      }
+    })
+
+    if (!user) {
+      return DEFAULT_PREFERENCES
+    }
+
+    return {
+      autoGenerate: user.reflectionAutoGenerate,
+      preferredDay: user.reflectionPreferredDay as any,
+      preferredHour: user.reflectionPreferredHour,
+      timezone: user.reflectionTimezone,
+      includeIntegrations: Array.isArray(user.reflectionIncludeIntegrations) 
+        ? user.reflectionIncludeIntegrations as string[]
+        : [],
+      notifyOnGeneration: user.reflectionNotifyOnGeneration
+    }
   }
 
 }
