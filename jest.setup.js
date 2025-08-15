@@ -223,7 +223,10 @@ beforeAll(() => {
   console.error = (...args) => {
     if (
       typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
+      (args[0].includes('Warning: ReactDOM.render is no longer supported') ||
+       args[0].includes('Failed to get reflection preferences:') ||
+       args[0].includes('Failed to save user onboarding:') ||
+       args[0].includes('LLM Consolidation error:'))
     ) {
       return
     }
