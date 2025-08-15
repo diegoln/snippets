@@ -91,6 +91,13 @@ export interface UserProfile {
   companyCareerLadder: string | null
   careerPlanGeneratedAt: Date | null
   careerPlanLastUpdated: Date | null
+  // Reflection Automation Preferences
+  reflectionAutoGenerate: boolean
+  reflectionPreferredDay: string
+  reflectionPreferredHour: number
+  reflectionTimezone: string
+  reflectionIncludeIntegrations: any // JSON field
+  reflectionNotifyOnGeneration: boolean
 }
 
 /**
@@ -159,7 +166,14 @@ export class UserScopedDataService {
           nextLevelExpectations: true,
           companyCareerLadder: true,
           careerPlanGeneratedAt: true,
-          careerPlanLastUpdated: true
+          careerPlanLastUpdated: true,
+          // Reflection Automation Preferences
+          reflectionAutoGenerate: true,
+          reflectionPreferredDay: true,
+          reflectionPreferredHour: true,
+          reflectionTimezone: true,
+          reflectionIncludeIntegrations: true,
+          reflectionNotifyOnGeneration: true
         }
       })
 
@@ -184,7 +198,14 @@ export class UserScopedDataService {
     companyCareerLadder?: string
     careerPlanGeneratedAt?: Date
     careerPlanLastUpdated?: Date
-  }): Promise<UserProfile | void> {
+    // Reflection Automation Preferences
+    reflectionAutoGenerate?: boolean
+    reflectionPreferredDay?: string
+    reflectionPreferredHour?: number
+    reflectionTimezone?: string
+    reflectionIncludeIntegrations?: any
+    reflectionNotifyOnGeneration?: boolean
+  }): Promise<UserProfile> {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { id: this.userId },
@@ -201,7 +222,14 @@ export class UserScopedDataService {
           nextLevelExpectations: true,
           companyCareerLadder: true,
           careerPlanGeneratedAt: true,
-          careerPlanLastUpdated: true
+          careerPlanLastUpdated: true,
+          // Reflection Automation Preferences
+          reflectionAutoGenerate: true,
+          reflectionPreferredDay: true,
+          reflectionPreferredHour: true,
+          reflectionTimezone: true,
+          reflectionIncludeIntegrations: true,
+          reflectionNotifyOnGeneration: true
         }
       })
 

@@ -108,7 +108,7 @@ import { POST as weeklyReflectionPOST, GET as weeklyReflectionGET } from '../app
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL
+      url: process.env.DATABASE_URL || 'file:./test.db'
     }
   }
 })

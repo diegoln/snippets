@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -29,6 +29,14 @@ model User {
   companyCareerLadder      String?   // Optional company-provided ladder
   careerPlanGeneratedAt    DateTime? // Track when plan was created
   careerPlanLastUpdated    DateTime? // Track manual edits
+  
+  // Reflection Automation Preferences
+  reflectionAutoGenerate         Boolean @default(true)
+  reflectionPreferredDay         String  @default("friday") // "monday"|"friday"|"sunday"
+  reflectionPreferredHour        Int     @default(14)       // 0-23 in user timezone
+  reflectionTimezone            String  @default("America/New_York")
+  reflectionIncludeIntegrations Json    @default("[]")      // Array of integration types
+  reflectionNotifyOnGeneration  Boolean @default(false)
   
   accounts        Account[]
   sessions        Session[]
@@ -133,7 +141,7 @@ model Integration {
   expiresAt    DateTime?
   isActive     Boolean @default(true)
   lastSyncAt   DateTime?
-  metadata     String @default("{}")
+  metadata     Json @default("{}")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,14 +158,14 @@ model AsyncOperation {
   operationType     String    // 'career_plan_generation', 'weekly_analysis', etc.
   status            String    // 'queued', 'processing', 'completed', 'failed'
   progress          Int       @default(0) // 0-100
-  inputData         String?
-  resultData        String?
+  inputData         Json?
+  resultData        Json?
   errorMessage      String?
   createdAt         DateTime  @default(now())
   startedAt         DateTime?
   completedAt       DateTime?
   estimatedDuration Int?      // seconds
-  metadata          String      @default("{}")
+  metadata          Json      @default("{}")
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
@@ -186,8 +194,8 @@ model IntegrationData {
   weekNumber  Int
   year        Int
   integrationType String
-  rawData     String
-  metadata    String?
+  rawData     Json
+  metadata    Json?
   createdAt   DateTime @default(now())
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

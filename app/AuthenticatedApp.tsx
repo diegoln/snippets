@@ -11,6 +11,7 @@ import { Logo } from '../components/Logo'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { SafeImage } from '../components/SafeImage'
 import { SettingsIcon, LogoutIcon } from '../components/icons'
+import { ManualReflectionGenerator } from '../components/ManualReflectionGenerator'
 import { PerformanceSettings } from '../types/settings'
 import { PerformanceAssessment, AssessmentFormData, AssessmentContext, AssessmentAction, ASSESSMENT_CONSTANTS, CheckInFormData, CheckInContext } from '../types/performance'
 import { llmProxy } from '../lib/llmproxy'
@@ -99,78 +100,78 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [snippets.length])
 
   // Load dashboard data (onboarding already verified in root page)
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!currentUser) {
-        return
-      }
+  const loadDashboardData = useCallback(async () => {
+    if (!currentUser) {
+      return
+    }
 
-      try {
-        console.log('📊 Loading dashboard data for authenticated user...')
-        
-        // Fetch dashboard data in parallel
-        const [snippetsResponse, assessmentsResponse] = await Promise.all([
-          fetch('/api/snippets', {
-            headers: {
-              'X-Dev-User-Id': 'dev-user-123'
-            }
-          }),
-          fetch('/api/assessments', {
-            headers: {
-              'X-Dev-User-Id': 'dev-user-123'
-            }
-          })
-        ])
-
-        // Handle snippets response
-        if (snippetsResponse.ok) {
-          const snippetsData = await snippetsResponse.json()
-          setSnippets(snippetsData)
-          
-          if (snippetsData.length > 0) {
-            setSelectedSnippet(snippetsData[0])
+    try {
+      console.log('📊 Loading dashboard data for authenticated user...')
+      
+      // Fetch dashboard data in parallel
+      const [snippetsResponse, assessmentsResponse] = await Promise.all([
+        fetch('/api/snippets', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123'
           }
-        } else {
-          console.error('Failed to fetch snippets:', {
-            status: snippetsResponse.status,
-            statusText: snippetsResponse.statusText,
-            userEmail: currentUser?.email,
-            timestamp: new Date().toISOString()
-          })
-          setSnippets([])
-        }
+        }),
+        fetch('/api/assessments', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123'
+          }
+        })
+      ])
+
+      // Handle snippets response
+      if (snippetsResponse.ok) {
+        const snippetsData = await snippetsResponse.json()
+        setSnippets(snippetsData)
         
-        // Handle assessments response
-        if (assessmentsResponse.ok) {
-          const assessmentsData = await assessmentsResponse.json()
-          dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
-        } else {
-          console.error('Failed to fetch assessments:', {
-            status: assessmentsResponse.status,
-            statusText: assessmentsResponse.statusText,
-            userEmail: currentUser?.email,
-            timestamp: new Date().toISOString()
-          })
-          dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+        if (snippetsData.length > 0) {
+          setSelectedSnippet(snippetsData[0])
         }
-        
-        console.log('✅ Dashboard data loaded successfully')
-      } catch (error) {
-        console.error('Error fetching dashboard data:', {
-          error: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
+      } else {
+        console.error('Failed to fetch snippets:', {
+          status: snippetsResponse.status,
+          statusText: snippetsResponse.statusText,
           userEmail: currentUser?.email,
           timestamp: new Date().toISOString()
         })
         setSnippets([])
-        dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
-      } finally {
-        setIsLoadingData(false)
       }
+      
+      // Handle assessments response
+      if (assessmentsResponse.ok) {
+        const assessmentsData = await assessmentsResponse.json()
+        dispatch({ type: 'SET_ASSESSMENTS', payload: assessmentsData })
+      } else {
+        console.error('Failed to fetch assessments:', {
+          status: assessmentsResponse.status,
+          statusText: assessmentsResponse.statusText,
+          userEmail: currentUser?.email,
+          timestamp: new Date().toISOString()
+        })
+        dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+      }
+      
+      console.log('✅ Dashboard data loaded successfully')
+    } catch (error) {
+      console.error('Error fetching dashboard data:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        userEmail: currentUser?.email,
+        timestamp: new Date().toISOString()
+      })
+      setSnippets([])
+      dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+    } finally {
+      setIsLoadingData(false)
     }
-
-    loadDashboardData()
   }, [currentUser])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [loadDashboardData])
 
   const handleSaveSnippet = useCallback(async (content: string): Promise<void> => {
     if (!selectedSnippet) return
@@ -625,16 +626,32 @@ Weekly Reflections
                   </div>
                 )}
                 
-                {!snippets.find(snippet => snippet.weekNumber === getCurrentWeek()) && (
-                  <button 
-                    onClick={handleAddCurrentWeek}
-                    className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
-                    aria-label="Add current week reflection"
-                    title={`Add reflection for week ${getCurrentWeek()}`}
-                  >
-                    + Add Current Week (Week {getCurrentWeek()})
-                  </button>
-                )}
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  {!snippets.find(snippet => snippet.weekNumber === getCurrentWeek()) && (
+                    <button 
+                      onClick={handleAddCurrentWeek}
+                      className="w-full p-3 border-2 border-dashed border-neutral-600/30 rounded-card text-secondary hover:border-primary-600/50 hover:text-primary-600 hover:bg-primary-100/30 transition-advance focus:outline-none focus:ring-2 focus:ring-accent-500 focus:ring-offset-2"
+                      aria-label="Add current week reflection"
+                      title={`Add reflection for week ${getCurrentWeek()}`}
+                    >
+                      + Add Current Week (Week {getCurrentWeek()})
+                    </button>
+                  )}
+                  
+                  {/* Manual Generation */}
+                  <ManualReflectionGenerator
+                    onReflectionGenerated={(operationId) => {
+                      console.log('🤖 Reflection generation started:', operationId)
+                      // Refresh snippets list after a delay to show the new reflection
+                      setTimeout(() => {
+                        // Re-fetch snippets to show the generated reflection
+                        loadDashboardData()
+                      }, 3000)
+                    }}
+                    disabled={!!snippets.find(snippet => snippet.weekNumber === getCurrentWeek())}
+                  />
+                </div>
               </nav>
             </div>
           </aside>
