@@ -97,7 +97,7 @@ export class SnippetSelector {
       })
 
       // Convert dates to string format for consistent handling
-      return snippets.map((snippet: any) => ({
+      return snippets.map((snippet) => ({
         id: snippet.id,
         weekNumber: snippet.weekNumber,
         year: snippet.year,
