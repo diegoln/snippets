@@ -529,92 +529,95 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [extractBulletsFromReflection])
 
+  // Handle profile step completion with calendar integration
+  const handleProfileStepCompletion = useCallback(async () => {
+    setError(null)
+    setLoadingState({ 
+      isLoading: true, 
+      operation: 'loading-integration-data', 
+      message: 'Analyzing your calendar data...' 
+    })
+    
+    try {
+      // Enable calendar integration automatically
+      setConnectedIntegrations(new Set(['google_calendar']))
+      
+      // Load calendar data using consolidation API
+      const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': DEV_USER_ID
+        },
+        body: JSON.stringify({ integrationType: 'google_calendar' })
+      })
+
+      const consolidationData = await consolidationResponse.json()
+      
+      if (consolidationResponse.ok && consolidationData.success && consolidationData.hasData) {
+        // Generate reflection from consolidation
+        const reflectionResponse = await fetch('/api/reflections/generate-from-consolidation', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': DEV_USER_ID
+          },
+          body: JSON.stringify({
+            consolidationId: consolidationData.consolidationId
+          })
+        })
+
+        if (reflectionResponse.ok) {
+          const reflectionData = await reflectionResponse.json()
+          
+          if (reflectionData.hasData && reflectionData.reflection) {
+            setFormData(prev => ({
+              ...prev,
+              reflectionContent: reflectionData.reflection
+            }))
+            
+            // Extract bullets for UI display
+            const bullets = extractBulletsFromReflection(reflectionData.reflection)
+            setIntegrationBullets({ google_calendar: bullets })
+          }
+        }
+      } else {
+        // No calendar data available - use default reflection
+        const defaultReflection = generateInitialReflection()
+        setFormData(prev => ({
+          ...prev,
+          reflectionContent: defaultReflection
+        }))
+      }
+      
+      setCurrentStep(1) // Move to reflection step
+    } catch (error) {
+      console.error('Failed to load calendar data:', error)
+      // Continue with default reflection
+      const defaultReflection = generateInitialReflection()
+      setFormData(prev => ({
+        ...prev,
+        reflectionContent: defaultReflection
+      }))
+      setCurrentStep(1)
+    } finally {
+      setLoadingState({ isLoading: false })
+    }
+  }, [extractBulletsFromReflection, generateInitialReflection])
+
   // Handle step navigation
   const handleNext = useCallback(async () => {
     if (currentStep === 0) {
       // Step 0 is now combined role + guidelines
       // Validation is handled in the component
       // Move directly to reflection step (skip integration)
-      setError(null)
-      
-      // Auto-enable calendar integration and load data
-      try {
-        setLoadingState({ 
-          isLoading: true, 
-          operation: 'loading-integration-data', 
-          message: 'Analyzing your calendar data...' 
-        })
-        
-        // Enable calendar integration automatically
-        setConnectedIntegrations(new Set(['google_calendar']))
-        
-        // Load calendar data using consolidation API
-        const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': DEV_USER_ID
-          },
-          body: JSON.stringify({ integrationType: 'google_calendar' })
-        })
-
-        const consolidationData = await consolidationResponse.json()
-        
-        if (consolidationResponse.ok && consolidationData.success && consolidationData.hasData) {
-          // Generate reflection from consolidation
-          const reflectionResponse = await fetch('/api/reflections/generate-from-consolidation', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'X-Dev-User-Id': DEV_USER_ID
-            },
-            body: JSON.stringify({
-              consolidationId: consolidationData.consolidationId
-            })
-          })
-
-          if (reflectionResponse.ok) {
-            const reflectionData = await reflectionResponse.json()
-            
-            if (reflectionData.hasData && reflectionData.reflection) {
-              setFormData(prev => ({
-                ...prev,
-                reflectionContent: reflectionData.reflection
-              }))
-              
-              // Extract bullets for UI display
-              const bullets = extractBulletsFromReflection(reflectionData.reflection)
-              setIntegrationBullets({ google_calendar: bullets })
-            }
-          }
-        } else {
-          // No calendar data available - use default reflection
-          const defaultReflection = generateInitialReflection()
-          setFormData(prev => ({
-            ...prev,
-            reflectionContent: defaultReflection
-          }))
-        }
-        
-        setCurrentStep(1) // Move to reflection step
-      } catch (error) {
-        console.error('Failed to load calendar data:', error)
-        // Continue with default reflection
-        const defaultReflection = generateInitialReflection()
-        setFormData(prev => ({
-          ...prev,
-          reflectionContent: defaultReflection
-        }))
-        setCurrentStep(1)
-      } finally {
-        setLoadingState({ isLoading: false })
-      }
+      await handleProfileStepCompletion()
       return
     }
     
     setError(null)
     setCurrentStep(prev => Math.min(prev + 1, maxSteps - 1))
-  }, [currentStep, extractBulletsFromReflection, generateInitialReflection])
+  }, [currentStep, handleProfileStepCompletion])
 
   const handleBack = useCallback(() => {
     setError(null)

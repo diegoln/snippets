@@ -130,9 +130,9 @@ const handleJWT = async (params: any) => {
           // Auto-create calendar integration
           await dataService.createIntegration({
             type: 'google_calendar',
-            accessToken: account.access_token,
-            refreshToken: account.refresh_token || null,
-            expiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+            accessToken: typeof account.access_token === 'string' ? account.access_token : '',
+            refreshToken: typeof account.refresh_token === 'string' ? account.refresh_token : null,
+            expiresAt: typeof account.expires_at === 'number' ? new Date(account.expires_at * 1000) : null,
             metadata: { 
               status: 'auto-enabled',
               grantedScopes: ['calendar.readonly', 'meetings.space.readonly', 'drive.readonly'],

@@ -173,9 +173,9 @@ export async function POST(request: NextRequest) {
         const token = await getToken({ req: request })
         integration = await dataService.createIntegration({
           type: 'google_calendar',
-          accessToken: token?.accessToken as string,
-          refreshToken: token?.refreshToken as string || null,
-          expiresAt: token?.expiresAt ? new Date((token.expiresAt as number) * 1000) : null,
+          accessToken: typeof token?.accessToken === 'string' ? token.accessToken : '',
+          refreshToken: typeof token?.refreshToken === 'string' ? token.refreshToken : null,
+          expiresAt: typeof token?.expiresAt === 'number' ? new Date(token.expiresAt * 1000) : null,
           metadata: { 
             status: 'active',
             grantedScopes: ['calendar.readonly', 'meetings.space.readonly', 'drive.readonly']

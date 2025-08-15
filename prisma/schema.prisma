@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -133,7 +133,7 @@ model Integration {
   expiresAt    DateTime?
   isActive     Boolean @default(true)
   lastSyncAt   DateTime?
-  metadata     String @default("{}")
+  metadata     Json @default("{}")
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,14 +150,14 @@ model AsyncOperation {
   operationType     String    // 'career_plan_generation', 'weekly_analysis', etc.
   status            String    // 'queued', 'processing', 'completed', 'failed'
   progress          Int       @default(0) // 0-100
-  inputData         String?
-  resultData        String?
+  inputData         Json?
+  resultData        Json?
   errorMessage      String?
   createdAt         DateTime  @default(now())
   startedAt         DateTime?
   completedAt       DateTime?
   estimatedDuration Int?      // seconds
-  metadata          String      @default("{}")
+  metadata          Json      @default("{}")
   
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   
@@ -186,8 +186,8 @@ model IntegrationData {
   weekNumber  Int
   year        Int
   integrationType String
-  rawData     String
-  metadata    String?
+  rawData     Json
+  metadata    Json?
   createdAt   DateTime @default(now())
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

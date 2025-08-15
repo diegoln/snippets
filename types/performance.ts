@@ -6,6 +6,28 @@
  * their weekly snippets and career context.
  */
 
+// Integration consolidation types
+export interface Evidence {
+  statement: string
+  attribution: 'USER' | 'TEAM'
+}
+
+export interface Category {
+  name: string
+  evidence: Evidence[]
+}
+
+export interface Theme {
+  name: string
+  categories: Category[]
+}
+
+export interface Metrics {
+  totalMeetings?: number
+  meetingHours?: number
+  [key: string]: any
+}
+
 /**
  * Career check-in document interface
  */
@@ -66,9 +88,9 @@ export interface CheckInContext {
     endDate: string
     integrationType: string
     summary: string
-    themes: any[]
+    themes: Theme[]
     keyInsights: string[]
-    metrics: any
+    metrics: Metrics
   }>
   previousFeedback?: string
   checkInFocusAreas?: string
