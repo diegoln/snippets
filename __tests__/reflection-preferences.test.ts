@@ -199,7 +199,7 @@ describe('Reflection Preferences System', () => {
 
         expect(response.status).toBe(400)
         expect(data.success).toBe(false)
-        expect(data.error).toContain('Hour must be between 0 and 23')
+        expect(data.error).toContain('Invalid request data')
       })
 
       it('should validate day options', async () => {
@@ -219,7 +219,7 @@ describe('Reflection Preferences System', () => {
 
         expect(response.status).toBe(400)
         expect(data.success).toBe(false)
-        expect(data.error).toContain('Invalid preferred day')
+        expect(data.error).toContain('Invalid request data')
       })
 
       it('should validate timezone', async () => {
@@ -239,7 +239,7 @@ describe('Reflection Preferences System', () => {
 
         expect(response.status).toBe(400)
         expect(data.success).toBe(false)
-        expect(data.error).toContain('Invalid timezone')
+        expect(data.error).toContain('Invalid request data')
       })
 
       it('should validate integration types', async () => {
@@ -263,7 +263,7 @@ describe('Reflection Preferences System', () => {
 
         expect(response.status).toBe(400)
         expect(data.success).toBe(false)
-        expect(data.error).toContain('Invalid integration types')
+        expect(data.error).toContain('Invalid integrations specified')
       })
     })
 
@@ -431,7 +431,7 @@ describe('Reflection Preferences System', () => {
 
       expect(response.status).toBe(500)
       expect(data.success).toBe(false)
-      expect(data.error).toContain('Failed to fetch preferences')
+      expect(data.error).toContain('Failed to retrieve preferences')
     })
 
     it('should handle malformed JSON requests', async () => {

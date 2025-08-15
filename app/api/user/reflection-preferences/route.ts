@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       )
     }
@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     console.error('Failed to get reflection preferences:', error)
     return NextResponse.json(
       { 
+        success: false,
         error: 'Failed to retrieve preferences',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
@@ -131,7 +132,7 @@ export async function PUT(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       )
     }
@@ -141,13 +142,14 @@ export async function PUT(request: NextRequest) {
     try {
       body = await request.json()
     } catch (error) {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+      return NextResponse.json({ success: false, error: 'Invalid JSON in request body' }, { status: 400 })
     }
 
     const validationResult = ReflectionPreferencesUpdateSchema.safeParse(body)
     if (!validationResult.success) {
       return NextResponse.json(
         { 
+          success: false,
           error: 'Invalid request data',
           details: validationResult.error.issues
         },
@@ -172,6 +174,7 @@ export async function PUT(request: NextRequest) {
         if (invalidIntegrations.length > 0) {
           return NextResponse.json(
             { 
+              success: false,
               error: 'Invalid integrations specified',
               details: `The following integrations are not connected: ${invalidIntegrations.join(', ')}`
             },
@@ -235,6 +238,7 @@ export async function PUT(request: NextRequest) {
     console.error('Failed to update reflection preferences:', error)
     return NextResponse.json(
       { 
+        success: false,
         error: 'Failed to update preferences',
         details: error instanceof Error ? error.message : 'Unknown error'
       },
