@@ -116,18 +116,23 @@ describe('UserScopedDataService - Snippet Operations', () => {
     })
 
     it('should create snippet for past week successfully', async () => {
-      const mockSnippet = {
-        id: 'snippet-past',
+      const mockReflection = {
+        id: 'reflection-past',
         weekNumber: 29,
         year: 2025,
         startDate: new Date('2025-07-14'),
         endDate: new Date('2025-07-18'),
         content: 'Past week content',
+        type: 'weekly',
+        sourceIntegrationType: null,
+        consolidationId: null,
+        generatedFromConsolidation: false,
+        aiSuggestions: null,
         createdAt: new Date(),
         updatedAt: new Date()
       }
 
-      mockPrisma.weeklySnippet.upsert.mockResolvedValue(mockSnippet)
+      mockPrisma.reflection.upsert.mockResolvedValue(mockReflection)
 
       const result = await dataService.createSnippet({
         weekNumber: 29, // Past week
@@ -138,7 +143,7 @@ describe('UserScopedDataService - Snippet Operations', () => {
       })
 
       expect(result.weekNumber).toBe(29)
-      expect(mockPrisma.weeklySnippet.upsert).toHaveBeenCalled()
+      expect(mockPrisma.reflection.upsert).toHaveBeenCalled()
     })
 
     it('should reject future week with error', async () => {

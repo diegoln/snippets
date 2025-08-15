@@ -552,7 +552,7 @@ describe('Weekly Reflection Automation - Integration Tests', () => {
       } finally {
         // Clean up
         await prisma.asyncOperation.deleteMany({ where: { userId: user2.id } })
-        await prisma.weeklySnippet.deleteMany({ where: { userId: user2.id } })
+        await prisma.reflection.deleteMany({ where: { userId: user2.id } })
         await prisma.user.delete({ where: { id: user2.id } })
       }
     })
