@@ -224,9 +224,15 @@ beforeAll(() => {
     if (
       typeof args[0] === 'string' &&
       (args[0].includes('Warning: ReactDOM.render is no longer supported') ||
-       args[0].includes('Failed to get reflection preferences:') ||
-       args[0].includes('Failed to save user onboarding:') ||
-       args[0].includes('LLM Consolidation error:'))
+       // Filter out intentional test error messages that start with common patterns
+       args[0].startsWith('Failed to ') ||
+       args[0].startsWith('Error ') ||
+       args[0].includes('LLM Consolidation error:') ||
+       args[0].includes('Database connection failed') ||
+       args[0].includes('Database error') ||
+       args[0].includes('Session expired') ||
+       args[0].includes('LLM service unavailable') ||
+       args[0].includes('❌ Error fetching'))
     ) {
       return
     }
