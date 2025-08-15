@@ -53,7 +53,7 @@ The diagram illustrates the layered architecture with clear separation between:
 - **API Layer**: RESTful endpoints for all system operations including scheduled processing
 - **Data Storage**: Dual database support (SQLite dev, PostgreSQL prod)
 - **Integration Services**: Third-party connections to Google Calendar, Todoist, and GitHub
-- **AI Processing**: Environment-aware LLM integration (local models for dev, OpenAI for production)
+- **AI Processing**: Consistent LLM integration (Google Gemini API for all environments)
 - **Scheduled Processing**: GCP-based batch jobs for weekly data collection and analysis
 
 ## Integration System Architecture
@@ -219,17 +219,12 @@ AsyncOperation {
 
 **Environment-Aware AI Processing:**
 
-**Development Environment:**
-- **Local LLM**: Uses Ollama or similar local model for testing
-- **Fast Iteration**: Quick responses without API costs
-- **Offline Development**: Works without internet connection
-- **Mock Responses**: Predictable outputs for testing
-
-**Production Environment:**
-- **OpenAI API Gateway**: Single point for all LLM requests
-- **Request Management**: Rate limiting, retry logic, queuing
-- **Response Processing**: Standardized output formatting
-- **Cost Optimization**: Intelligent caching and token management
+**All Environments (Development & Production):**
+- **Google Gemini API**: Unified LLM service across all environments
+- **Consistent Behavior**: Same AI model and responses in dev and production
+- **Cost-Effective**: Gemini provides better pricing than OpenAI alternatives
+- **Fast Response Times**: Optimized for quick iteration and production use
+- **Real AI Testing**: Development uses actual AI for realistic testing
 
 **Usage Patterns:**
 ```typescript
@@ -301,7 +296,7 @@ class GitHubIntegration extends BaseIntegration {
 **Secret Manager:**
 - **Database credentials**: Connection string with Unix socket format
 - **OAuth secrets**: Google Client ID/Secret, NextAuth secret
-- **API keys**: OpenAI API key, integration API keys
+- **API keys**: Gemini API key, integration API keys
 - **Encryption keys**: For token encryption/decryption
 
 **Cloud Build Pipeline:**
@@ -343,7 +338,7 @@ class GitHubIntegration extends BaseIntegration {
 3. **Data Collection**: Parallel API calls to Google Calendar, Todoist, GitHub
 4. **Data Storage**: Raw responses stored in integration_data table
 5. **Data Processing**: Clean, transform, and aggregate collected data
-6. **LLM Analysis**: Send aggregated data to OpenAI for insight generation
+6. **LLM Analysis**: Send aggregated data to Google Gemini for insight generation
 7. **Result Storage**: Update Friday Reflections with AI recommendations
 8. **Error Handling**: Retry failed operations, log issues for investigation
 
@@ -625,7 +620,7 @@ function shouldGenerateForUser(user: UserProfile): boolean {
 **Database**: PostgreSQL (prod/staging) / SQLite (dev) via Prisma ORM
 **Cloud Platform**: Google Cloud Platform
 **Container Runtime**: Cloud Run with Docker
-**AI Integration**: Google Gemini API across all environments
+**AI Integration**: Google Gemini API (unified across all environments)
 **External APIs**: Google Calendar, Todoist, GitHub (prod) / Mock data (dev/staging)
 **Reflection Automation**: Hourly scheduler, job processor, manual triggers
 **Background Jobs**: Async operation tracking, progress updates, error recovery

@@ -142,9 +142,9 @@
   <text x="750" y="625" text-anchor="middle" font-family="Arial" font-size="8" fill="#880e4f">Cloud</text>
   
   <rect x="790" y="570" width="60" height="60" fill="#f8bbd9" stroke="#e91e63" stroke-width="1" rx="5"/>
-  <text x="820" y="595" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="#880e4f">Mock LLM</text>
+  <text x="820" y="595" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="#880e4f">Gemini API</text>
   <text x="820" y="610" text-anchor="middle" font-family="Arial" font-size="8" fill="#880e4f">Development</text>
-  <text x="820" y="625" text-anchor="middle" font-family="Arial" font-size="8" fill="#880e4f">Local</text>
+  <text x="820" y="625" text-anchor="middle" font-family="Arial" font-size="8" fill="#880e4f">Same as Prod</text>
   
   <!-- Scheduled Processing -->
   <rect x="50" y="680" width="800" height="60" fill="#f3e5f5" stroke="#9c27b0" stroke-width="2" rx="8"/>
