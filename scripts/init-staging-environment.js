@@ -50,7 +50,7 @@ async function initStagingEnvironment() {
     // 1. Clean up existing staging data
     console.log('1️⃣ Cleaning up existing staging data...');
     
-    await prisma.weeklySnippet.deleteMany({
+    await prisma.reflection.deleteMany({
       where: { userId: { startsWith: 'staging_' } }
     });
     await prisma.integration.deleteMany({
@@ -89,7 +89,10 @@ async function initStagingEnvironment() {
           id: mockUser.id,
           email: mockUser.email,
           image: mockUser.image,
-          ...userData
+          name: mockUser.name,
+          jobTitle,
+          seniorityLevel,
+          onboardingCompletedAt
         }
       });
       console.log(`✅ Created staging user: ${user.name} (${user.email})`);
