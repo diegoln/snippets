@@ -6,6 +6,7 @@ import type { User, Account, Profile, Session } from 'next-auth'
 import type { JWT } from 'next-auth/jwt'
 import { getMockUserById, getAllMockUsers, isDevelopmentEnvironment } from '../../../../lib/mock-users'
 import { shouldUseMockAuth, getEnvironmentMode, getBaseUrl } from '../../../../lib/environment'
+import { createUserDataService } from '../../../../lib/user-scoped-data'
 
 // Force dynamic rendering - critical for environment-specific auth behavior
 export const dynamic = 'force-dynamic'
@@ -115,6 +116,39 @@ const handleJWT = async (params: any) => {
     token.refreshToken = account.refresh_token
     token.expiresAt = account.expires_at
     authLog('Stored Google OAuth tokens with extended scopes')
+    
+    // Auto-enable calendar integration for Google OAuth users
+    if (user?.id && getEnvironmentMode() === 'production') {
+      try {
+        const dataService = createUserDataService(user.id)
+        
+        // Check if calendar integration already exists
+        const existingIntegrations = await dataService.getIntegrations()
+        const hasCalendarIntegration = existingIntegrations.some((i: any) => i.type === 'google_calendar')
+        
+        if (!hasCalendarIntegration) {
+          // Auto-create calendar integration
+          await dataService.createIntegration({
+            type: 'google_calendar',
+            accessToken: typeof account.access_token === 'string' ? account.access_token : '',
+            refreshToken: typeof account.refresh_token === 'string' ? account.refresh_token : null,
+            expiresAt: typeof account.expires_at === 'number' ? new Date(account.expires_at * 1000) : null,
+            metadata: { 
+              status: 'auto-enabled',
+              grantedScopes: ['calendar.readonly', 'meetings.space.readonly', 'drive.readonly'],
+              autoEnabledAt: new Date().toISOString()
+            },
+            isActive: true
+          })
+          authLog('Auto-enabled calendar integration for Google OAuth user')
+        }
+        
+        await dataService.disconnect()
+      } catch (error) {
+        authError('Failed to auto-enable calendar integration:', error)
+        // Don't fail auth if integration creation fails
+      }
+    }
   }
   
   if (user && 'id' in user) {

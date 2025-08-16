@@ -4,7 +4,7 @@
  * Builds prompts for generating performance assessments from weekly snippets.
  */
 
-import { AssessmentContext } from '../../../types/performance'
+import { AssessmentContext, Theme, Category, Evidence } from '../../../types/performance'
 
 /**
  * Build performance assessment prompt from context
@@ -22,8 +22,8 @@ ${checkInFocusAreas ? `- Special Directions: ${checkInFocusAreas}` : ''}
 
 CONSOLIDATED WORK ACTIVITIES:
 ${consolidatedData.map(consolidation => {
-  const themesText = consolidation.themes.map((theme: any) => 
-    `${theme.name}: ${theme.categories.map((cat: any) => cat.evidence.map((e: any) => e.statement).join(', ')).join('; ')}`
+  const themesText = consolidation.themes.map((theme: Theme) => 
+    `${theme.name}: ${theme.categories.map((cat: Category) => cat.evidence.map((e: Evidence) => e.statement).join(', ')).join('; ')}`
   ).join('\n  ')
   
   return `Week ${consolidation.weekNumber} (${consolidation.startDate} to ${consolidation.endDate}) - ${consolidation.integrationType}:
