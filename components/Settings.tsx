@@ -20,9 +20,12 @@ import { signOut } from 'next-auth/react'
 import { Tooltip } from './Tooltip'
 import { Integrations } from './Integrations'
 import { ReflectionPreferencesComponent } from './ReflectionPreferences'
+import { RoleAndGuidelinesStep } from './RoleAndGuidelinesStep'
+import { LoadingSpinner } from './LoadingSpinner'
 import { useFileUpload } from '../hooks/useFileUpload'
 import { useReflectionPreferences } from '../hooks/useReflectionPreferences'
 import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
+import { VALID_ROLES, VALID_LEVELS } from '../constants/user'
 import type { 
   PerformanceSettings, 
   SettingsProps, 
@@ -48,7 +51,19 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     performanceFeedbackFile: initialSettings.performanceFeedbackFile || null
   }), [initialSettings])
 
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'integrations' | 'reflections'>('performance')
+  // User profile state for role/guidelines
+  const [userProfile, setUserProfile] = useState<{
+    jobTitle: string
+    seniorityLevel: string
+    careerGuidelines?: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
+  } | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'role-guidelines' | 'integrations' | 'reflections'>('performance')
   const [settings, setSettings] = useState<PerformanceSettings>(initialFormState)
   const [errors, setErrors] = useState<SettingsErrors>({})
   const [formState, setFormState] = useState<FormState>({
@@ -189,6 +204,100 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
   }, [settings, validateForm, onSave])
 
   /**
+   * Handle role and guidelines update from the Role & Guidelines tab
+   */
+  const handleRoleAndGuidelinesUpdate = useCallback(async (data: {
+    role: string
+    customRole: string
+    level: string
+    customLevel: string
+    careerGuidelines: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
+  }) => {
+    setFormState(prev => ({ 
+      ...prev, 
+      isSubmitting: true, 
+      submitError: null 
+    }))
+    
+    try {
+      const effectiveRole = data.role === 'other' ? data.customRole : data.role
+      const effectiveLevel = data.level === 'other' ? data.customLevel : data.level
+      
+      // Save profile
+      const profileResponse = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
+        },
+        body: JSON.stringify({
+          jobTitle: effectiveRole,
+          seniorityLevel: effectiveLevel,
+        }),
+      })
+      
+      if (!profileResponse.ok) {
+        throw new Error('Failed to update profile')
+      }
+      
+      // Save career guidelines
+      if (data.careerGuidelines.currentLevelPlan && data.careerGuidelines.nextLevelExpectations) {
+        const guidelinesResponse = await fetch('/api/user/career-guidelines', {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': 'dev-user-123'
+          },
+          body: JSON.stringify({
+            currentLevelPlan: data.careerGuidelines.currentLevelPlan,
+            nextLevelExpectations: data.careerGuidelines.nextLevelExpectations,
+            companyLadder: data.careerGuidelines.companyLadder
+          })
+        })
+        
+        if (!guidelinesResponse.ok) {
+          console.error('Failed to save career guidelines, but continuing...')
+        }
+      }
+      
+      // Update local state
+      setUserProfile({
+        jobTitle: effectiveRole,
+        seniorityLevel: effectiveLevel,
+        careerGuidelines: data.careerGuidelines
+      })
+      
+      // Update settings with new role/level
+      setSettings(prev => ({
+        ...prev,
+        jobTitle: effectiveRole,
+        seniorityLevel: effectiveLevel
+      }))
+      
+      setFormState(prev => ({ 
+        ...prev, 
+        hasUnsavedChanges: false 
+      }))
+      
+    } catch (error) {
+      console.error('Error updating role and guidelines:', error)
+      setFormState(prev => ({ 
+        ...prev, 
+        submitError: error instanceof Error ? error.message : 'Failed to update role and guidelines' 
+      }))
+    } finally {
+      setFormState(prev => ({ 
+        ...prev, 
+        isSubmitting: false 
+      }))
+    }
+  }, [])
+
+  /**
    * Handle modal close with unsaved changes warning
    */
   const handleClose = useCallback(() => {
@@ -200,6 +309,61 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
       onClose()
     }
   }, [formState.hasUnsavedChanges, onClose])
+
+  // Load user profile on mount
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setIsLoadingProfile(true)
+        
+        // Load user profile
+        const profileResponse = await fetch('/api/user/profile', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123'
+          }
+        })
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json()
+          
+          // Load career guidelines if they exist
+          const guidelinesResponse = await fetch('/api/user/career-guidelines', {
+            headers: {
+              'X-Dev-User-Id': 'dev-user-123'
+            }
+          })
+          
+          let careerGuidelines
+          if (guidelinesResponse.ok) {
+            careerGuidelines = await guidelinesResponse.json()
+          }
+          
+          setUserProfile({
+            jobTitle: profileData.jobTitle || '',
+            seniorityLevel: profileData.seniorityLevel || '',
+            careerGuidelines: careerGuidelines ? {
+              currentLevelPlan: careerGuidelines.currentLevelPlan || '',
+              nextLevelExpectations: careerGuidelines.nextLevelExpectations || '',
+              companyLadder: careerGuidelines.companyLadder || ''
+            } : undefined
+          })
+          
+          // Update settings with loaded profile data
+          setSettings(prev => ({
+            ...prev,
+            jobTitle: profileData.jobTitle || '',
+            seniorityLevel: profileData.seniorityLevel || ''
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error)
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+    
+    loadUserProfile()
+  }, [])
 
   /**
    * Cleanup on unmount
@@ -246,6 +410,16 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                 }`}
               >
                 Performance
+              </button>
+              <button
+                onClick={() => setActiveSettingsTab('role-guidelines')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeSettingsTab === 'role-guidelines'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Role & Guidelines
               </button>
               <button
                 onClick={() => setActiveSettingsTab('integrations')}
@@ -511,6 +685,46 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
               </button>
             </div>
               </form>
+            </>
+          ) : activeSettingsTab === 'role-guidelines' ? (
+            <>
+              {/* Submit Error Display */}
+              {formState.submitError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-700">{formState.submitError}</p>
+                </div>
+              )}
+              
+              {isLoadingProfile ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="lg" />
+                  <span className="ml-3 text-gray-600">Loading your profile...</span>
+                </div>
+              ) : userProfile ? (
+                <div className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-blue-900 mb-2">
+                      Update Your Role & Career Guidelines
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Changes to your role or level will regenerate your career guidelines to ensure they stay relevant.
+                    </p>
+                  </div>
+                  
+                  <RoleAndGuidelinesStep
+                    initialRole={VALID_ROLES.includes(userProfile.jobTitle as any) ? userProfile.jobTitle : 'other'}
+                    initialLevel={VALID_LEVELS.includes(userProfile.seniorityLevel as any) ? userProfile.seniorityLevel : 'other'}
+                    initialCustomRole={VALID_ROLES.includes(userProfile.jobTitle as any) ? '' : userProfile.jobTitle}
+                    initialCustomLevel={VALID_LEVELS.includes(userProfile.seniorityLevel as any) ? '' : userProfile.seniorityLevel}
+                    initialCareerGuidelines={userProfile.careerGuidelines}
+                    onComplete={handleRoleAndGuidelinesUpdate}
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Failed to load profile data. Please try refreshing the page.</p>
+                </div>
+              )}
             </>
           ) : activeSettingsTab === 'integrations' ? (
             <Integrations />

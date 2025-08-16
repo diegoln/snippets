@@ -109,13 +109,18 @@ export const AuthenticatedApp = (): JSX.Element => {
       console.log('📊 Loading dashboard data for authenticated user...')
       
       // Fetch dashboard data in parallel
-      const [snippetsResponse, assessmentsResponse] = await Promise.all([
+      const [snippetsResponse, assessmentsResponse, profileResponse] = await Promise.all([
         fetch('/api/snippets', {
           headers: {
             'X-Dev-User-Id': 'dev-user-123'
           }
         }),
         fetch('/api/assessments', {
+          headers: {
+            'X-Dev-User-Id': 'dev-user-123'
+          }
+        }),
+        fetch('/api/user/profile', {
           headers: {
             'X-Dev-User-Id': 'dev-user-123'
           }
@@ -152,6 +157,25 @@ export const AuthenticatedApp = (): JSX.Element => {
           timestamp: new Date().toISOString()
         })
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
+      }
+      
+      // Handle profile response
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json()
+        setUserSettings({
+          jobTitle: profileData.jobTitle || '',
+          seniorityLevel: profileData.seniorityLevel || '',
+          careerLadderFile: null,
+          performanceFeedback: '',
+          performanceFeedbackFile: null
+        })
+      } else {
+        console.error('Failed to fetch user profile:', {
+          status: profileResponse.status,
+          statusText: profileResponse.statusText,
+          userEmail: currentUser?.email,
+          timestamp: new Date().toISOString()
+        })
       }
       
       console.log('✅ Dashboard data loaded successfully')
@@ -249,8 +273,32 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [])
 
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
-    setUserSettings(settings)
-    setShowSettings(false)
+    try {
+      // Update profile in the database
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': 'dev-user-123'
+        },
+        body: JSON.stringify({
+          jobTitle: settings.jobTitle,
+          seniorityLevel: settings.seniorityLevel
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save settings')
+      }
+      
+      // Update local state
+      setUserSettings(settings)
+      setShowSettings(false)
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      // TODO: Show error message to user
+      throw error
+    }
   }, [])
 
   const handleGenerateDraft = useCallback(async (request: CheckInFormData): Promise<void> => {
