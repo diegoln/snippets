@@ -118,7 +118,7 @@ describe('Integration Disconnect API', () => {
 
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
-      expect(data.message).toBe('Integration removed successfully')
+      expect(data.message).toBe('Calendar integration disabled successfully')
       expect(mockDataService.deleteIntegration).toHaveBeenCalledWith('integration-123')
       expect(mockDataService.disconnect).toHaveBeenCalled()
     })
@@ -166,7 +166,7 @@ describe('Integration Disconnect API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to delete integration')
+      expect(data.error).toBe('Failed to disable calendar integration')
       expect(mockDataService.disconnect).toHaveBeenCalled()
     })
 
@@ -229,7 +229,7 @@ describe('Integration Disconnect API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(409)
-      expect(data.error).toBe('Integration already exists for this service')
+      expect(data.error).toBe('Calendar integration is already enabled')
       expect(mockDataService.createIntegration).not.toHaveBeenCalled()
     })
 
@@ -364,7 +364,7 @@ describe('Integration Disconnect API', () => {
       const data = await response.json()
 
       expect(response.status).toBe(500)
-      expect(data.error).toBe('Failed to delete integration')
+      expect(data.error).toBe('Failed to disable calendar integration')
       expect(mockCreateUserDataService).toHaveBeenCalledWith(user2Id)
       expect(user2DataService.deleteIntegration).toHaveBeenCalledWith('integration-123')
     })
