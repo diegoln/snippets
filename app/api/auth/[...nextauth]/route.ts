@@ -65,7 +65,8 @@ const handleRedirect = async ({ url, baseUrl }: { url: string; baseUrl: string }
   
   // Custom redirect logic based on environment
   if (envMode === 'production') {
-    // Production OAuth flow - redirect to production app
+    // Production OAuth flow - always redirect to main app (no forced onboarding redirect)
+    // Let the main app handle onboarding detection after successful authentication
     if (url.startsWith(correctBaseUrl) && url !== correctBaseUrl) {
       return url
     }
@@ -280,7 +281,6 @@ const handler = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/auth/signin', // Dynamic sign-in page that routes based on environment
-    newUser: '/onboarding-wizard',
     signOut: '/', // Explicitly set signout page to home
   },
 })
