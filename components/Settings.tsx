@@ -20,9 +20,14 @@ import { signOut } from 'next-auth/react'
 import { Tooltip } from './Tooltip'
 import { Integrations } from './Integrations'
 import { ReflectionPreferencesComponent } from './ReflectionPreferences'
+import { RoleAndGuidelinesStep } from './RoleAndGuidelinesStep'
+import { LoadingSpinner } from './LoadingSpinner'
+import { SettingsActions } from './SettingsActions'
 import { useFileUpload } from '../hooks/useFileUpload'
 import { useReflectionPreferences } from '../hooks/useReflectionPreferences'
-import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
+import { VALIDATION_MESSAGES, ARIA_LABELS } from '../constants/settings'
+import { VALID_ROLES, VALID_LEVELS } from '../constants/user'
+import { getClientEnvironmentMode } from '../lib/environment'
 import type { 
   PerformanceSettings, 
   SettingsProps, 
@@ -41,14 +46,23 @@ import type {
 export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProps): JSX.Element {
   // Form state management with memoized initial state
   const initialFormState = useMemo<PerformanceSettings>(() => ({
-    jobTitle: initialSettings.jobTitle || '',
-    seniorityLevel: initialSettings.seniorityLevel || '',
-    careerLadderFile: initialSettings.careerLadderFile || null,
     performanceFeedback: initialSettings.performanceFeedback || '',
     performanceFeedbackFile: initialSettings.performanceFeedbackFile || null
   }), [initialSettings])
 
-  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'integrations' | 'reflections'>('performance')
+  // User profile state for role/guidelines
+  const [userProfile, setUserProfile] = useState<{
+    jobTitle: string
+    seniorityLevel: string
+    careerGuidelines?: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
+  } | null>(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+
+  const [activeSettingsTab, setActiveSettingsTab] = useState<'performance' | 'role-guidelines' | 'integrations' | 'reflections'>('performance')
   const [settings, setSettings] = useState<PerformanceSettings>(initialFormState)
   const [errors, setErrors] = useState<SettingsErrors>({})
   const [formState, setFormState] = useState<FormState>({
@@ -56,26 +70,19 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     submitError: null,
     hasUnsavedChanges: false
   })
+  
+  // Success states for save feedback (per tab)
+  const [performanceSaveSuccess, setPerformanceSaveSuccess] = useState(false)
+  const [roleGuidelinesSaveSuccess, setRoleGuidelinesSaveSuccess] = useState(false)
+  const [reflectionPreferencesSaveSuccess, setReflectionPreferencesSaveSuccess] = useState(false)
 
   // Refs for file inputs
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const feedbackFileInputRef = useRef<HTMLInputElement>(null)
 
   // Reflection preferences hook
   const reflectionPreferences = useReflectionPreferences()
 
   // File upload hooks with proper error handling
-  const careerLadderUpload = useFileUpload({
-    onSuccess: (file) => {
-      setSettings(prev => ({ ...prev, careerLadderFile: file }))
-      setFormState(prev => ({ ...prev, hasUnsavedChanges: true }))
-    },
-    onError: (error) => setErrors(prev => ({ ...prev, careerLadderFile: error })),
-    onClear: () => {
-      setSettings(prev => ({ ...prev, careerLadderFile: null }))
-      setFormState(prev => ({ ...prev, hasUnsavedChanges: true }))
-    }
-  })
 
   const feedbackFileUpload = useFileUpload({
     onSuccess: (file) => {
@@ -95,6 +102,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
   const handleInputChange = useCallback((field: SettingsFieldName, value: string): void => {
     setSettings(prev => ({ ...prev, [field]: value }))
     setFormState(prev => ({ ...prev, hasUnsavedChanges: true }))
+    setPerformanceSaveSuccess(false) // Clear success state when user makes changes
     
     // Clear error when user starts typing
     if (errors[field]) {
@@ -102,12 +110,6 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     }
   }, [errors])
 
-  /**
-   * Handle career ladder file upload
-   */
-  const handleCareerLadderUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>): void => {
-    careerLadderUpload.handleFileChange(event)
-  }, [careerLadderUpload])
 
   /**
    * Handle performance feedback file upload  
@@ -116,13 +118,6 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
     feedbackFileUpload.handleFileChange(event)
   }, [feedbackFileUpload])
 
-  /**
-   * Remove career ladder file
-   */
-  const handleRemoveCareerLadderFile = useCallback((): void => {
-    careerLadderUpload.clearFile(fileInputRef)
-    setErrors(prev => ({ ...prev, careerLadderFile: undefined }))
-  }, [careerLadderUpload])
 
   /**
    * Remove performance feedback file
@@ -138,26 +133,17 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
   const validateForm = useCallback((): boolean => {
     const newErrors: SettingsErrors = {}
 
-    // Job title validation
-    if (!settings.jobTitle.trim()) {
-      newErrors.jobTitle = VALIDATION_MESSAGES.JOB_TITLE_REQUIRED
-    }
-
-    // Seniority level validation
-    if (!settings.seniorityLevel.trim()) {
-      newErrors.seniorityLevel = VALIDATION_MESSAGES.SENIORITY_LEVEL_REQUIRED
-    }
+    // Performance tab only validates file-related errors
+    // Job title and seniority level are handled in Role & Guidelines tab
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }, [settings])
+  }, [])
 
   /**
-   * Handle form submission with comprehensive error handling
+   * Handle performance settings save (extracted from form submission)
    */
-  const handleSubmit = useCallback(async (event: React.FormEvent): Promise<void> => {
-    event.preventDefault()
-    
+  const handlePerformanceSave = useCallback(async (): Promise<void> => {
     if (!validateForm()) {
       return
     }
@@ -174,6 +160,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         ...prev, 
         hasUnsavedChanges: false 
       }))
+      setPerformanceSaveSuccess(true)
     } catch (error) {
       console.error('Error saving settings:', error)
       setFormState(prev => ({ 
@@ -189,6 +176,108 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
   }, [settings, validateForm, onSave])
 
   /**
+   * Handle form submission with comprehensive error handling
+   */
+  const handleSubmit = useCallback(async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault()
+    await handlePerformanceSave()
+  }, [handlePerformanceSave])
+
+  /**
+   * Handle role and guidelines update from the Role & Guidelines tab
+   */
+  const handleRoleAndGuidelinesUpdate = useCallback(async (data: {
+    role: string
+    customRole: string
+    level: string
+    customLevel: string
+    careerGuidelines: {
+      currentLevelPlan: string
+      nextLevelExpectations: string
+      companyLadder?: string
+    }
+  }) => {
+    setFormState(prev => ({ 
+      ...prev, 
+      isSubmitting: true, 
+      submitError: null 
+    }))
+    
+    try {
+      const effectiveRole = data.role === 'other' ? data.customRole : data.role
+      const effectiveLevel = data.level === 'other' ? data.customLevel : data.level
+      
+      // Save profile - API will use session or dev auth automatically
+      const profileResponse = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          jobTitle: effectiveRole,
+          seniorityLevel: effectiveLevel,
+        }),
+      })
+      
+      if (!profileResponse.ok) {
+        throw new Error('Failed to update profile')
+      }
+      
+      // Save career guidelines
+      if (data.careerGuidelines.currentLevelPlan && data.careerGuidelines.nextLevelExpectations) {
+        const guidelinesResponse = await fetch('/api/user/career-guidelines', {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            currentLevelPlan: data.careerGuidelines.currentLevelPlan,
+            nextLevelExpectations: data.careerGuidelines.nextLevelExpectations,
+            companyLadder: data.careerGuidelines.companyLadder
+          })
+        })
+        
+        if (!guidelinesResponse.ok) {
+          console.warn('Failed to save career guidelines, but continuing...')
+          // Show warning to user about partial save
+          setFormState(prev => ({ 
+            ...prev, 
+            submitError: 'Profile updated successfully, but career guidelines failed to save. Please try again.' 
+          }))
+        }
+      }
+      
+      // Update local state
+      setUserProfile({
+        jobTitle: effectiveRole,
+        seniorityLevel: effectiveLevel,
+        careerGuidelines: data.careerGuidelines
+      })
+      
+      // Note: Role and level are managed in userProfile state, not settings
+      
+      setFormState(prev => ({ 
+        ...prev, 
+        hasUnsavedChanges: false 
+      }))
+      
+      setRoleGuidelinesSaveSuccess(true)
+      
+    } catch (error) {
+      console.error('Error updating role and guidelines:', error)
+      setFormState(prev => ({ 
+        ...prev, 
+        submitError: error instanceof Error ? error.message : 'Failed to update role and guidelines' 
+      }))
+    } finally {
+      setFormState(prev => ({ 
+        ...prev, 
+        isSubmitting: false 
+      }))
+    }
+  }, [setFormState, setUserProfile])
+
+  /**
    * Handle modal close with unsaved changes warning
    */
   const handleClose = useCallback(() => {
@@ -200,6 +289,52 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
       onClose()
     }
   }, [formState.hasUnsavedChanges, onClose])
+
+  // Load user profile on mount
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        setIsLoadingProfile(true)
+        
+        // Load user profile and career guidelines in parallel - APIs will use session or dev auth automatically
+        const [profileResponse, guidelinesResponse] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/user/career-guidelines')
+        ])
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json()
+          
+          let careerGuidelines
+          if (guidelinesResponse.ok) {
+            careerGuidelines = await guidelinesResponse.json()
+          }
+          
+          setUserProfile({
+            jobTitle: profileData.jobTitle || '',
+            seniorityLevel: profileData.seniorityLevel || '',
+            careerGuidelines: careerGuidelines ? {
+              currentLevelPlan: careerGuidelines.currentLevelPlan || '',
+              nextLevelExpectations: careerGuidelines.nextLevelExpectations || '',
+              companyLadder: careerGuidelines.companyLadder || ''
+            } : undefined
+          })
+          
+          // Update settings with performance feedback from profile
+          setSettings(prev => ({
+            ...prev,
+            performanceFeedback: profileData.performanceFeedback || ''
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error)
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+    
+    loadUserProfile()
+  }, [])
 
   /**
    * Cleanup on unmount
@@ -238,7 +373,12 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
           <div className="border-b border-gray-200 mb-6">
             <nav className="-mb-px flex space-x-8">
               <button
-                onClick={() => setActiveSettingsTab('performance')}
+                onClick={() => {
+                  setActiveSettingsTab('performance')
+                  // Clear success states when switching tabs
+                  setRoleGuidelinesSaveSuccess(false)
+                  setReflectionPreferencesSaveSuccess(false)
+                }}
                 className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeSettingsTab === 'performance'
                     ? 'border-blue-500 text-blue-600'
@@ -248,7 +388,28 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                 Performance
               </button>
               <button
-                onClick={() => setActiveSettingsTab('integrations')}
+                onClick={() => {
+                  setActiveSettingsTab('role-guidelines')
+                  // Clear success states when switching tabs
+                  setPerformanceSaveSuccess(false)
+                  setReflectionPreferencesSaveSuccess(false)
+                }}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeSettingsTab === 'role-guidelines'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Role & Guidelines
+              </button>
+              <button
+                onClick={() => {
+                  setActiveSettingsTab('integrations')
+                  // Clear success states when switching tabs
+                  setPerformanceSaveSuccess(false)
+                  setRoleGuidelinesSaveSuccess(false)
+                  setReflectionPreferencesSaveSuccess(false)
+                }}
                 className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeSettingsTab === 'integrations'
                     ? 'border-blue-500 text-blue-600'
@@ -258,7 +419,12 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                 Integrations
               </button>
               <button
-                onClick={() => setActiveSettingsTab('reflections')}
+                onClick={() => {
+                  setActiveSettingsTab('reflections')
+                  // Clear success states when switching tabs
+                  setPerformanceSaveSuccess(false)
+                  setRoleGuidelinesSaveSuccess(false)
+                }}
                 className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeSettingsTab === 'reflections'
                     ? 'border-blue-500 text-blue-600'
@@ -281,116 +447,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Job Title Field */}
-            <div>
-              <label htmlFor={FORM_FIELDS.JOB_TITLE} className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                Job Title <span className="text-red-500 ml-1">*</span>
-                <Tooltip content="Your current job title (e.g., Senior Software Engineer, Product Manager).">
-                  <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </Tooltip>
-              </label>
-              <input
-                id={FORM_FIELDS.JOB_TITLE}
-                type="text"
-                value={settings.jobTitle}
-                onChange={(e) => handleInputChange(FORM_FIELDS.JOB_TITLE, e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.jobTitle ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Senior Software Engineer"
-                aria-describedby={errors.jobTitle ? `${FORM_FIELDS.JOB_TITLE}-error` : undefined}
-                disabled={formState.isSubmitting}
-              />
-              {errors.jobTitle && (
-                <p id={`${FORM_FIELDS.JOB_TITLE}-error`} className="mt-1 text-sm text-red-600">
-                  {errors.jobTitle}
-                </p>
-              )}
-            </div>
 
-            {/* Seniority Level Field */}
-            <div>
-              <label htmlFor="seniorityLevel" className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                Seniority Level <span className="text-red-500 ml-1">*</span>
-                <Tooltip content="Your company's level or title (e.g., Senior Engineer, L5, Staff, Principal).">
-                  <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </Tooltip>
-              </label>
-              <input
-                id="seniorityLevel"
-                type="text"
-                value={settings.seniorityLevel}
-                onChange={(e) => handleInputChange('seniorityLevel', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.seniorityLevel ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Senior Software Engineer, L5, Staff Engineer, Principal"
-                aria-describedby={errors.seniorityLevel ? "seniorityLevel-error" : undefined}
-              />
-              {errors.seniorityLevel && (
-                <p id="seniorityLevel-error" className="mt-1 text-sm text-red-600">
-                  {errors.seniorityLevel}
-                </p>
-              )}
-            </div>
-
-            {/* Career Ladder Upload */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                Career Ladder Document <span className="text-gray-500 ml-1">(Optional)</span>
-                <Tooltip content="Upload your company's career ladder document. PDF, Word, or text files (max 10MB).">
-                  <svg className="w-4 h-4 ml-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </Tooltip>
-              </label>
-              
-              <div className="flex items-center space-x-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  onChange={handleCareerLadderUpload}
-                  className="hidden"
-                  id="careerLadderFile"
-                />
-                
-                <label
-                  htmlFor="careerLadderFile"
-                  className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-200 transition-colors focus-within:ring-2 focus-within:ring-blue-500"
-                >
-                  Choose File
-                </label>
-                
-                {settings.careerLadderFile && (
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">
-                      {settings.careerLadderFile.name}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleRemoveCareerLadderFile}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                      aria-label={ARIA_LABELS.REMOVE_FILE}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              {errors.careerLadderFile && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.careerLadderFile}
-                </p>
-              )}
-            </div>
 
             {/* Performance Feedback Field */}
             <div>
@@ -493,30 +550,74 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <button
-                type="button"
-                onClick={handleClose}
-                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                disabled={formState.isSubmitting}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={formState.isSubmitting}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {formState.isSubmitting ? 'Saving...' : 'Save Settings'}
-              </button>
-            </div>
+            <SettingsActions
+              isSubmitting={formState.isSubmitting}
+              saveSuccess={performanceSaveSuccess}
+              hasError={!!formState.submitError}
+              successMessage="Performance settings saved successfully!"
+              saveButtonLabel="Save Settings"
+              onSave={handlePerformanceSave}
+              onCancel={handleClose}
+            />
               </form>
+            </>
+          ) : activeSettingsTab === 'role-guidelines' ? (
+            <>
+              {/* Error Display */}
+              {formState.submitError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-700">{formState.submitError}</p>
+                </div>
+              )}
+              
+              {isLoadingProfile ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoadingSpinner size="lg" />
+                  <span className="ml-3 text-gray-600">Loading your profile...</span>
+                </div>
+              ) : userProfile ? (
+                <div className="space-y-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-blue-900 mb-2">
+                      Update Your Role & Career Guidelines
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Changes to your role or level will regenerate your career guidelines to ensure they stay relevant.
+                    </p>
+                  </div>
+                  
+                  <RoleAndGuidelinesStep
+                    initialRole={userProfile.jobTitle && VALID_ROLES.includes(userProfile.jobTitle as typeof VALID_ROLES[number]) ? userProfile.jobTitle : 'other'}
+                    initialLevel={userProfile.seniorityLevel && VALID_LEVELS.includes(userProfile.seniorityLevel as typeof VALID_LEVELS[number]) ? userProfile.seniorityLevel : 'other'}
+                    initialCustomRole={userProfile.jobTitle && !VALID_ROLES.includes(userProfile.jobTitle as typeof VALID_ROLES[number]) ? userProfile.jobTitle : ''}
+                    initialCustomLevel={userProfile.seniorityLevel && !VALID_LEVELS.includes(userProfile.seniorityLevel as typeof VALID_LEVELS[number]) ? userProfile.seniorityLevel : ''}
+                    initialCareerGuidelines={userProfile.careerGuidelines}
+                    mode="settings"
+                    isSubmitting={formState.isSubmitting}
+                    saveSuccess={roleGuidelinesSaveSuccess}
+                    onComplete={handleRoleAndGuidelinesUpdate}
+                    onCancel={handleClose}
+                  />
+                  
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">Failed to load profile data. Please try refreshing the page.</p>
+                </div>
+              )}
             </>
           ) : activeSettingsTab === 'integrations' ? (
             <Integrations />
           ) : (
             <ReflectionPreferencesComponent
-              onSave={reflectionPreferences.updatePreferences}
+              onSave={async (preferences) => {
+                try {
+                  await reflectionPreferences.updatePreferences(preferences)
+                  setReflectionPreferencesSaveSuccess(true)
+                } catch (error) {
+                  throw error // Re-throw to let ReflectionPreferencesComponent handle display
+                }
+              }}
               onClose={handleClose}
               initialPreferences={reflectionPreferences.preferences || undefined}
               availableIntegrations={reflectionPreferences.availableIntegrations}

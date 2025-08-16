@@ -9,6 +9,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { Tooltip } from './Tooltip'
+import { SettingsActions } from './SettingsActions'
 import { 
   ReflectionPreferences,
   ReflectionPreferencesUpdate, 
@@ -109,11 +110,9 @@ export function ReflectionPreferencesComponent({
   }, [preferences])
 
   /**
-   * Handle form submission
+   * Handle form save via SettingsActions
    */
-  const handleSubmit = useCallback(async (event: React.FormEvent) => {
-    event.preventDefault()
-    
+  const handleSave = useCallback(async () => {
     if (!validatePreferences()) {
       return
     }
@@ -132,6 +131,7 @@ export function ReflectionPreferencesComponent({
       setErrors({
         general: error instanceof Error ? error.message : 'Failed to save preferences'
       })
+      throw error // Re-throw to let SettingsActions handle error display
     } finally {
       setIsSubmitting(false)
     }
@@ -159,7 +159,7 @@ export function ReflectionPreferencesComponent({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         {/* Auto-generation Toggle */}
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-3">
@@ -339,57 +339,18 @@ export function ReflectionPreferencesComponent({
           </div>
         )}
 
-        {/* Action Buttons - Fixed height container to prevent layout shifts */}
-        <div className="pt-4 border-t">
-          {/* Success Message - Fixed height container */}
-          <div className="h-12 mb-4 flex items-center">
-            {saveSuccess && (
-              <div className="flex items-center space-x-2 p-3 bg-green-50 border border-green-200 rounded-lg w-full">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-sm text-green-700 font-medium">
-                  Preferences saved successfully!
-                </span>
-              </div>
-            )}
-          </div>
-          
-          {/* Button Container */}
-          <div className="flex justify-between items-center">
-            <div>
-              {onClose && saveSuccess && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                >
-                  Done
-                </button>
-              )}
-            </div>
-            <div className="flex space-x-3">
-              {onClose && !saveSuccess && (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={isLoading || isSubmitting || (!hasUnsavedChanges && !saveSuccess)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Saving...' : saveSuccess ? 'Saved ✓' : 'Save Preferences'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </form>
+        {/* Action Buttons using SettingsActions for consistency */}
+        <SettingsActions
+          isSubmitting={isSubmitting}
+          saveSuccess={saveSuccess}
+          hasError={!!errors.general}
+          successMessage="Reflection preferences saved successfully!"
+          saveButtonLabel="Save Preferences"
+          onSave={handleSave}
+          onCancel={onClose || (() => {})}
+          disabled={isLoading || (!hasUnsavedChanges && !saveSuccess)}
+        />
+      </div>
     </div>
   )
 }

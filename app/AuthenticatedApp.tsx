@@ -76,9 +76,6 @@ export const AuthenticatedApp = (): JSX.Element => {
   const [assessments, dispatch] = useReducer(assessmentReducer, [])
   const [currentPage, setCurrentPage] = useState<number>(0)
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
-    jobTitle: '',
-    seniorityLevel: '',
-    careerLadderFile: null,
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
@@ -108,18 +105,10 @@ export const AuthenticatedApp = (): JSX.Element => {
     try {
       console.log('📊 Loading dashboard data for authenticated user...')
       
-      // Fetch dashboard data in parallel
+      // Fetch dashboard data in parallel - APIs will use session or dev auth automatically
       const [snippetsResponse, assessmentsResponse] = await Promise.all([
-        fetch('/api/snippets', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        }),
-        fetch('/api/assessments', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        })
+        fetch('/api/snippets'),
+        fetch('/api/assessments')
       ])
 
       // Handle snippets response
@@ -154,6 +143,13 @@ export const AuthenticatedApp = (): JSX.Element => {
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
       }
       
+      // Initialize user settings with default values
+      // Profile data is fetched by Settings component when needed
+      setUserSettings({
+        performanceFeedback: '',
+        performanceFeedbackFile: null
+      })
+      
       console.log('✅ Dashboard data loaded successfully')
     } catch (error) {
       console.error('Error fetching dashboard data:', {
@@ -180,8 +176,7 @@ export const AuthenticatedApp = (): JSX.Element => {
       const response = await fetch('/api/snippets', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           id: selectedSnippet.id,
@@ -249,8 +244,30 @@ export const AuthenticatedApp = (): JSX.Element => {
   }, [])
 
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
-    setUserSettings(settings)
-    setShowSettings(false)
+    try {
+      // Save performance feedback data to the database - API will use session or dev auth automatically
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          performanceFeedback: settings.performanceFeedback
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save performance settings')
+      }
+      
+      // Update local state  
+      setUserSettings(settings)
+      
+      // Note: Don't close modal here - let Settings component handle its own Done state
+    } catch (error) {
+      console.error('Error saving performance settings:', error)
+      throw error // Re-throw to let Settings component handle the error
+    }
   }, [])
 
   const handleGenerateDraft = useCallback(async (request: CheckInFormData): Promise<void> => {
