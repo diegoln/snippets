@@ -25,6 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
 
       - name: Setup test database
         run: |
@@ -86,6 +88,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
 
       - name: TypeScript type checking (strict)
         run: npm run typecheck:quick
@@ -123,6 +127,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
 
       - name: Generate schema
         run: npm run generate-schema:force
@@ -166,6 +172,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
 
       - name: Test OAuth configuration with database failures
         run: |
@@ -219,6 +227,8 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: true
 
       - name: Validate fix prevents "Try signing in with a different account" error
         run: |
