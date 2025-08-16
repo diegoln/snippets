@@ -22,19 +22,19 @@ export interface MockUser {
 export const BASE_MOCK_USERS: Omit<MockUser, 'id'>[] = [
   {
     name: 'Jack Thompson',
-    email: 'diegoln@gmail.com',
+    email: 'diegoln+jack@gmail.com',
     image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face',
     role: 'Senior Software Engineer - Identity Platform'
   },
   {
     name: 'Sarah Engineer',
-    email: 'diegoln@gmail.com',
+    email: 'diegoln+sarah@gmail.com',
     image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face',
     role: 'Staff Engineer'
   },
   {
     name: 'Alex Designer',
-    email: 'diegoln@gmail.com', 
+    email: 'diegoln+alex@gmail.com', 
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face',
     role: 'Senior Product Designer'
   }

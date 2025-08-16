@@ -66,7 +66,7 @@ export async function initializeMockData(
       ...user,
       id: config.userIdPrefix ? `${config.userIdPrefix}${index + 1}` : `${index + 1}`,
       email: config.emailSuffix 
-        ? user.email.replace('@', config.emailSuffix) 
+        ? user.email.replace('@gmail.com', `${config.emailSuffix}gmail.com`) 
         : user.email
     }))
     
@@ -132,9 +132,27 @@ export async function initializeMockData(
     // 4. Create mock integrations
     console.log(`4️⃣ Setting up mock integrations for ${envName} users...`)
     
+    // Verify users exist before creating integrations
+    const createdUsers = await db.user.findMany({
+      where: { id: { in: mockUsers.map(u => u.id) } },
+      select: { id: true, name: true }
+    })
+    
+    if (createdUsers.length !== mockUsers.length) {
+      console.warn(`⚠️ Warning: Expected ${mockUsers.length} users, found ${createdUsers.length}`)
+    }
+    
     for (const mockUser of mockUsers) {
-      // Google Calendar integration for all users
-      await db.integration.upsert({
+      try {
+        // Verify user exists
+        const userExists = createdUsers.find(u => u.id === mockUser.id)
+        if (!userExists) {
+          console.error(`❌ User ${mockUser.id} not found, skipping integrations`)
+          continue
+        }
+        
+        // Google Calendar integration for all users
+        await db.integration.upsert({
         where: {
           userId_type: {
             userId: mockUser.id,
@@ -191,6 +209,9 @@ export async function initializeMockData(
           }
         })
         console.log(`✅ Created Todoist integration for ${mockUser.name}`)
+      }
+      } catch (error) {
+        console.error(`❌ Failed to create integrations for ${mockUser.name}:`, error instanceof Error ? error.message : String(error))
       }
     }
     console.log()

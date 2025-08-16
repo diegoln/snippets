@@ -30,6 +30,9 @@ interface RoleAndGuidelinesStepProps {
     nextLevelExpectations: string
     companyLadder?: string
   }
+  mode?: 'onboarding' | 'settings'
+  isSubmitting?: boolean
+  saveSuccess?: boolean
   onComplete: (data: {
     role: string
     customRole: string
@@ -41,6 +44,7 @@ interface RoleAndGuidelinesStepProps {
       companyLadder?: string
     }
   }) => void
+  onCancel?: () => void
 }
 
 export function RoleAndGuidelinesStep({
@@ -49,7 +53,11 @@ export function RoleAndGuidelinesStep({
   initialCustomRole = '',
   initialCustomLevel = '',
   initialCareerGuidelines,
-  onComplete
+  mode = 'onboarding',
+  isSubmitting = false,
+  saveSuccess = false,
+  onComplete,
+  onCancel
 }: RoleAndGuidelinesStepProps) {
   // Role and level selection state
   const [role, setRole] = useState(initialRole)
@@ -791,16 +799,43 @@ export function RoleAndGuidelinesStep({
         </div>
       )}
 
-      {/* Continue Button */}
+      {/* Success Message for Settings Mode */}
+      {mode === 'settings' && saveSuccess && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-sm text-green-700">Role and guidelines updated successfully!</p>
+        </div>
+      )}
+
+      {/* Action Buttons */}
       {hasGeneratedGuidelines && (
-        <div className="flex justify-end pt-4">
-          <button
-            onClick={handleContinue}
-            disabled={!canContinue()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Continue →
-          </button>
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          {mode === 'settings' && saveSuccess ? (
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              Done
+            </button>
+          ) : (
+            <>
+              {mode === 'settings' && onCancel && (
+                <button
+                  onClick={onCancel}
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+              )}
+              <button
+                onClick={handleContinue}
+                disabled={!canContinue() || isSubmitting}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Saving...' : (mode === 'settings' ? 'Save Changes' : 'Continue →')}
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>

@@ -9,9 +9,6 @@
  * User performance cycle settings interface
  */
 export interface PerformanceSettings {
-  jobTitle: string
-  seniorityLevel: string
-  careerLadderFile: File | null
   performanceFeedback: string
   performanceFeedbackFile: File | null
 }

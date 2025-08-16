@@ -76,9 +76,6 @@ export const AuthenticatedApp = (): JSX.Element => {
   const [assessments, dispatch] = useReducer(assessmentReducer, [])
   const [currentPage, setCurrentPage] = useState<number>(0)
   const [userSettings, setUserSettings] = useState<PerformanceSettings>({
-    jobTitle: '',
-    seniorityLevel: '',
-    careerLadderFile: null,
     performanceFeedback: '',
     performanceFeedbackFile: null
   })
@@ -151,9 +148,6 @@ export const AuthenticatedApp = (): JSX.Element => {
       if (profileResponse.ok) {
         const profileData = await profileResponse.json()
         setUserSettings({
-          jobTitle: profileData.jobTitle || '',
-          seniorityLevel: profileData.seniorityLevel || '',
-          careerLadderFile: null,
           performanceFeedback: '',
           performanceFeedbackFile: null
         })
@@ -261,31 +255,28 @@ export const AuthenticatedApp = (): JSX.Element => {
 
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
     try {
-      // Update profile in the database - API will use session or dev auth automatically
+      // Save performance feedback data to the database - API will use session or dev auth automatically
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          jobTitle: settings.jobTitle,
-          seniorityLevel: settings.seniorityLevel
+          performanceFeedback: settings.performanceFeedback
         })
       })
       
       if (!response.ok) {
-        throw new Error('Failed to save settings')
+        throw new Error('Failed to save performance settings')
       }
       
-      // Update local state
+      // Update local state  
       setUserSettings(settings)
-      setShowSettings(false)
+      
+      // Note: Don't close modal here - let Settings component handle its own Done state
     } catch (error) {
-      console.error('Error saving settings:', error)
-      // Show error message to user with better UX than alert
-      // TODO: Replace with proper toast notification system
-      alert('Failed to save settings. Please try again.')
-      // Don't re-throw to prevent app crash
+      console.error('Error saving performance settings:', error)
+      throw error // Re-throw to let Settings component handle the error
     }
   }, [])
 
