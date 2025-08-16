@@ -47,14 +47,34 @@ The **staging environment** is accessible at `https://advanceweekly.io/staging` 
 
 ![System Architecture](./architecture-diagram.png)
 
-The diagram illustrates the layered architecture with clear separation between:
-- **User Interface Layer**: Landing page, Friday Reflections, Career Check-Ins, and integration management
-- **Authentication Layer**: Environment-aware auth with NextAuth supporting both mock and Google OAuth
-- **API Layer**: RESTful endpoints for all system operations including scheduled processing
-- **Data Storage**: Dual database support (SQLite dev, PostgreSQL prod)
-- **Integration Services**: Third-party connections to Google Calendar, Todoist, and GitHub
-- **AI Processing**: Consistent LLM integration (Google Gemini API for all environments)
-- **Scheduled Processing**: GCP-based batch jobs for weekly data collection and analysis
+The diagram illustrates the layered architecture focused on core product capabilities and responsibilities:
+
+**🎯 User Experience Layer**
+- Core user interactions: weekly reflections, automation controls, career assessments
+- Integration setup and manual generation triggers
+- Focus: User-centric feature delivery and interface design
+
+**🤖 Reflection Automation Engine**
+- Smart scheduling based on user preferences and timezone awareness
+- Job orchestration with progress tracking and conflict prevention  
+- Focus: Intelligent automation that works seamlessly in the background
+
+**🔐 Security & Identity Management**
+- Multi-environment authentication (development vs production OAuth)
+- Session management and integration security
+- Focus: Secure, environment-aware identity handling
+
+**⚙️ Business Logic & API Services**
+- Core application logic: reflection engine, assessment processing, user management
+- Data validation and integration coordination
+- Focus: Business rules and service orchestration
+
+**🗄️ Data & Integration Platform**
+- Multi-environment database strategy (PostgreSQL/SQLite)
+- Third-party integration hub (Google Calendar, GitHub, Todoist)
+- AI processing engine (unified Google Gemini API)
+- Background job processing for async operations
+- Focus: Data persistence, external connectivity, and AI-powered insights
 
 ## Integration System Architecture
 
