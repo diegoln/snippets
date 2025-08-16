@@ -50,6 +50,7 @@ describe('/api/user/profile', () => {
         name: 'Test User',
         jobTitle: 'engineer',
         seniorityLevel: 'senior',
+        performanceFeedback: null,
         onboardingCompleted: true,
         onboardingCompletedAt: '2025-01-01T10:00:00.000Z'
       })
@@ -126,7 +127,7 @@ describe('/api/user/profile', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Job title and seniority level are required')
+      expect(data.error).toBe('Job title and seniority level are both required for role updates')
       expect(mockDataService.updateUserProfile).not.toHaveBeenCalled()
     })
 
@@ -142,7 +143,7 @@ describe('/api/user/profile', () => {
       const data = await response.json()
 
       expect(response.status).toBe(400)
-      expect(data.error).toBe('Job title and seniority level are required')
+      expect(data.error).toBe('Job title and seniority level are both required for role updates')
       expect(mockDataService.updateUserProfile).not.toHaveBeenCalled()
     })
 
