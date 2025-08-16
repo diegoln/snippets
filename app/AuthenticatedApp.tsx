@@ -106,10 +106,9 @@ export const AuthenticatedApp = (): JSX.Element => {
       console.log('📊 Loading dashboard data for authenticated user...')
       
       // Fetch dashboard data in parallel - APIs will use session or dev auth automatically
-      const [snippetsResponse, assessmentsResponse, profileResponse] = await Promise.all([
+      const [snippetsResponse, assessmentsResponse] = await Promise.all([
         fetch('/api/snippets'),
-        fetch('/api/assessments'),
-        fetch('/api/user/profile')
+        fetch('/api/assessments')
       ])
 
       // Handle snippets response
@@ -144,21 +143,12 @@ export const AuthenticatedApp = (): JSX.Element => {
         dispatch({ type: 'SET_ASSESSMENTS', payload: [] })
       }
       
-      // Handle profile response
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json()
-        setUserSettings({
-          performanceFeedback: '',
-          performanceFeedbackFile: null
-        })
-      } else {
-        console.error('Failed to fetch user profile:', {
-          status: profileResponse.status,
-          statusText: profileResponse.statusText,
-          userEmail: currentUser?.email,
-          timestamp: new Date().toISOString()
-        })
-      }
+      // Initialize user settings with default values
+      // Profile data is fetched by Settings component when needed
+      setUserSettings({
+        performanceFeedback: '',
+        performanceFeedbackFile: null
+      })
       
       console.log('✅ Dashboard data loaded successfully')
     } catch (error) {

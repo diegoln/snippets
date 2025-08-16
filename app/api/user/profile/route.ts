@@ -25,12 +25,24 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { jobTitle, seniorityLevel } = body
+    const { jobTitle, seniorityLevel, performanceFeedback } = body
 
-    // Validate input
-    if (!jobTitle || !seniorityLevel) {
+    // Handle different update scenarios
+    const hasRoleUpdate = jobTitle || seniorityLevel
+    const hasPerformanceUpdate = performanceFeedback !== undefined
+    
+    // Validate input - either role update or performance update
+    if (!hasRoleUpdate && !hasPerformanceUpdate) {
       return NextResponse.json(
-        { error: 'Job title and seniority level are required' },
+        { error: 'At least one field must be provided for update' },
+        { status: 400 }
+      )
+    }
+    
+    // For role updates, both fields are required
+    if (hasRoleUpdate && (!jobTitle || !seniorityLevel)) {
+      return NextResponse.json(
+        { error: 'Job title and seniority level are both required for role updates' },
         { status: 400 }
       )
     }
@@ -47,6 +59,15 @@ export async function PUT(request: NextRequest) {
       
       if (token?.email) {
         // Create or update user directly
+        const updateData: any = {}
+        if (hasRoleUpdate) {
+          updateData.jobTitle = jobTitle
+          updateData.seniorityLevel = seniorityLevel
+        }
+        if (hasPerformanceUpdate) {
+          updateData.performanceFeedback = performanceFeedback
+        }
+        
         const user = await prisma.user.upsert({
           where: { id: userId },
           create: {
@@ -54,19 +75,16 @@ export async function PUT(request: NextRequest) {
             email: token.email as string,
             name: token.name as string || null,
             image: token.picture as string || null,
-            jobTitle,
-            seniorityLevel,
+            ...updateData
           },
-          update: {
-            jobTitle,
-            seniorityLevel,
-          }
+          update: updateData
         })
 
         return NextResponse.json({
           id: user.id,
           jobTitle: user.jobTitle,
           seniorityLevel: user.seniorityLevel,
+          performanceFeedback: user.performanceFeedback,
         })
       }
     }
@@ -74,10 +92,16 @@ export async function PUT(request: NextRequest) {
     // Production path - use data service
     const dataService = createUserDataService(userId)
     try {
-      const updatedUser = await dataService.updateUserProfile({
-        jobTitle,
-        seniorityLevel,
-      })
+      const updateParams: any = {}
+      if (hasRoleUpdate) {
+        updateParams.jobTitle = jobTitle
+        updateParams.seniorityLevel = seniorityLevel
+      }
+      if (hasPerformanceUpdate) {
+        updateParams.performanceFeedback = performanceFeedback
+      }
+      
+      const updatedUser = await dataService.updateUserProfile(updateParams)
 
       if (!updatedUser) {
         throw new Error('Failed to update user profile')
@@ -87,6 +111,7 @@ export async function PUT(request: NextRequest) {
         id: updatedUser.id,
         jobTitle: updatedUser.jobTitle,
         seniorityLevel: updatedUser.seniorityLevel,
+        performanceFeedback: updatedUser.performanceFeedback,
       })
     } finally {
       await dataService.disconnect()
@@ -141,6 +166,7 @@ export async function GET(request: NextRequest) {
         email: user.email,
         jobTitle: user.jobTitle,
         seniorityLevel: user.seniorityLevel,
+        performanceFeedback: user.performanceFeedback,
         onboardingCompleted: !!user.onboardingCompletedAt,
         onboardingCompletedAt: user.onboardingCompletedAt?.toISOString() || null,
       })

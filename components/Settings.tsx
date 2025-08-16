@@ -254,12 +254,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         careerGuidelines: data.careerGuidelines
       })
       
-      // Update settings with new role/level
-      setSettings(prev => ({
-        ...prev,
-        jobTitle: effectiveRole,
-        seniorityLevel: effectiveLevel
-      }))
+      // Note: Role and level are managed in userProfile state, not settings
       
       setFormState(prev => ({ 
         ...prev, 
@@ -280,7 +275,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         isSubmitting: false 
       }))
     }
-  }, [setFormState, setUserProfile, setSettings])
+  }, [setFormState, setUserProfile])
 
   /**
    * Handle modal close with unsaved changes warning
@@ -301,14 +296,14 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
       try {
         setIsLoadingProfile(true)
         
-        // Load user profile - API will use session or dev auth automatically
-        const profileResponse = await fetch('/api/user/profile')
+        // Load user profile and career guidelines in parallel - APIs will use session or dev auth automatically
+        const [profileResponse, guidelinesResponse] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/user/career-guidelines')
+        ])
         
         if (profileResponse.ok) {
           const profileData = await profileResponse.json()
-          
-          // Load career guidelines if they exist - API will use session or dev auth automatically
-          const guidelinesResponse = await fetch('/api/user/career-guidelines')
           
           let careerGuidelines
           if (guidelinesResponse.ok) {
@@ -325,11 +320,10 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
             } : undefined
           })
           
-          // Update settings with loaded profile data
+          // Update settings with performance feedback from profile
           setSettings(prev => ({
             ...prev,
-            jobTitle: profileData.jobTitle || '',
-            seniorityLevel: profileData.seniorityLevel || ''
+            performanceFeedback: profileData.performanceFeedback || ''
           }))
         }
       } catch (error) {
