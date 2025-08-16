@@ -26,6 +26,7 @@ import { useFileUpload } from '../hooks/useFileUpload'
 import { useReflectionPreferences } from '../hooks/useReflectionPreferences'
 import { VALIDATION_MESSAGES, ARIA_LABELS, FORM_FIELDS } from '../constants/settings'
 import { VALID_ROLES, VALID_LEVELS } from '../constants/user'
+import { getClientEnvironmentMode } from '../lib/environment'
 import type { 
   PerformanceSettings, 
   SettingsProps, 
@@ -227,12 +228,11 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
       const effectiveRole = data.role === 'other' ? data.customRole : data.role
       const effectiveLevel = data.level === 'other' ? data.customLevel : data.level
       
-      // Save profile
+      // Save profile - API will use session or dev auth automatically
       const profileResponse = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           jobTitle: effectiveRole,
@@ -249,8 +249,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         const guidelinesResponse = await fetch('/api/user/career-guidelines', {
           method: 'PUT',
           headers: { 
-            'Content-Type': 'application/json',
-            'X-Dev-User-Id': 'dev-user-123'
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             currentLevelPlan: data.careerGuidelines.currentLevelPlan,
@@ -260,7 +259,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         })
         
         if (!guidelinesResponse.ok) {
-          console.error('Failed to save career guidelines, but continuing...')
+          console.warn('Failed to save career guidelines, but continuing...')
         }
       }
       
@@ -316,22 +315,14 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
       try {
         setIsLoadingProfile(true)
         
-        // Load user profile
-        const profileResponse = await fetch('/api/user/profile', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        })
+        // Load user profile - API will use session or dev auth automatically
+        const profileResponse = await fetch('/api/user/profile')
         
         if (profileResponse.ok) {
           const profileData = await profileResponse.json()
           
-          // Load career guidelines if they exist
-          const guidelinesResponse = await fetch('/api/user/career-guidelines', {
-            headers: {
-              'X-Dev-User-Id': 'dev-user-123'
-            }
-          })
+          // Load career guidelines if they exist - API will use session or dev auth automatically
+          const guidelinesResponse = await fetch('/api/user/career-guidelines')
           
           let careerGuidelines
           if (guidelinesResponse.ok) {
@@ -712,10 +703,10 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
                   </div>
                   
                   <RoleAndGuidelinesStep
-                    initialRole={VALID_ROLES.includes(userProfile.jobTitle as any) ? userProfile.jobTitle : 'other'}
-                    initialLevel={VALID_LEVELS.includes(userProfile.seniorityLevel as any) ? userProfile.seniorityLevel : 'other'}
-                    initialCustomRole={VALID_ROLES.includes(userProfile.jobTitle as any) ? '' : userProfile.jobTitle}
-                    initialCustomLevel={VALID_LEVELS.includes(userProfile.seniorityLevel as any) ? '' : userProfile.seniorityLevel}
+                    initialRole={userProfile.jobTitle && VALID_ROLES.includes(userProfile.jobTitle as typeof VALID_ROLES[number]) ? userProfile.jobTitle : 'other'}
+                    initialLevel={userProfile.seniorityLevel && VALID_LEVELS.includes(userProfile.seniorityLevel as typeof VALID_LEVELS[number]) ? userProfile.seniorityLevel : 'other'}
+                    initialCustomRole={userProfile.jobTitle && !VALID_ROLES.includes(userProfile.jobTitle as typeof VALID_ROLES[number]) ? userProfile.jobTitle : ''}
+                    initialCustomLevel={userProfile.seniorityLevel && !VALID_LEVELS.includes(userProfile.seniorityLevel as typeof VALID_LEVELS[number]) ? userProfile.seniorityLevel : ''}
                     initialCareerGuidelines={userProfile.careerGuidelines}
                     onComplete={handleRoleAndGuidelinesUpdate}
                   />

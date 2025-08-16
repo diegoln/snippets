@@ -108,23 +108,11 @@ export const AuthenticatedApp = (): JSX.Element => {
     try {
       console.log('📊 Loading dashboard data for authenticated user...')
       
-      // Fetch dashboard data in parallel
+      // Fetch dashboard data in parallel - APIs will use session or dev auth automatically
       const [snippetsResponse, assessmentsResponse, profileResponse] = await Promise.all([
-        fetch('/api/snippets', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        }),
-        fetch('/api/assessments', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        }),
-        fetch('/api/user/profile', {
-          headers: {
-            'X-Dev-User-Id': 'dev-user-123'
-          }
-        })
+        fetch('/api/snippets'),
+        fetch('/api/assessments'),
+        fetch('/api/user/profile')
       ])
 
       // Handle snippets response
@@ -204,8 +192,7 @@ export const AuthenticatedApp = (): JSX.Element => {
       const response = await fetch('/api/snippets', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           id: selectedSnippet.id,
@@ -274,12 +261,11 @@ export const AuthenticatedApp = (): JSX.Element => {
 
   const handleSaveSettings = useCallback(async (settings: PerformanceSettings): Promise<void> => {
     try {
-      // Update profile in the database
+      // Update profile in the database - API will use session or dev auth automatically
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'X-Dev-User-Id': 'dev-user-123'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           jobTitle: settings.jobTitle,
