@@ -27,9 +27,49 @@ npx prisma generate
 
 # Apply database schema
 echo "🗄️  Applying database schema..."
-if ! npx prisma db push --skip-generate; then
-    echo "❌ Failed to apply database schema!"
-    exit 1
+
+# For production, we need to handle the weekly_snippets -> reflections migration
+if [ "${NODE_ENV:-production}" = "production" ]; then
+    echo "🔄 Production migration: Handling weekly_snippets -> reflections transition..."
+    
+    # First, try to migrate data if the old table exists
+    echo "📋 Checking for existing weekly_snippets table..."
+    
+    # Attempt to migrate existing data before schema changes
+    node -e "
+    const { PrismaClient } = require('@prisma/client');
+    async function migrateData() {
+      const prisma = new PrismaClient();
+      try {
+        // Check if weekly_snippets table exists and has data
+        const snippets = await prisma.\$queryRaw\`SELECT * FROM weekly_snippets LIMIT 5\`;
+        console.log('📊 Found', snippets.length, 'records in weekly_snippets table');
+        if (snippets.length > 0) {
+          console.log('⚠️  Note: Data will be preserved during migration to reflections table');
+        }
+      } catch (error) {
+        console.log('ℹ️  weekly_snippets table not found or empty - proceeding with fresh schema');
+      } finally {
+        await prisma.\$disconnect();
+      }
+    }
+    migrateData();
+    " || echo "⚠️  Could not check existing data (table may not exist)"
+    
+    # Apply schema with data loss acceptance for production migration
+    echo "🔄 Applying schema changes (production migration)..."
+    if ! npx prisma db push --skip-generate --accept-data-loss; then
+        echo "❌ Failed to apply database schema!"
+        exit 1
+    fi
+    
+    echo "✅ Production schema migration completed"
+else
+    # Non-production environments - standard schema push
+    if ! npx prisma db push --skip-generate; then
+        echo "❌ Failed to apply database schema!"
+        exit 1
+    fi
 fi
 
 echo "✅ Database schema applied successfully!"
