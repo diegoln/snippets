@@ -260,6 +260,11 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         
         if (!guidelinesResponse.ok) {
           console.warn('Failed to save career guidelines, but continuing...')
+          // Show warning to user about partial save
+          setFormState(prev => ({ 
+            ...prev, 
+            submitError: 'Profile updated successfully, but career guidelines failed to save. Please try again.' 
+          }))
         }
       }
       
@@ -294,7 +299,7 @@ export function Settings({ onSave, onClose, initialSettings = {} }: SettingsProp
         isSubmitting: false 
       }))
     }
-  }, [])
+  }, [setFormState, setUserProfile, setSettings])
 
   /**
    * Handle modal close with unsaved changes warning

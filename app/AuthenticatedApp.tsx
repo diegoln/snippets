@@ -282,8 +282,10 @@ export const AuthenticatedApp = (): JSX.Element => {
       setShowSettings(false)
     } catch (error) {
       console.error('Error saving settings:', error)
-      // TODO: Show error message to user
-      throw error
+      // Show error message to user with better UX than alert
+      // TODO: Replace with proper toast notification system
+      alert('Failed to save settings. Please try again.')
+      // Don't re-throw to prevent app crash
     }
   }, [])
 
