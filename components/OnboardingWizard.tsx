@@ -126,6 +126,15 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
   
   // Always start at step 0 - localStorage restoration happens in useEffect if needed
   const [currentStep, setCurrentStep] = useState(0)
+  
+  // Validate currentStep is within bounds (will validate after steps is defined)
+  const maxSteps = 3 // We have 3 steps: 0, 1, 2
+  useEffect(() => {
+    if (currentStep >= maxSteps) {
+      console.warn(`currentStep ${currentStep} is out of bounds, resetting to 0`)
+      setCurrentStep(0)
+    }
+  }, [currentStep, maxSteps])
   const [loadingState, setLoadingState] = useState<LoadingState>({ isLoading: false })
   const [error, setError] = useState<string | null>(null)
   const [notification, setNotification] = useState<string | null>(null)
@@ -235,10 +244,11 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
       try {
         const { step, data, integrations, bullets } = JSON.parse(savedProgress)
         
-        // Only restore if it's not the final success step (step 3)
-        // If user reached success but onboarding wasn't completed, they should start over
-        if (step !== 3) {
-          setCurrentStep(step || 0)
+        // Only restore if it's a valid step (0, 1, or 2)
+        // If user reached success step (2) but onboarding wasn't completed, they should start over
+        const validStep = step >= 0 && step < maxSteps ? step : 0
+        if (step < maxSteps) {
+          setCurrentStep(validStep)
           setFormData(prev => ({ ...prev, ...data }))
           setConnectedIntegrations(new Set(integrations || []))
           setIntegrationBullets(bullets || {})
@@ -256,11 +266,12 @@ export function OnboardingWizard({ initialData, clearPreviousProgress = false, o
 
   // Save progress to localStorage whenever state changes (debounced)
   useEffect(() => {
-    // Don't save if we're on the success step (step 3) as onboarding is complete
-    if (currentStep !== 3) {
+    // Don't save if we're on the success step (step 2) as onboarding is complete
+    // Also don't save if currentStep is invalid
+    if (currentStep < maxSteps - 1 && currentStep >= 0) {
       saveProgressToLocalStorage(currentStep, formData, connectedIntegrations, integrationBullets)
     }
-  }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage])
+  }, [currentStep, formData, connectedIntegrations, integrationBullets, saveProgressToLocalStorage, maxSteps])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -518,31 +529,95 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
     }
   }, [extractBulletsFromReflection])
 
+  // Handle profile step completion with calendar integration
+  const handleProfileStepCompletion = useCallback(async () => {
+    setError(null)
+    setLoadingState({ 
+      isLoading: true, 
+      operation: 'loading-integration-data', 
+      message: 'Analyzing your calendar data...' 
+    })
+    
+    try {
+      // Enable calendar integration automatically
+      setConnectedIntegrations(new Set(['google_calendar']))
+      
+      // Load calendar data using consolidation API
+      const consolidationResponse = await fetch('/api/integrations/consolidate-onboarding', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Dev-User-Id': DEV_USER_ID
+        },
+        body: JSON.stringify({ integrationType: 'google_calendar' })
+      })
+
+      const consolidationData = await consolidationResponse.json()
+      
+      if (consolidationResponse.ok && consolidationData.success && consolidationData.hasData) {
+        // Generate reflection from consolidation
+        const reflectionResponse = await fetch('/api/reflections/generate-from-consolidation', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Dev-User-Id': DEV_USER_ID
+          },
+          body: JSON.stringify({
+            consolidationId: consolidationData.consolidationId
+          })
+        })
+
+        if (reflectionResponse.ok) {
+          const reflectionData = await reflectionResponse.json()
+          
+          if (reflectionData.hasData && reflectionData.reflection) {
+            setFormData(prev => ({
+              ...prev,
+              reflectionContent: reflectionData.reflection
+            }))
+            
+            // Extract bullets for UI display
+            const bullets = extractBulletsFromReflection(reflectionData.reflection)
+            setIntegrationBullets({ google_calendar: bullets })
+          }
+        }
+      } else {
+        // No calendar data available - use default reflection
+        const defaultReflection = generateInitialReflection()
+        setFormData(prev => ({
+          ...prev,
+          reflectionContent: defaultReflection
+        }))
+      }
+      
+      setCurrentStep(1) // Move to reflection step
+    } catch (error) {
+      console.error('Failed to load calendar data:', error)
+      // Continue with default reflection
+      const defaultReflection = generateInitialReflection()
+      setFormData(prev => ({
+        ...prev,
+        reflectionContent: defaultReflection
+      }))
+      setCurrentStep(1)
+    } finally {
+      setLoadingState({ isLoading: false })
+    }
+  }, [extractBulletsFromReflection, generateInitialReflection])
+
   // Handle step navigation
   const handleNext = useCallback(async () => {
     if (currentStep === 0) {
       // Step 0 is now combined role + guidelines
       // Validation is handled in the component
-      // Just move to integration step
-      setError(null)
-      setCurrentStep(1)
-      return
-    }
-    
-    if (currentStep === 1) {
-      // Step 1 is integration - validate integration is connected
-      if (connectedIntegrations.size === 0) {
-        setError('Please connect at least one integration')
-        return
-      }
-      setError(null)
-      setCurrentStep(2) // Move to reflection
+      // Move directly to reflection step (skip integration)
+      await handleProfileStepCompletion()
       return
     }
     
     setError(null)
-    setCurrentStep(prev => Math.min(prev + 1, 3))
-  }, [currentStep, connectedIntegrations])
+    setCurrentStep(prev => Math.min(prev + 1, maxSteps - 1))
+  }, [currentStep, handleProfileStepCompletion])
 
   const handleBack = useCallback(() => {
     setError(null)
@@ -613,8 +688,8 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
         onOnboardingComplete()
       }
       
-      // Move to success step (now step 3)
-      setCurrentStep(3)
+      // Move to success step (now step 2)
+      setCurrentStep(maxSteps - 1)
       
       // Preload the dashboard by setting a flag in localStorage
       // This helps the main page know onboarding is complete without an API call
@@ -870,66 +945,22 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
       ),
     },
     {
-      title: 'Connect an integration',
-      subtitle: 'Pick one to start. Real bullets from your work will appear instantly.',
-      content: (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {INTEGRATIONS.map(integration => (
-            <div
-              key={integration.id}
-              className={`p-6 rounded-lg border-2 transition-all ${
-                connectedIntegrations.has(integration.id)
-                  ? 'border-accent-500 bg-accent-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className={`text-${integration.color}-600 mb-4`}>
-                {integration.icon}
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                {integration.name}
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                {integration.description}
-              </p>
-              {connectedIntegrations.has(integration.id) ? (
-                <div className="space-y-2">
-                  <button
-                    disabled
-                    className="w-full py-2 px-4 rounded-md text-sm font-medium bg-green-600 text-white"
-                  >
-                    ✓ Connected
-                  </button>
-                  <button
-                    onClick={() => disconnectIntegration(integration.id)}
-                    className="w-full py-1 px-3 rounded-md text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-all"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => connectIntegration(integration.id)}
-                  disabled={isConnecting !== null}
-                  className="w-full py-2 px-4 rounded-md text-sm font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isConnecting === integration.id ? (
-                    <LoadingSpinner size="sm" />
-                  ) : (
-                    'Connect'
-                  )}
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      ),
-    },
-    {
       title: 'Review your first reflection',
-      subtitle: `Nice work! ${formData.level ? `Two of these show cross-team work—great for a ${formData.level}-level ${formData.role}.` : ''}`,
+      subtitle: `We've analyzed your recent work activity. ${formData.level ? `Great cross-team collaboration—perfect for a ${formData.level}-level ${formData.role}.` : ''}`,
       content: (
         <div className="space-y-4">
+          {/* Calendar integration status */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+              </svg>
+              <span className="text-sm text-blue-800 font-medium">
+                Calendar analysis enabled - we&apos;ve pulled insights from your recent meetings
+              </span>
+            </div>
+          </div>
+          
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <textarea
               value={formData.reflectionContent}
@@ -939,7 +970,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             />
           </div>
           <p className="text-sm text-gray-600">
-            Feel free to edit, add, or remove any bullets. You can star the best ones or add manual highlights.
+            Feel free to edit, add, or remove any bullets. You can adjust data sources in Settings → Integrations.
           </p>
         </div>
       ),
@@ -958,7 +989,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               <div>
                 <h3 className="text-lg font-semibold text-green-900">Your first reflection is saved!</h3>
                 <p className="text-green-700 mt-1">
-                  We&apos;ll use this to help you track your growth and prepare for performance reviews.
+                  We&apos;re already analyzing your calendar for future reflections.
                 </p>
               </div>
             </div>
@@ -1000,7 +1031,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
               </li>
               <li className="flex items-start">
                 <span className="text-accent-500 mr-2">•</span>
-                <span>Your connected integrations will automatically pull in context</span>
+                <span>Your calendar data will automatically enhance future reflections</span>
               </li>
               <li className="flex items-start">
                 <span className="text-accent-500 mr-2">•</span>
@@ -1051,10 +1082,10 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
           {/* Current Step */}
           <div className="bg-white rounded-lg shadow-md p-8 mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {steps[currentStep].title}
+              {steps[currentStep]?.title || 'Loading...'}
             </h2>
             <p className="text-gray-600 mb-6">
-              {steps[currentStep].subtitle}
+              {steps[currentStep]?.subtitle || 'Please wait...'}
             </p>
             
             {error && (
@@ -1106,13 +1137,13 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
                 })
               }}
             >
-              {steps[currentStep].content}
+              {steps[currentStep]?.content || <div>Loading step content...</div>}
             </ErrorBoundary>
           </div>
 
           {/* Navigation */}
           <div className="flex justify-between items-center">
-            {currentStep < 3 ? (
+            {currentStep < maxSteps - 1 ? (
               <button
                 onClick={handleBack}
                 disabled={currentStep === 0 || loadingState.isLoading}
@@ -1127,22 +1158,7 @@ ${tip ? `💡 Tip for ${effectiveLevel}-level ${effectiveRole}: ${tip}` : ''}
             {currentStep === 0 ? (
               // Step 0 - Combined role/guidelines step has its own continue button
               <div />
-            ) : currentStep < 2 ? (
-              <button
-                onClick={handleNext}
-                disabled={loadingState.isLoading}
-                className="btn-accent px-8 py-3 rounded-pill font-semibold shadow-elevation-1 disabled:opacity-50"
-              >
-                {loadingState.isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <LoadingSpinner size="sm" />
-                    <span>{loadingState.message}</span>
-                  </div>
-                ) : (
-                  'Continue →'
-                )}
-              </button>
-            ) : currentStep === 2 ? (
+            ) : currentStep === 1 ? (
               <button
                 onClick={handleSave}
                 disabled={loadingState.isLoading}

@@ -100,12 +100,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check for existing in-progress operation
+    // Check for existing in-progress operation (QUEUED or PROCESSING)
     const existingOps = await dataService.getAsyncOperations()
     const inProgress = existingOps.find(
       (op: AsyncOperation) => 
         op.operationType === AsyncOperationType.WEEKLY_REFLECTION &&
-        op.status === AsyncOperationStatus.PROCESSING
+        (op.status === AsyncOperationStatus.PROCESSING || op.status === AsyncOperationStatus.QUEUED)
     )
 
     if (inProgress) {

@@ -248,105 +248,88 @@ export const Integrations = (): JSX.Element => {
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-lg shadow-sm border border-neutral-200 p-6">
-        <h2 className="text-xl font-semibold text-primary-900 mb-2">Connect Your Calendar</h2>
+        <h2 className="text-xl font-semibold text-primary-900 mb-2">Calendar Integration</h2>
         <p className="text-secondary mb-6">
-          Connect your Google Calendar to automatically extract meeting context for your weekly reflections. 
-          This helps our AI understand your career progress and collaboration patterns.
+          Your Google Calendar access is already available from sign-in. Enable calendar analysis to automatically 
+          extract meeting context for your weekly reflections.
         </p>
 
-        {!calendarIntegration ? (
-          <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-primary-900 mb-2">Google Calendar</h3>
-                <p className="text-secondary mb-4">
-                  Connect your Google Calendar to automatically extract:
-                </p>
-                <ul className="text-sm text-secondary space-y-1 mb-6">
-                  <li>• Meeting titles and descriptions</li>
-                  <li>• 1:1 discussions for career development</li>
-                  <li>• Project meetings and technical discussions</li>
-                  <li>• Stakeholder interactions and presentations</li>
-                </ul>
-                <button
-                  onClick={handleConnectCalendar}
-                  disabled={isConnecting}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isConnecting ? (
-                    <>
-                      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"></div>
-                      Connecting...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                      </svg>
-                      Connect Google Calendar
-                    </>
-                  )}
-                </button>
-              </div>
+        <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <svg className="w-8 h-8 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+              </svg>
             </div>
-          </div>
-        ) : (
-          <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-            <div className="flex items-start space-x-4">
-              <div className="flex-shrink-0">
-                <svg className="w-8 h-8 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-medium text-green-900 mb-2">Google Calendar Connected</h3>
-                <p className="text-green-700 mb-4">
-                  Your calendar is connected and ready to provide meeting context for your weekly reflections.
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-green-600 space-y-1">
-                    <p>Connected: {new Date(calendarIntegration.createdAt).toLocaleDateString()}</p>
-                    {calendarIntegration.lastSyncAt && (
-                      <p>Last sync: {new Date(calendarIntegration.lastSyncAt).toLocaleDateString()}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleDisconnectCalendar}
-                    disabled={isConnecting}
-                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isConnecting ? 'Disconnecting...' : 'Disconnect'}
-                  </button>
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-primary-900">Google Calendar</h3>
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-green-600 font-medium">✓ Access Granted</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!!calendarIntegration}
+                      onChange={calendarIntegration ? handleDisconnectCalendar : handleConnectCalendar}
+                      disabled={isConnecting}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span className="ml-3 text-sm font-medium text-gray-700">
+                      {calendarIntegration ? 'Enabled' : 'Disabled'}
+                    </span>
+                  </label>
                 </div>
               </div>
+              
+              <p className="text-secondary mb-4">
+                Automatically extracts meeting insights including:
+              </p>
+              <ul className="text-sm text-secondary space-y-1 mb-4">
+                <li>• Meeting titles and descriptions</li>
+                <li>• 1:1 discussions for career development</li>
+                <li>• Project meetings and technical discussions</li>
+                <li>• Stakeholder interactions and presentations</li>
+              </ul>
+              
+              {calendarIntegration && (
+                <div className="text-sm text-green-600 space-y-1">
+                  <p>Enabled: {new Date(calendarIntegration.createdAt).toLocaleDateString()}</p>
+                  {calendarIntegration.lastSyncAt && (
+                    <p>Last sync: {new Date(calendarIntegration.lastSyncAt).toLocaleDateString()}</p>
+                  )}
+                </div>
+              )}
+              
+              {isConnecting && (
+                <div className="flex items-center text-sm text-blue-600 mt-2">
+                  <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full mr-2"></div>
+                  {calendarIntegration ? 'Disabling...' : 'Enabling...'}
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
-        <h3 className="text-lg font-medium text-primary-900 mb-2">How It Works</h3>
+        <h3 className="text-lg font-medium text-primary-900 mb-2">How Calendar Analysis Works</h3>
         <div className="space-y-4 text-secondary">
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">1</div>
-            <p>We securely access your calendar events for the current week</p>
+            <p>Uses your existing Google OAuth permissions to access calendar events</p>
           </div>
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">2</div>
-            <p>Extract meeting context, including titles, descriptions, and attendee information</p>
+            <p>Analyzes meeting context, titles, descriptions, and attendee patterns</p>
           </div>
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">3</div>
-            <p>AI analyzes your meetings to understand career progress and collaboration patterns</p>
+            <p>AI identifies career-relevant activities and collaboration patterns</p>
           </div>
           <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-6 h-6 bg-primary-600 text-white rounded-full flex items-center justify-center text-sm font-medium">4</div>
-            <p>Context is used to improve weekly reflection suggestions and performance assessments</p>
+            <p>Automatically generates reflection content and performance insights</p>
           </div>
         </div>
       </div>
@@ -354,9 +337,10 @@ export const Integrations = (): JSX.Element => {
       <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
         <h3 className="text-lg font-medium text-blue-900 mb-2">Privacy & Security</h3>
         <ul className="text-blue-700 space-y-2 text-sm">
-          <li>• We only access basic meeting information (titles, times, attendees)</li>
+          <li>• Uses existing Google OAuth permissions - no additional authorization needed</li>
+          <li>• Only accesses basic meeting metadata (titles, times, attendees)</li>
           <li>• Meeting content and private details are never stored</li>
-          <li>• You can disconnect at any time from your account settings</li>
+          <li>• You can disable calendar analysis at any time</li>
           <li>• All data is encrypted and processed securely</li>
         </ul>
       </div>
